@@ -19,6 +19,14 @@ export default {
 			}
 		},
 		extend: {
+			fontSize: {
+				'xs-mobile': '10px',
+				'sm-mobile': '11px',
+				'base-mobile': '12px',
+				'lg-mobile': '14px',
+				'xl-mobile': '16px',
+				'2xl-mobile': '18px',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

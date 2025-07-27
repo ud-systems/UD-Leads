@@ -75,7 +75,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit }: LeadDeta
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>

@@ -117,7 +117,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] w-[calc(100vw-2rem)] sm:w-full">
         <DialogHeader>
           <DialogTitle>Edit Followup</DialogTitle>
           <DialogDescription>

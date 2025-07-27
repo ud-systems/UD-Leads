@@ -223,13 +223,15 @@ export function DataManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="statuses">Statuses</TabsTrigger>
-          <TabsTrigger value="storeTypes">Store Types</TabsTrigger>
-          <TabsTrigger value="buyingPower">Buying Power</TabsTrigger>
-          <TabsTrigger value="tags">Tags</TabsTrigger>
-          <TabsTrigger value="territories">Territories</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto mobile-tabs-scroll mobile-tabs-container">
+          <TabsList className="flex w-full min-w-max space-x-1 p-1">
+            <TabsTrigger value="statuses" className="flex-shrink-0">Statuses</TabsTrigger>
+            <TabsTrigger value="storeTypes" className="flex-shrink-0">Store Types</TabsTrigger>
+            <TabsTrigger value="buyingPower" className="flex-shrink-0">Buying Power</TabsTrigger>
+            <TabsTrigger value="tags" className="flex-shrink-0">Tags</TabsTrigger>
+            <TabsTrigger value="territories" className="flex-shrink-0">Territories</TabsTrigger>
+          </TabsList>
+        </div>
 
         <div className="flex items-center space-x-2">
           <div className="relative flex-1">

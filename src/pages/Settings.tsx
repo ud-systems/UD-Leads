@@ -28,14 +28,14 @@ export default function Settings() {
 
       <Tabs defaultValue={isAdmin ? "overview" : "appearance"} className="space-y-6">
         <div className="overflow-x-auto mobile-tabs-scroll mobile-tabs-container">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 min-w-max">
-            {isAdmin && <TabsTrigger value="overview">Overview</TabsTrigger>}
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            {isAdmin && <TabsTrigger value="branding">Branding</TabsTrigger>}
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="data">Data</TabsTrigger>
-            {isAdmin && <TabsTrigger value="dataManagement">Data Management</TabsTrigger>}
-            {(isAdmin || isManager) && <TabsTrigger value="users">Users</TabsTrigger>}
+          <TabsList className="flex w-full min-w-max space-x-1 p-1">
+            {isAdmin && <TabsTrigger value="overview" className="flex-shrink-0">Overview</TabsTrigger>}
+            <TabsTrigger value="appearance" className="flex-shrink-0">Appearance</TabsTrigger>
+            {isAdmin && <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>}
+            <TabsTrigger value="notifications" className="flex-shrink-0">Notifications</TabsTrigger>
+            <TabsTrigger value="data" className="flex-shrink-0">Data</TabsTrigger>
+            {isAdmin && <TabsTrigger value="dataManagement" className="flex-shrink-0">Data Management</TabsTrigger>}
+            {(isAdmin || isManager) && <TabsTrigger value="users" className="flex-shrink-0">Users</TabsTrigger>}
           </TabsList>
         </div>
 

@@ -1,11 +1,13 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 import { Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { useProfile } from "@/hooks/useProfile";
 
@@ -15,6 +17,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isSmallDesktop, setIsSmallDesktop] = useState(false);
@@ -88,17 +91,21 @@ export function Layout({ children }: LayoutProps) {
                 variant="ghost"
                 size="sm"
                 className="h-10 w-10 p-0 rounded-lg hover:bg-accent mobile-touch-target"
-                onClick={() => window.location.href = '/profile'}
+                onClick={() => navigate('/profile')}
+                title={`${profile?.name || user?.email || 'User'} Profile`}
               >
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt="Profile"
-                    className="h-8 w-8 rounded-full object-cover"
+                <Avatar className="h-8 w-8">
+                  <AvatarImage 
+                    src={profile?.avatar_url} 
+                    alt={profile?.name || user?.email || 'Profile'} 
                   />
-                ) : (
-                  <User className="h-5 w-5" />
-                )}
+                  <AvatarFallback className="text-xs">
+                    {profile?.name ? 
+                      profile.name.split(' ').map(n => n[0]).join('').toUpperCase() :
+                      user?.email?.charAt(0).toUpperCase() || 'U'
+                    }
+                  </AvatarFallback>
+                </Avatar>
               </Button>
             </div>
           </div>
