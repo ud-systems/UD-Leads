@@ -1108,15 +1108,15 @@ All colors MUST be HSL.
   }
 }
 
-  /* Container improvements */
-  .container-responsive {
-    width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0 1rem;
+/* Container improvements */
+.container-responsive {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem;
     overflow-x: auto;
     overflow-y: auto;
-  }
+}
 
 @media (min-width: 640px) {
   .container-responsive {
@@ -1261,7 +1261,7 @@ All colors MUST be HSL.
 }
 
 /* Mobile Date Input Fixes */
-@media (max-width: 768px) {
+    @media (max-width: 768px) {
   /* Ensure date inputs work properly on mobile */
   input[type="date"] {
     min-height: 40px;

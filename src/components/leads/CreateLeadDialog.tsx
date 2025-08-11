@@ -29,7 +29,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { FileUpload } from "@/components/ui/file-upload";
-import { Plus, Navigation, Loader2 } from "lucide-react";
+import { Plus, Navigation, Loader2, X } from "lucide-react";
 
 export function CreateLeadDialog() {
   const [open, setOpen] = useState(false);
@@ -72,9 +72,9 @@ export function CreateLeadDialog() {
     last_visit: "",
     next_visit: "",
     
-    // Photos
-    exterior_photo_url: "",
-    interior_photo_url: "",
+    // Photos - Now arrays for multiple uploads
+    exterior_photos: [] as string[],
+    interior_photos: [] as string[],
     
     // Notes
     notes: ""
@@ -125,19 +125,19 @@ export function CreateLeadDialog() {
       return;
     }
 
-    if (!formData.exterior_photo_url.trim()) {
+    if (formData.exterior_photos.length === 0) {
       toast({
         title: "Error",
-        description: "Exterior photo is required",
+        description: "At least one exterior photo is required",
         variant: "destructive",
       });
       return;
     }
 
-    if (!formData.interior_photo_url.trim()) {
+    if (formData.interior_photos.length === 0) {
       toast({
         title: "Error",
-        description: "Interior photo is required",
+        description: "At least one interior photo is required",
         variant: "destructive",
       });
       return;
@@ -163,8 +163,10 @@ export function CreateLeadDialog() {
       products_currently_sold: formData.products_currently_sold ? formData.products_currently_sold.split(',').map(p => p.trim()) : [],
       last_visit: formData.last_visit || null,
       next_visit: formData.next_visit || null,
-      exterior_photo_url: formData.exterior_photo_url || undefined,
-      interior_photo_url: formData.interior_photo_url || undefined
+      exterior_photo_url: formData.exterior_photos[0] || undefined, // Keep first photo as primary
+      interior_photo_url: formData.interior_photos[0] || undefined, // Keep first photo as primary
+      exterior_photos: formData.exterior_photos,
+      interior_photos: formData.interior_photos
     };
 
     createLead(leadData as any, {
@@ -218,8 +220,8 @@ export function CreateLeadDialog() {
           salesperson: "",
           last_visit: "",
           next_visit: "",
-          exterior_photo_url: "",
-          interior_photo_url: "",
+          exterior_photos: [],
+          interior_photos: [],
           notes: ""
         });
       },
@@ -233,8 +235,36 @@ export function CreateLeadDialog() {
     });
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const addPhoto = (type: 'exterior' | 'interior', photoUrl: string) => {
+    if (type === 'exterior') {
+      setFormData(prev => ({
+        ...prev,
+        exterior_photos: [...prev.exterior_photos, photoUrl]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        interior_photos: [...prev.interior_photos, photoUrl]
+      }));
+    }
+  };
+
+  const removePhoto = (type: 'exterior' | 'interior', index: number) => {
+    if (type === 'exterior') {
+      setFormData(prev => ({
+        ...prev,
+        exterior_photos: prev.exterior_photos.filter((_, i) => i !== index)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        interior_photos: prev.interior_photos.filter((_, i) => i !== index)
+      }));
+    }
   };
 
   const nextStep = () => {
@@ -249,18 +279,18 @@ export function CreateLeadDialog() {
         return;
       }
     } else if (currentStep === 3) {
-      if (!formData.exterior_photo_url.trim()) {
+      if (formData.exterior_photos.length === 0) {
         toast({
           title: "Error",
-          description: "Exterior photo is required to continue",
+          description: "At least one exterior photo is required to continue",
           variant: "destructive",
         });
         return;
       }
-      if (!formData.interior_photo_url.trim()) {
+      if (formData.interior_photos.length === 0) {
         toast({
           title: "Error",
-          description: "Interior photo is required to continue",
+          description: "At least one interior photo is required to continue",
           variant: "destructive",
         });
         return;
@@ -539,24 +569,78 @@ export function CreateLeadDialog() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="exterior_photo_url">Exterior Photo *</Label>
+      {/* Exterior Photos */}
+      <div className="space-y-3">
+        <Label>Exterior Photos *</Label>
+        <div className="space-y-3">
+          {/* Existing Photos */}
+          {formData.exterior_photos.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {formData.exterior_photos.map((photo, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
+                    alt={`Exterior photo ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 h-6 w-6 p-0"
+                    onClick={() => removePhoto('exterior', index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Add New Photo */}
           <FileUpload
-            label="Exterior Photo"
-            value={formData.exterior_photo_url}
-            onChange={(url) => handleInputChange("exterior_photo_url", url)}
+            label="Add Exterior Photo"
+            value=""
+            onChange={(url) => addPhoto('exterior', url)}
             bucket="lead-photos"
             folder="exterior"
           />
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="interior_photo_url">Interior Photo *</Label>
+      {/* Interior Photos */}
+      <div className="space-y-3">
+        <Label>Interior Photos *</Label>
+        <div className="space-y-3">
+          {/* Existing Photos */}
+          {formData.interior_photos.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {formData.interior_photos.map((photo, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
+                    alt={`Interior photo ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 h-6 w-6 p-0"
+                    onClick={() => removePhoto('interior', index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Add New Photo */}
           <FileUpload
-            label="Interior Photo"
-            value={formData.interior_photo_url}
-            onChange={(url) => handleInputChange("interior_photo_url", url)}
+            label="Add Interior Photo"
+            value=""
+            onChange={(url) => addPhoto('interior', url)}
             bucket="lead-photos"
             folder="interior"
           />
@@ -594,7 +678,7 @@ export function CreateLeadDialog() {
     switch (currentStep) {
       case 1: return "Enter the basic contact information for this lead";
       case 2: return "Provide location details and business information";
-      case 3: return "Set status and upload required store photos (exterior and interior)";
+      case 3: return "Set status and upload multiple store photos (exterior and interior)";
       case 4: return "Add required notes or comments about this lead";
       default: return "";
     }

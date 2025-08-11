@@ -33,6 +33,8 @@ export interface Database {
           next_visit: string | null
           exterior_photo_url: string | null
           interior_photo_url: string | null
+          exterior_photos: string[] | null
+          interior_photos: string[] | null
           manager_id: string | null
         }
         Insert: {
@@ -58,6 +60,8 @@ export interface Database {
           next_visit?: string | null
           exterior_photo_url?: string | null
           interior_photo_url?: string | null
+          exterior_photos?: string[] | null
+          interior_photos?: string[] | null
           manager_id?: string | null
         }
         Update: {
@@ -83,6 +87,8 @@ export interface Database {
           next_visit?: string | null
           exterior_photo_url?: string | null
           interior_photo_url?: string | null
+          exterior_photos?: string[] | null
+          interior_photos?: string[] | null
           manager_id?: string | null
         }
       }
@@ -121,32 +127,6 @@ export interface Database {
           manager_id?: string | null
         }
       }
-      suppliers: {
-        Row: {
-          id: string
-          name: string | null
-          contact_person: string | null
-          email: string | null
-          phone: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          name?: string | null
-          contact_person?: string | null
-          email?: string | null
-          phone?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string | null
-          contact_person?: string | null
-          email?: string | null
-          phone?: string | null
-          created_at?: string | null
-        }
-      }
       territories: {
         Row: {
           id: string
@@ -173,220 +153,57 @@ export interface Database {
           updated_at?: string | null
         }
       }
-      profiles: {
+      users: {
         Row: {
           id: string
-          name: string | null
           email: string | null
+          name: string | null
           role: string | null
-          avatar_url: string | null
-          manager_id: string | null
           created_at: string | null
           updated_at: string | null
+          manager_id: string | null
         }
         Insert: {
           id?: string
-          name?: string | null
           email?: string | null
+          name?: string | null
           role?: string | null
-          avatar_url?: string | null
-          manager_id?: string | null
           created_at?: string | null
           updated_at?: string | null
+          manager_id?: string | null
         }
         Update: {
           id?: string
-          name?: string | null
           email?: string | null
+          name?: string | null
           role?: string | null
-          avatar_url?: string | null
-          manager_id?: string | null
           created_at?: string | null
           updated_at?: string | null
+          manager_id?: string | null
         }
       }
       system_settings: {
         Row: {
           id: string
           key: string | null
-          value: Json | null
+          value: string | null
+          description: string | null
           created_at: string | null
+          updated_at: string | null
         }
         Insert: {
           id?: string
           key?: string | null
-          value?: Json | null
+          value?: string | null
+          description?: string | null
           created_at?: string | null
+          updated_at?: string | null
         }
         Update: {
           id?: string
           key?: string | null
-          value?: Json | null
-          created_at?: string | null
-        }
-      }
-      user_preferences: {
-        Row: {
-          id: string
-          user_id: string
-          primary_color: string | null
-          accent_color: string | null
-          secondary_color: string | null
-          active_color: string | null
-          inactive_color: string | null
-          daily_visit_target: number | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          primary_color?: string | null
-          accent_color?: string | null
-          secondary_color?: string | null
-          active_color?: string | null
-          inactive_color?: string | null
-          daily_visit_target?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          primary_color?: string | null
-          accent_color?: string | null
-          secondary_color?: string | null
-          active_color?: string | null
-          inactive_color?: string | null
-          daily_visit_target?: number | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-      targets: {
-        Row: {
-          id: string
-          user_id: string
-          target_type: string
-          metric_type: string
-          target_value: number
-          achieved_value: number
-          period_start: string
-          period_end: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          target_type: string
-          metric_type?: string
-          target_value: number
-          achieved_value?: number
-          period_start: string
-          period_end: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          target_type?: string
-          metric_type?: string
-          target_value?: number
-          achieved_value?: number
-          period_start?: string
-          period_end?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-      conversations: {
-        Row: {
-          id: string
-          name: string | null
-          type: string
-          created_by: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          name?: string | null
-          type?: string
-          created_by?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string | null
-          type?: string
-          created_by?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-      }
-      conversation_participants: {
-        Row: {
-          id: string
-          conversation_id: string
-          user_id: string
-          role: string
-          joined_at: string | null
-          last_read_at: string | null
-        }
-        Insert: {
-          id?: string
-          conversation_id: string
-          user_id: string
-          role?: string
-          joined_at?: string | null
-          last_read_at?: string | null
-        }
-        Update: {
-          id?: string
-          conversation_id?: string
-          user_id?: string
-          role?: string
-          joined_at?: string | null
-          last_read_at?: string | null
-        }
-      }
-      messages: {
-        Row: {
-          id: string
-          conversation_id: string
-          sender_id: string | null
-          content: string
-          message_type: string
-          metadata: Json | null
-          is_edited: boolean | null
-          edited_at: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          conversation_id: string
-          sender_id?: string | null
-          content: string
-          message_type?: string
-          metadata?: Json | null
-          is_edited?: boolean | null
-          edited_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          conversation_id?: string
-          sender_id?: string | null
-          content?: string
-          message_type?: string
-          metadata?: Json | null
-          is_edited?: boolean | null
-          edited_at?: string | null
+          value?: string | null
+          description?: string | null
           created_at?: string | null
           updated_at?: string | null
         }
