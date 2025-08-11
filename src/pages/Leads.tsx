@@ -606,8 +606,8 @@ export default function Leads() {
               {/* Photo Display */}
               <div className="h-48 bg-muted overflow-hidden">
                 <LeadPhotoDisplay
-                  exteriorPhotoUrl={lead.exterior_photo_url}
-                  interiorPhotoUrl={lead.interior_photo_url}
+                  exteriorPhotos={lead.exterior_photos}
+                  interiorPhotos={lead.interior_photos}
                   storeName={lead.store_name}
                   storeType={lead.store_type}
                   size="lg"

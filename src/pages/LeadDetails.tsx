@@ -358,7 +358,7 @@ export default function LeadDetails() {
         </div>
       </div>
 
-      {/* Photos Section */}
+      {/* Store Photos Card */}
       <Card className="overflow-hidden">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-xl">
@@ -368,118 +368,94 @@ export default function LeadDetails() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {/* Exterior Photo */}
+            {/* Exterior Photos */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h4 className="font-semibold text-lg">Exterior Photo</h4>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => startEditing('exterior_photo_url', lead.exterior_photo_url || '')}
-                  className="flex items-center gap-2 w-full sm:w-auto"
-                >
-                  <Edit className="h-4 w-4" />
-                  {editingField === 'exterior_photo_url' ? 'Editing...' : 'Edit'}
-                </Button>
+                <h4 className="font-semibold text-lg">Exterior Photos</h4>
+                <Badge variant="secondary" className="text-xs">
+                  {lead.exterior_photos?.length || 0} photos
+                </Badge>
               </div>
               
-              {editingField === 'exterior_photo_url' ? (
-                <div className="space-y-3">
-                  <FileUpload
-                    label="Exterior Photo"
-                    value={editValue}
-                    onChange={(url) => setEditValue(url)}
-                    bucket="lead-photos"
-                    folder="exterior"
-                  />
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => saveField('exterior_photo_url')} disabled={isPending}>
-                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      Save
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={cancelEditing}>
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </Button>
-                  </div>
+              {lead.exterior_photos && lead.exterior_photos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {lead.exterior_photos.map((photo, index) => (
+                    <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg">
+                      <img
+                        src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
+                        alt={`Store exterior ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 flex items-center justify-center bg-muted">
+                        <div className="text-center">
+                          <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">Photo unavailable</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="absolute top-2 left-2 text-xs">
+                        {index + 1}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg">
-                  {lead.exterior_photo_url ? (
-                    <img
-                      src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${lead.exterior_photo_url}`}
-                      alt="Store exterior"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <div className={`${lead.exterior_photo_url ? 'hidden' : ''} absolute inset-0 flex items-center justify-center bg-muted`}>
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted">
                     <div className="text-center">
                       <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">No exterior photo uploaded</p>
+                      <p className="text-sm text-muted-foreground">No exterior photos uploaded</p>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Interior Photo */}
+            {/* Interior Photos */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h4 className="font-semibold text-lg">Interior Photo</h4>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => startEditing('interior_photo_url', lead.interior_photo_url || '')}
-                  className="flex items-center gap-2 w-full sm:w-auto"
-                >
-                  <Edit className="h-4 w-4" />
-                  {editingField === 'interior_photo_url' ? 'Editing...' : 'Edit'}
-                </Button>
+                <h4 className="font-semibold text-lg">Interior Photos</h4>
+                <Badge variant="secondary" className="text-xs">
+                  {lead.interior_photos?.length || 0} photos
+                </Badge>
               </div>
               
-              {editingField === 'interior_photo_url' ? (
-                <div className="space-y-3">
-                  <FileUpload
-                    label="Interior Photo"
-                    value={editValue}
-                    onChange={(url) => setEditValue(url)}
-                    bucket="lead-photos"
-                    folder="interior"
-                  />
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => saveField('interior_photo_url')} disabled={isPending}>
-                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      Save
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={cancelEditing}>
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </Button>
-                  </div>
+              {lead.interior_photos && lead.interior_photos.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {lead.interior_photos.map((photo, index) => (
+                    <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg">
+                      <img
+                        src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
+                        alt={`Store interior ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden absolute inset-0 flex items-center justify-center bg-muted">
+                        <div className="text-center">
+                          <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">Photo unavailable</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="absolute top-2 left-2 text-xs">
+                        {index + 1}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg">
-                  {lead.interior_photo_url ? (
-                    <img
-                      src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${lead.interior_photo_url}`}
-                      alt="Store interior"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  <div className={`${lead.interior_photo_url ? 'hidden' : ''} absolute inset-0 flex items-center justify-center bg-muted`}>
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted">
                     <div className="text-center">
                       <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">No interior photo uploaded</p>
+                      <p className="text-sm text-muted-foreground">No interior photos uploaded</p>
                     </div>
                   </div>
                 </div>
