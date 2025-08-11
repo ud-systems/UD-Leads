@@ -34,8 +34,8 @@ export function DatePicker({
   const displayValue = value || { from: new Date(), to: new Date() };
 
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
 
   const currentYear = getYear(currentDate);
@@ -95,59 +95,57 @@ export function DatePicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 min-w-[320px] max-w-[95vw] sm:min-w-[350px] date-picker-mobile" align="start">
-        <div className="p-3 sm:p-4">
-          {/* Calendar Header with Month/Year Dropdowns */}
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2 calendar-header">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateMonth('prev')}
-                className="h-8 w-8 p-0 hover:bg-muted flex-shrink-0"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+      <PopoverContent className="w-auto p-0 max-w-[95vw] sm:max-w-none" align="start">
+        <div className="p-2 sm:p-4">
+          {/* Mobile-optimized Calendar Header */}
+          <div className="flex items-center justify-between mb-3 gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateMonth('prev')}
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0"
+            >
+              <ChevronLeft className="h-3 w-3" />
+            </Button>
+            
+            <div className="flex items-center gap-1 flex-1 justify-center">
+              <Select value={currentMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
+                <SelectTrigger className="w-14 h-7 border border-input bg-background text-xs font-medium hover:bg-muted">
+                  <SelectValue />
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               
-              <div className="flex items-center gap-1 sm:gap-2 calendar-dropdowns flex-1 sm:flex-none min-w-0">
-                <Select value={currentMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
-                  <SelectTrigger className="w-20 sm:w-24 h-8 border border-input bg-background text-xs sm:text-sm font-medium hover:bg-muted select-trigger min-w-0">
-                    <SelectValue />
-                    <ChevronDown className="h-3 w-3 ml-1 flex-shrink-0" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map((month, index) => (
-                      <SelectItem key={index} value={index.toString()}>
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Select value={currentYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
-                  <SelectTrigger className="w-16 sm:w-20 h-8 border border-input bg-background text-xs sm:text-sm font-medium hover:bg-muted select-trigger min-w-0">
-                    <SelectValue />
-                    <ChevronDown className="h-3 w-3 ml-1 flex-shrink-0" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateMonth('next')}
-                className="h-8 w-8 p-0 hover:bg-muted flex-shrink-0"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <Select value={currentYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
+                <SelectTrigger className="w-16 h-7 border border-input bg-background text-xs font-medium hover:bg-muted">
+                  <SelectValue />
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateMonth('next')}
+              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0"
+            >
+              <ChevronRight className="h-3 w-3" />
+            </Button>
           </div>
 
           {/* Calendar */}
@@ -155,7 +153,7 @@ export function DatePicker({
             mode="range"
             selected={displayValue}
             onSelect={handleDateSelect}
-            className="rounded-md border-0 w-full"
+            className="rounded-md border-0"
           />
         </div>
       </PopoverContent>

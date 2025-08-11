@@ -1262,24 +1262,17 @@ All colors MUST be HSL.
 
 /* Mobile Calendar Fixes */
 @media (max-width: 768px) {
-  .date-picker-mobile {
-    max-width: 95vw !important;
-    min-width: 320px !important;
+  /* Ensure calendar fits within viewport */
+  .rdp {
+    max-width: 100% !important;
+    overflow: hidden !important;
   }
   
-  .calendar-dropdowns {
-    min-width: 0;
-    flex-shrink: 1;
+  .rdp-table {
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
-  .calendar-dropdowns .select-trigger {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  /* Prevent calendar cell overflow */
   .rdp-cell {
     overflow: hidden !important;
     position: relative !important;
