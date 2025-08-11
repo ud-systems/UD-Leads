@@ -1259,3 +1259,45 @@ All colors MUST be HSL.
     @apply flex-row gap-3;
   }
 }
+
+/* Mobile Calendar Fixes */
+@media (max-width: 768px) {
+  .date-picker-mobile {
+    max-width: 95vw !important;
+    min-width: 320px !important;
+  }
+  
+  .calendar-dropdowns {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  
+  .calendar-dropdowns .select-trigger {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Prevent calendar cell overflow */
+  .rdp-cell {
+    overflow: hidden !important;
+    position: relative !important;
+  }
+  
+  .rdp-day {
+    position: relative !important;
+    z-index: 10 !important;
+    overflow: hidden !important;
+  }
+  
+  .rdp-day_selected {
+    z-index: 20 !important;
+    position: relative !important;
+  }
+  
+  .rdp-day_range_middle {
+    z-index: 15 !important;
+    position: relative !important;
+  }
+}
