@@ -87,6 +87,7 @@ export default function Analytics() {
     const discussionRate = totalLeads > 0 ? ((inDiscussionLeads / totalLeads) * 100) : 0;
     const trialRate = totalLeads > 0 ? ((trialOrderLeads / totalLeads) * 100) : 0;
     
+    // Updated to use weekly_spend instead of buying_power
     const highValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === '£10,000+').length;
     const mediumValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === '£5000 - £9999').length;
     const lowValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === 'Less than £1000' || l.weekly_spend === '£1000 - £3000').length;
@@ -114,11 +115,11 @@ export default function Analytics() {
     { name: 'Converted', value: keyMetrics.convertedLeads, color: '#10b981' }
   ], [keyMetrics]);
 
-  // Buying Power Distribution
-  const buyingPowerData = useMemo(() => [
-    { name: 'High Value', value: keyMetrics.highValueLeads, color: '#10b981' },
-    { name: 'Medium Value', value: keyMetrics.mediumValueLeads, color: '#f59e0b' },
-    { name: 'Low Value', value: keyMetrics.lowValueLeads, color: '#ef4444' }
+  // Weekly Spend Distribution (updated from buying power)
+  const weeklySpendData = useMemo(() => [
+    { name: 'High Value (£10,000+)', value: keyMetrics.highValueLeads, color: '#10b981' },
+    { name: 'Medium Value (£5000-£9999)', value: keyMetrics.mediumValueLeads, color: '#f59e0b' },
+    { name: 'Low Value (<£3000)', value: keyMetrics.lowValueLeads, color: '#ef4444' }
   ], [keyMetrics]);
 
   // Store Type Analysis
@@ -133,20 +134,20 @@ export default function Analytics() {
       return acc;
     }, {} as Record<string, { total: number; converted: number }>);
 
-         return Object.entries(storeTypeStats)
-       .map(([type, stats]) => ({
-         name: type,
-         total: (stats as any).total,
-         converted: (stats as any).converted,
-         conversionRate: (stats as any).total > 0 ? (((stats as any).converted / (stats as any).total) * 100).toFixed(1) : '0'
-       }))
-       .sort((a, b) => b.total - a.total);
+    return Object.entries(storeTypeStats)
+      .map(([type, stats]) => ({
+        name: type,
+        total: stats.total,
+        converted: stats.converted,
+        conversionRate: stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : '0'
+      }))
+      .sort((a, b) => b.total - a.total);
   }, [roleFilteredLeads]);
 
   // Territory Performance
   const territoryData = useMemo(() => {
     const territoryStats = roleFilteredLeads.reduce((acc, lead) => {
-      const territory = territories.find(t => t.id === lead.territory_id)?.name || 'Unknown';
+      const territory = territories.find(t => t.id === lead.territory_id)?.city || 'Unknown';
       if (!acc[territory]) {
         acc[territory] = { total: 0, converted: 0, inDiscussion: 0 };
       }
@@ -156,15 +157,15 @@ export default function Analytics() {
       return acc;
     }, {} as Record<string, { total: number; converted: number; inDiscussion: number }>);
 
-         return Object.entries(territoryStats)
-       .map(([territory, stats]) => ({
-         name: territory,
-         total: (stats as any).total,
-         converted: (stats as any).converted,
-         inDiscussion: (stats as any).inDiscussion,
-         conversionRate: (stats as any).total > 0 ? (((stats as any).converted / (stats as any).total) * 100).toFixed(1) : '0'
-       }))
-       .sort((a, b) => parseFloat(b.conversionRate) - parseFloat(a.conversionRate));
+    return Object.entries(territoryStats)
+      .map(([territory, stats]) => ({
+        name: territory,
+        total: stats.total,
+        converted: stats.converted,
+        inDiscussion: stats.inDiscussion,
+        conversionRate: stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : '0'
+      }))
+      .sort((a, b) => parseFloat(b.conversionRate) - parseFloat(a.conversionRate));
   }, [roleFilteredLeads, territories]);
 
   // Salesperson Performance
@@ -180,15 +181,15 @@ export default function Analytics() {
       return acc;
     }, {} as Record<string, { total: number; converted: number; inDiscussion: number }>);
 
-         return Object.entries(salespersonStats)
-       .map(([salesperson, stats]) => ({
-         name: salesperson,
-         total: (stats as any).total,
-         converted: (stats as any).converted,
-         inDiscussion: (stats as any).inDiscussion,
-         conversionRate: (stats as any).total > 0 ? (((stats as any).converted / (stats as any).total) * 100).toFixed(1) : '0'
-       }))
-       .sort((a, b) => b.converted - a.converted);
+    return Object.entries(salespersonStats)
+      .map(([salesperson, stats]) => ({
+        name: salesperson,
+        total: stats.total,
+        converted: stats.converted,
+        inDiscussion: stats.inDiscussion,
+        conversionRate: stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : '0'
+      }))
+      .sort((a, b) => b.converted - a.converted);
   }, [roleFilteredLeads]);
 
   // Monthly Lead Trends - Fixed format for Nivo Line Chart
@@ -243,8 +244,8 @@ export default function Analytics() {
     return storeTypeData.map(item => ({
       storeType: item.name,
       conversionRate: parseFloat(item.conversionRate),
-      total: (item as any).total,
-      converted: (item as any).converted
+      total: item.total,
+      converted: item.converted
     }));
   }, [storeTypeData]);
 
@@ -398,20 +399,20 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        {/* Buying Power Distribution */}
+        {/* Weekly Spend Distribution */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              Buying Power Distribution
+              Weekly Spend Distribution
             </CardTitle>
-            <CardDescription>Leads categorized by buying power</CardDescription>
+            <CardDescription>Leads categorized by weekly spend</CardDescription>
           </CardHeader>
           <CardContent>
             <EnhancedPieChart
-              data={buyingPowerData}
-              title="Buying Power"
-              description="Distribution of leads by buying power"
+              data={weeklySpendData}
+              title="Weekly Spend"
+              description="Distribution of leads by weekly spend"
             />
           </CardContent>
         </Card>

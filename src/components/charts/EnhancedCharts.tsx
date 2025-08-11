@@ -114,14 +114,14 @@ export function EnhancedLineChart({ data, title, description, trend }: {
         useMesh={true}
         legends={[
           {
-            anchor: 'top',
+            anchor: 'top-left',
             direction: 'row',
             justify: false,
             translateX: 0,
             translateY: -20,
-            itemsSpacing: 0,
+            itemsSpacing: 20,
             itemDirection: 'left-to-right',
-            itemWidth: 80,
+            itemWidth: 100,
             itemHeight: 20,
             itemOpacity: 0.75,
             symbolSize: 12,
@@ -202,8 +202,8 @@ export function EnhancedBarChart({ data, title, description, trend }: {
     <ChartCard title={title} description={description} trend={trend}>
       <ResponsiveBar
         data={data}
-        keys={['value']}
-        indexBy="name"
+        keys={['conversionRate']}
+        indexBy="storeType"
         margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
         padding={0.3}
         groupMode="grouped"
@@ -217,7 +217,7 @@ export function EnhancedBarChart({ data, title, description, trend }: {
           tickSize: 5,
           tickPadding: 5,
           tickRotation: 0,
-          legend: 'Category',
+          legend: 'Store Type',
           legendPosition: 'middle',
           legendOffset: 32,
           truncateTickAt: 0,
@@ -226,7 +226,7 @@ export function EnhancedBarChart({ data, title, description, trend }: {
           tickSize: 5,
           tickPadding: 5,
           tickRotation: 0,
-          legend: 'Value',
+          legend: 'Conversion Rate (%)',
           legendPosition: 'middle',
           legendOffset: -40,
           truncateTickAt: 0,
@@ -237,6 +237,32 @@ export function EnhancedBarChart({ data, title, description, trend }: {
         animate={true}
         motionStiffness={90}
         motionDamping={15}
+        legends={[
+          {
+            anchor: 'top-left',
+            direction: 'row',
+            justify: false,
+            translateX: 0,
+            translateY: -20,
+            itemsSpacing: 20,
+            itemDirection: 'left-to-right',
+            itemWidth: 100,
+            itemHeight: 20,
+            itemOpacity: 0.75,
+            symbolSize: 12,
+            symbolShape: 'square',
+            symbolBorderColor: 'rgba(0, 0, 0, .5)',
+            effects: [
+              {
+                on: 'hover',
+                style: {
+                  itemBackground: 'rgba(0, 0, 0, .03)',
+                  itemOpacity: 1,
+                },
+              },
+            ],
+          },
+        ]}
         theme={{
           axis: {
             domain: {
@@ -266,6 +292,12 @@ export function EnhancedBarChart({ data, title, description, trend }: {
             line: {
               stroke: '#dddddd',
               strokeWidth: 1,
+            },
+          },
+          legends: {
+            text: {
+              fontSize: 12,
+              fill: '#333333',
             },
           },
           tooltip: {
@@ -379,13 +411,13 @@ export function EnhancedPieChart({ data, title, description, trend }: {
         ]}
         legends={[
           {
-            anchor: 'bottom',
-            direction: 'row',
+            anchor: 'bottom-left',
+            direction: 'column',
             justify: false,
             translateX: 0,
             translateY: 56,
-            itemsSpacing: 0,
-            itemWidth: 100,
+            itemsSpacing: 8,
+            itemWidth: 120,
             itemHeight: 18,
             itemTextColor: '#999',
             itemDirection: 'left-to-right',
