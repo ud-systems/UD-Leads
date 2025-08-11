@@ -28,7 +28,7 @@ import { useTerritories } from "@/hooks/useTerritories";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { FileUpload } from "@/components/ui/file-upload";
+import { MultiPhotoUpload } from "@/components/ui/multi-photo-upload";
 import { Plus, Navigation, Loader2, X } from "lucide-react";
 
 export function CreateLeadDialog() {
@@ -237,34 +237,6 @@ export function CreateLeadDialog() {
 
   const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const addPhoto = (type: 'exterior' | 'interior', photoUrl: string) => {
-    if (type === 'exterior') {
-      setFormData(prev => ({
-        ...prev,
-        exterior_photos: [...prev.exterior_photos, photoUrl]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        interior_photos: [...prev.interior_photos, photoUrl]
-      }));
-    }
-  };
-
-  const removePhoto = (type: 'exterior' | 'interior', index: number) => {
-    if (type === 'exterior') {
-      setFormData(prev => ({
-        ...prev,
-        exterior_photos: prev.exterior_photos.filter((_, i) => i !== index)
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        interior_photos: prev.interior_photos.filter((_, i) => i !== index)
-      }));
-    }
   };
 
   const nextStep = () => {
@@ -531,7 +503,7 @@ export function CreateLeadDialog() {
   );
 
   const renderStep3 = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
@@ -571,80 +543,26 @@ export function CreateLeadDialog() {
 
       {/* Exterior Photos */}
       <div className="space-y-3">
-        <Label>Exterior Photos *</Label>
-        <div className="space-y-3">
-          {/* Existing Photos */}
-          {formData.exterior_photos.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {formData.exterior_photos.map((photo, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
-                    alt={`Exterior photo ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-1 right-1 h-6 w-6 p-0"
-                    onClick={() => removePhoto('exterior', index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Add New Photo */}
-          <FileUpload
-            label="Add Exterior Photo"
-            value=""
-            onChange={(url) => addPhoto('exterior', url)}
-            bucket="lead-photos"
-            folder="exterior"
-          />
-        </div>
+        <MultiPhotoUpload
+          label="Exterior Photos *"
+          photos={formData.exterior_photos}
+          onPhotosChange={(photos) => handleInputChange("exterior_photos", photos)}
+          bucket="lead-photos"
+          folder="exterior"
+          maxPhotos={5}
+        />
       </div>
 
       {/* Interior Photos */}
       <div className="space-y-3">
-        <Label>Interior Photos *</Label>
-        <div className="space-y-3">
-          {/* Existing Photos */}
-          {formData.interior_photos.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {formData.interior_photos.map((photo, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
-                    alt={`Interior photo ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-1 right-1 h-6 w-6 p-0"
-                    onClick={() => removePhoto('interior', index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Add New Photo */}
-          <FileUpload
-            label="Add Interior Photo"
-            value=""
-            onChange={(url) => addPhoto('interior', url)}
-            bucket="lead-photos"
-            folder="interior"
-          />
-        </div>
+        <MultiPhotoUpload
+          label="Interior Photos *"
+          photos={formData.interior_photos}
+          onPhotosChange={(photos) => handleInputChange("interior_photos", photos)}
+          bucket="lead-photos"
+          folder="interior"
+          maxPhotos={5}
+        />
       </div>
     </div>
   );
