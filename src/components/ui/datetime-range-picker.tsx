@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CalendarIcon } from "lucide-react";
 import { format, startOfYear, endOfYear, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,8 @@ export function DateTimeRangePicker({
   disabled = false
 }: DateTimeRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(value.from);
+  const [startDate, setStartDate] = useState(value?.from ? format(value.from, "yyyy-MM-dd") : "");
+  const [endDate, setEndDate] = useState(value?.to ? format(value.to, "yyyy-MM-dd") : "");
 
   const quickSelectOptions = [
     {
@@ -129,21 +130,20 @@ export function DateTimeRangePicker({
     }
   ];
 
-  const handleCalendarSelect = (range: { from: Date | undefined; to: Date | undefined } | undefined) => {
-    if (range?.from && range?.to) {
-      onChange({ from: range.from, to: range.to });
+  const handleApply = () => {
+    if (startDate && endDate) {
+      const fromDate = new Date(startDate);
+      const toDate = new Date(endDate);
+      onChange({ from: fromDate, to: toDate });
       setIsOpen(false);
     }
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = new Date(currentMonth);
-    if (direction === 'prev') {
-      newMonth.setMonth(newMonth.getMonth() - 1);
-    } else {
-      newMonth.setMonth(newMonth.getMonth() + 1);
-    }
-    setCurrentMonth(newMonth);
+  const handleClear = () => {
+    setStartDate("");
+    setEndDate("");
+    onChange({ from: new Date(), to: new Date() });
+    setIsOpen(false);
   };
 
   return (
@@ -193,37 +193,49 @@ export function DateTimeRangePicker({
             </div>
           </div>
 
-          {/* Calendar Panel */}
-          <div className="p-3 min-w-[280px] max-w-full">
-            <div className="flex items-center justify-between mb-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateMonth('prev')}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <h4 className="font-medium text-sm">
-                {format(currentMonth, "MMMM yyyy")}
-              </h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateMonth('next')}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          {/* Date Input Panel */}
+          <div className="p-4 min-w-[280px] max-w-full">
+            <h4 className="font-medium text-sm mb-3">Custom Range</h4>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="start-date-range">Start Date</Label>
+                <Input
+                  id="start-date-range"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="end-date-range">End Date</Label>
+                <Input
+                  id="end-date-range"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  onClick={handleApply} 
+                  className="flex-1"
+                  disabled={!startDate || !endDate}
+                >
+                  Apply
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleClear}
+                  className="flex-1"
+                >
+                  Clear
+                </Button>
+              </div>
             </div>
-            <Calendar
-              mode="range"
-              selected={value}
-              onSelect={handleCalendarSelect}
-              defaultMonth={currentMonth}
-              numberOfMonths={1}
-              className="rounded-md border-0"
-            />
           </div>
         </div>
       </PopoverContent>

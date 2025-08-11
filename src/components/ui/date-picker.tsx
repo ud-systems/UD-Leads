@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
-import { format, getYear, getMonth, setYear, setMonth } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface DateRange {
@@ -28,47 +28,26 @@ export function DatePicker({
   className
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState(value?.from || new Date());
+  const [startDate, setStartDate] = useState(value?.from ? format(value.from, "yyyy-MM-dd") : "");
+  const [endDate, setEndDate] = useState(value?.to ? format(value.to, "yyyy-MM-dd") : "");
 
   // Ensure we always have a valid date range for display
   const displayValue = value || { from: new Date(), to: new Date() };
 
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ];
-
-  const currentYear = getYear(currentDate);
-  const currentMonth = getMonth(currentDate);
-
-  // Generate years (current year ± 10 years)
-  const years = Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
-
-  const handleMonthChange = (monthIndex: number) => {
-    const newDate = setMonth(currentDate, monthIndex);
-    setCurrentDate(newDate);
-  };
-
-  const handleYearChange = (year: number) => {
-    const newDate = setYear(currentDate, year);
-    setCurrentDate(newDate);
-  };
-
-  const handleDateSelect = (range: { from: Date | undefined; to: Date | undefined } | undefined) => {
-    if (range?.from && range?.to) {
-      onChange({ from: range.from, to: range.to });
+  const handleApply = () => {
+    if (startDate && endDate) {
+      const fromDate = new Date(startDate);
+      const toDate = new Date(endDate);
+      onChange({ from: fromDate, to: toDate });
       setIsOpen(false);
     }
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-    if (direction === 'prev') {
-      newDate.setMonth(newDate.getMonth() - 1);
-    } else {
-      newDate.setMonth(newDate.getMonth() + 1);
-    }
-    setCurrentDate(newDate);
+  const handleClear = () => {
+    setStartDate("");
+    setEndDate("");
+    onChange(undefined);
+    setIsOpen(false);
   };
 
   return (
@@ -95,66 +74,46 @@ export function DatePicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 max-w-[95vw] sm:max-w-none" align="start">
-        <div className="p-2 sm:p-4">
-          {/* Mobile-optimized Calendar Header */}
-          <div className="flex items-center justify-between mb-3 gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigateMonth('prev')}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0"
+      <PopoverContent className="w-auto p-4 max-w-[95vw] sm:max-w-none" align="start">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="start-date">Start Date</Label>
+            <Input
+              id="start-date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="end-date">End Date</Label>
+            <Input
+              id="end-date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          
+          <div className="flex gap-2 pt-2">
+            <Button 
+              onClick={handleApply} 
+              className="flex-1"
+              disabled={!startDate || !endDate}
             >
-              <ChevronLeft className="h-3 w-3" />
+              Apply
             </Button>
-            
-            <div className="flex items-center gap-1 flex-1 justify-center">
-              <Select value={currentMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
-                <SelectTrigger className="w-14 h-7 border border-input bg-background text-xs font-medium hover:bg-muted">
-                  <SelectValue />
-                  <ChevronDown className="h-3 w-3 ml-1" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month, index) => (
-                    <SelectItem key={index} value={index.toString()}>
-                      {month}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={currentYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
-                <SelectTrigger className="w-16 h-7 border border-input bg-background text-xs font-medium hover:bg-muted">
-                  <SelectValue />
-                  <ChevronDown className="h-3 w-3 ml-1" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigateMonth('next')}
-              className="h-7 w-7 p-0 hover:bg-muted flex-shrink-0"
+            <Button 
+              variant="outline" 
+              onClick={handleClear}
+              className="flex-1"
             >
-              <ChevronRight className="h-3 w-3" />
+              Clear
             </Button>
           </div>
-
-          {/* Calendar */}
-          <Calendar
-            mode="range"
-            selected={displayValue}
-            onSelect={handleDateSelect}
-            className="rounded-md border-0"
-          />
         </div>
       </PopoverContent>
     </Popover>

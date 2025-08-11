@@ -1260,37 +1260,17 @@ All colors MUST be HSL.
   }
 }
 
-/* Mobile Calendar Fixes */
+/* Mobile Date Input Fixes */
 @media (max-width: 768px) {
-  /* Ensure calendar fits within viewport */
-  .rdp {
-    max-width: 100% !important;
-    overflow: hidden !important;
+  /* Ensure date inputs work properly on mobile */
+  input[type="date"] {
+    min-height: 40px;
+    font-size: 16px; /* Prevents zoom on iOS */
   }
   
-  .rdp-table {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-  
-  .rdp-cell {
-    overflow: hidden !important;
-    position: relative !important;
-  }
-  
-  .rdp-day {
-    position: relative !important;
-    z-index: 10 !important;
-    overflow: hidden !important;
-  }
-  
-  .rdp-day_selected {
-    z-index: 20 !important;
-    position: relative !important;
-  }
-  
-  .rdp-day_range_middle {
-    z-index: 15 !important;
-    position: relative !important;
+  /* Mobile-friendly popover sizing */
+  .date-picker-popover {
+    max-width: 95vw !important;
+    min-width: 280px !important;
   }
 }
