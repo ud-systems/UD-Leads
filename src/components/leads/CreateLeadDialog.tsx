@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useCreateLead } from "@/hooks/useLeads";
 import { useCreateVisit } from "@/hooks/useVisits";
-import { useStoreTypeOptions, useWeeklySpendOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions } from "@/hooks/useSystemSettings";
+import { useStoreTypeOptions, useWeeklySpendOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -42,6 +42,7 @@ export function CreateLeadDialog() {
   const weeklySpendOptions = useWeeklySpendOptions();
   const ownsShopOrWebsiteOptions = useOwnsShopOrWebsiteOptions();
   const numberOfStoresOptions = useNumberOfStoresOptions();
+  const leadStatusOptions = useLeadStatusOptions();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
   const { toast } = useToast();
@@ -72,7 +73,7 @@ export function CreateLeadDialog() {
     products_currently_sold: "",
     
     // Status & Visits
-    status: "new",
+    status: "New Prospect",
     salesperson: "",
     last_visit: "",
     next_visit: "",
@@ -227,7 +228,7 @@ export function CreateLeadDialog() {
           latitude: "",
           longitude: "",
           products_currently_sold: "",
-          status: "new",
+          status: "New Prospect",
           salesperson: "",
           last_visit: "",
           next_visit: "",
@@ -567,10 +568,11 @@ export function CreateLeadDialog() {
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="prospect">Prospect</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              {leadStatusOptions.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
