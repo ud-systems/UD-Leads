@@ -154,18 +154,16 @@ export function SalespersonCoverageMap({
     return [centerLat, centerLng];
   }, [leadLocations]);
 
-  // Get color based on visit count
-  const getMarkerColor = (visitCount: number) => {
-    if (visitCount === 0) return '#9ca3af'; // Light gray for no visits
-    if (visitCount <= 2) return '#3b82f6'; // Blue for low visits
-    if (visitCount <= 5) return '#10b981'; // Green for moderate visits
-    if (visitCount <= 10) return '#f59e0b'; // Orange for high visits
-    return '#ef4444'; // Red for very high visits
+  // Get color based on lead status
+  const getMarkerColor = (status: string) => {
+    if (status === 'Active') return '#10b981'; // Green for Active
+    if (status === 'Prospect') return '#3b82f6'; // Blue for Prospect
+    return '#9ca3af'; // Light gray for unknown status
   };
 
-  // Create custom icon based on visit count
-  const createCustomIcon = (visitCount: number) => {
-    const color = getMarkerColor(visitCount);
+  // Create custom icon based on lead status
+  const createCustomIcon = (status: string, visitCount: number) => {
+    const color = getMarkerColor(status);
     // Make markers with visits larger and more prominent
     const baseSize = visitCount === 0 ? 12 : 20;
     const size = visitCount === 0 ? baseSize : Math.min(baseSize + visitCount * 3, 50);
@@ -244,7 +242,7 @@ export function SalespersonCoverageMap({
                 <Marker
                   key={lead.id}
                   position={[lead.latitude, lead.longitude]}
-                  icon={createCustomIcon(lead.visit_count)}
+                  icon={createCustomIcon(lead.status, lead.visit_count)}
                 >
                   <Popup>
                     <div className="space-y-2 min-w-[200px]">
@@ -281,7 +279,7 @@ export function SalespersonCoverageMap({
           </div>
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-muted rounded-lg">
               <div className="text-2xl font-bold">{leadLocations.length}</div>
               <div className="text-sm text-muted-foreground">Total Leads</div>
@@ -303,6 +301,22 @@ export function SalespersonCoverageMap({
                 {selectedSalespersonId === 'all' || !selectedSalespersonId ? salespersons.length : '1'}
               </div>
               <div className="text-sm text-muted-foreground">Salespersons</div>
+            </div>
+          </div>
+
+          {/* Status Legend */}
+          <div className="flex flex-wrap gap-4 justify-center p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow-sm"></div>
+              <span className="text-sm font-medium">Active Leads</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-sm"></div>
+              <span className="text-sm font-medium">Prospect Leads</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-gray-400 border-2 border-white shadow-sm"></div>
+              <span className="text-sm font-medium">Unknown Status</span>
             </div>
           </div>
           

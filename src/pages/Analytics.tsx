@@ -78,14 +78,10 @@ export default function Analytics() {
   // Key Metrics
   const keyMetrics = useMemo(() => {
     const totalLeads = roleFilteredLeads.length;
-    const convertedLeads = roleFilteredLeads.filter(l => l.status === 'Converted').length;
-    const inDiscussionLeads = roleFilteredLeads.filter(l => l.status === 'In Discussion').length;
-    const trialOrderLeads = roleFilteredLeads.filter(l => l.status === 'Trial Order').length;
-    const newProspectLeads = roleFilteredLeads.filter(l => l.status === 'New Prospect').length;
+    const activeLeads = roleFilteredLeads.filter(l => l.status === 'Active').length;
+    const prospectLeads = roleFilteredLeads.filter(l => l.status === 'Prospect').length;
     
-    const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
-    const discussionRate = totalLeads > 0 ? ((inDiscussionLeads / totalLeads) * 100) : 0;
-    const trialRate = totalLeads > 0 ? ((trialOrderLeads / totalLeads) * 100) : 0;
+    const conversionRate = totalLeads > 0 ? ((activeLeads / totalLeads) * 100) : 0;
     
     // Updated to use weekly_spend instead of buying_power
     const highValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === '£10,000+').length;
@@ -94,32 +90,26 @@ export default function Analytics() {
     
     return {
       totalLeads,
-      convertedLeads,
-      inDiscussionLeads,
-      trialOrderLeads,
-      newProspectLeads,
+      activeLeads,
+      prospectLeads,
       conversionRate,
-      discussionRate,
-      trialRate,
       highValueLeads,
       mediumValueLeads,
       lowValueLeads
     };
   }, [roleFilteredLeads]);
 
-  // Lead Status Distribution
+  // Lead Status Distribution - Updated for actual database statuses
   const leadStatusData = useMemo(() => [
-    { name: 'New Prospects', value: keyMetrics.newProspectLeads, color: '#3b82f6' },
-    { name: 'In Discussion', value: keyMetrics.inDiscussionLeads, color: '#f59e0b' },
-    { name: 'Trial Order', value: keyMetrics.trialOrderLeads, color: '#8b5cf6' },
-    { name: 'Converted', value: keyMetrics.convertedLeads, color: '#10b981' }
+    { id: 'Prospect', label: 'Prospect', value: keyMetrics.prospectLeads, color: '#3b82f6' },
+    { id: 'Active', label: 'Active', value: keyMetrics.activeLeads, color: '#10b981' }
   ], [keyMetrics]);
 
   // Weekly Spend Distribution (updated from buying power)
   const weeklySpendData = useMemo(() => [
-    { name: 'High Value (£10,000+)', value: keyMetrics.highValueLeads, color: '#10b981' },
-    { name: 'Medium Value (£5000-£9999)', value: keyMetrics.mediumValueLeads, color: '#f59e0b' },
-    { name: 'Low Value (<£3000)', value: keyMetrics.lowValueLeads, color: '#ef4444' }
+    { id: 'High Value', label: 'High Value (£10,000+)', value: keyMetrics.highValueLeads, color: '#10b981' },
+    { id: 'Medium Value', label: 'Medium Value (£5000-£9999)', value: keyMetrics.mediumValueLeads, color: '#f59e0b' },
+    { id: 'Low Value', label: 'Low Value (<£3000)', value: keyMetrics.lowValueLeads, color: '#ef4444' }
   ], [keyMetrics]);
 
   // Store Type Analysis
@@ -127,19 +117,19 @@ export default function Analytics() {
     const storeTypeStats = roleFilteredLeads.reduce((acc, lead) => {
       const type = lead.store_type || 'Unknown';
       if (!acc[type]) {
-        acc[type] = { total: 0, converted: 0 };
+        acc[type] = { total: 0, active: 0 };
       }
       acc[type].total++;
-      if (lead.status === 'Converted') acc[type].converted++;
+      if (lead.status === 'Active') acc[type].active++;
       return acc;
-    }, {} as Record<string, { total: number; converted: number }>);
+    }, {} as Record<string, { total: number; active: number }>);
 
     return Object.entries(storeTypeStats)
       .map(([type, stats]) => ({
         name: type,
         total: stats.total,
-        converted: stats.converted,
-        conversionRate: stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : '0'
+        active: stats.active,
+        conversionRate: stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : '0'
       }))
       .sort((a, b) => b.total - a.total);
   }, [roleFilteredLeads]);
@@ -149,21 +139,21 @@ export default function Analytics() {
     const territoryStats = roleFilteredLeads.reduce((acc, lead) => {
       const territory = territories.find(t => t.id === lead.territory_id)?.city || 'Unknown';
       if (!acc[territory]) {
-        acc[territory] = { total: 0, converted: 0, inDiscussion: 0 };
+        acc[territory] = { total: 0, active: 0, prospect: 0 };
       }
       acc[territory].total++;
-      if (lead.status === 'Converted') acc[territory].converted++;
-      if (lead.status === 'In Discussion') acc[territory].inDiscussion++;
+      if (lead.status === 'Active') acc[territory].active++;
+      if (lead.status === 'Prospect') acc[territory].prospect++;
       return acc;
-    }, {} as Record<string, { total: number; converted: number; inDiscussion: number }>);
+    }, {} as Record<string, { total: number; active: number; prospect: number }>);
 
     return Object.entries(territoryStats)
       .map(([territory, stats]) => ({
         name: territory,
         total: stats.total,
-        converted: stats.converted,
-        inDiscussion: stats.inDiscussion,
-        conversionRate: stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : '0'
+        active: stats.active,
+        prospect: stats.prospect,
+        conversionRate: stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : '0'
       }))
       .sort((a, b) => parseFloat(b.conversionRate) - parseFloat(a.conversionRate));
   }, [roleFilteredLeads, territories]);
@@ -173,23 +163,23 @@ export default function Analytics() {
     const salespersonStats = roleFilteredLeads.reduce((acc, lead) => {
       const salesperson = lead.salesperson || 'Unknown';
       if (!acc[salesperson]) {
-        acc[salesperson] = { total: 0, converted: 0, inDiscussion: 0 };
+        acc[salesperson] = { total: 0, active: 0, prospect: 0 };
       }
       acc[salesperson].total++;
-      if (lead.status === 'Converted') acc[salesperson].converted++;
-      if (lead.status === 'In Discussion') acc[salesperson].inDiscussion++;
+      if (lead.status === 'Active') acc[salesperson].active++;
+      if (lead.status === 'Prospect') acc[salesperson].prospect++;
       return acc;
-    }, {} as Record<string, { total: number; converted: number; inDiscussion: number }>);
+    }, {} as Record<string, { total: number; active: number; prospect: number }>);
 
     return Object.entries(salespersonStats)
       .map(([salesperson, stats]) => ({
         name: salesperson,
         total: stats.total,
-        converted: stats.converted,
-        inDiscussion: stats.inDiscussion,
-        conversionRate: stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : '0'
+        active: stats.active,
+        prospect: stats.prospect,
+        conversionRate: stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : '0'
       }))
-      .sort((a, b) => b.converted - a.converted);
+      .sort((a, b) => b.active - a.active);
   }, [roleFilteredLeads]);
 
   // Monthly Lead Trends - Fixed format for Nivo Line Chart
@@ -245,7 +235,7 @@ export default function Analytics() {
       storeType: item.name,
       conversionRate: parseFloat(item.conversionRate),
       total: item.total,
-      converted: item.converted
+      active: item.active
     }));
   }, [storeTypeData]);
 
@@ -255,21 +245,21 @@ export default function Analytics() {
       if (lead.products_currently_sold && Array.isArray(lead.products_currently_sold)) {
         lead.products_currently_sold.forEach(product => {
           if (!acc[product]) {
-            acc[product] = { total: 0, converted: 0 };
+            acc[product] = { total: 0, active: 0 };
           }
           acc[product].total++;
-          if (lead.status === 'Converted') acc[product].converted++;
+          if (lead.status === 'Active') acc[product].active++;
         });
       }
       return acc;
-    }, {} as Record<string, { total: number; converted: number }>);
+    }, {} as Record<string, { total: number; active: number }>);
 
     return Object.entries(productStats)
       .map(([product, stats]) => ({
         name: product,
         total: stats.total,
-        converted: stats.converted,
-        conversionRate: stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : '0'
+        active: stats.active,
+        conversionRate: stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : '0'
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 10); // Top 10 products
@@ -347,7 +337,7 @@ export default function Analytics() {
           <CardContent>
             <div className="text-2xl font-bold">{keyMetrics.conversionRate.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              {keyMetrics.convertedLeads} of {keyMetrics.totalLeads} leads
+              {keyMetrics.activeLeads} of {keyMetrics.totalLeads} leads
             </p>
           </CardContent>
         </Card>
@@ -371,9 +361,9 @@ export default function Analytics() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.inDiscussionLeads}</div>
+            <div className="text-2xl font-bold">{keyMetrics.prospectLeads}</div>
             <p className="text-xs text-muted-foreground">
-              {keyMetrics.discussionRate.toFixed(1)}% of total leads
+              Prospect leads
             </p>
           </CardContent>
         </Card>
@@ -472,7 +462,7 @@ export default function Analytics() {
                   <div>
                     <div className="font-medium">{territory.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {territory.converted}/{territory.total} converted
+                      {territory.active}/{territory.total} active
                     </div>
                   </div>
                   <Badge variant="secondary">
@@ -500,7 +490,7 @@ export default function Analytics() {
                   <div>
                     <div className="font-medium">{salesperson.name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {salesperson.converted}/{salesperson.total} converted
+                      {salesperson.active}/{salesperson.total} active
                     </div>
                   </div>
                   <Badge variant="secondary">
@@ -528,7 +518,7 @@ export default function Analytics() {
               <div key={index} className="p-4 border rounded-lg">
                 <div className="font-medium">{product.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  {product.converted}/{product.total} converted
+                  {product.active}/{product.total} active
                 </div>
                 <div className="text-lg font-bold text-primary">
                   {product.conversionRate}%
