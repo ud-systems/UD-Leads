@@ -73,7 +73,7 @@ export function DashboardFilters({
                 Salesperson
               </label>
               <Select value={filters.selectedSalesperson} onValueChange={handleSalespersonChange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select salesperson" />
                 </SelectTrigger>
                 <SelectContent>
@@ -95,6 +95,7 @@ export function DashboardFilters({
               value={filters.dateRange}
               onChange={handleDateChange}
               placeholder="Select date range..."
+              className="h-10"
             />
           </div>
         </div>

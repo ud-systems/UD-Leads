@@ -236,14 +236,14 @@ export default function Visits() {
           
           {/* Filter Controls - In the same row as search */}
           <div className={cn(
-            "flex flex-wrap items-center gap-2",
+            "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2",
             isMobile && !showFilters ? "hidden" : "flex"
           )}>
             <Select value={selectedStatus} onValueChange={(value) => {
               setSelectedStatus(value);
               handleFilterChange();
             }}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -260,7 +260,7 @@ export default function Visits() {
                 setSelectedSalesperson(value);
                 handleFilterChange();
               }}>
-                <SelectTrigger className="w-full sm:w-[140px] text-base">
+                <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                   <SelectValue placeholder="Salesperson" />
                 </SelectTrigger>
                 <SelectContent>
@@ -276,7 +276,7 @@ export default function Visits() {
               setSelectedTerritory(value);
               handleFilterChange();
             }}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                 <SelectValue placeholder="Territory" />
               </SelectTrigger>
               <SelectContent>
@@ -292,7 +292,7 @@ export default function Visits() {
               value={dateRange}
               onChange={setDateRange}
               placeholder="Filter by visit date..."
-              className="w-full sm:w-[200px] text-base"
+              className="w-full sm:w-[200px] text-base h-10"
             />
           </div>
           

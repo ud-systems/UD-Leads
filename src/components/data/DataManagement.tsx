@@ -16,7 +16,7 @@ import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useSystemSettings, useUpdateSystemSetting } from "@/hooks/useSystemSettings";
 import { useLeadStatusOptions, useBuyingPowerOptions, useStoreTypeOptions } from "@/hooks/useSystemSettings";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Plus, Edit, Trash2, Store, Tag, MapPin, DollarSign, Search, Filter, Users, CheckSquare, Square, Activity } from "lucide-react";
+import { Plus, Edit, Trash2, Store, MapPin, DollarSign, Search, Filter, Users, CheckSquare, Square, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function DataManagement() {
@@ -54,10 +54,6 @@ export function DataManagement() {
 
   // Use system settings for store types instead of extracting from leads
   const storeTypes = storeTypeOptions;
-
-  // Get unique tags from existing leads
-  const allTags = leads?.flatMap(l => l.tags || []).filter(Boolean) || [];
-  const uniqueTags = Array.from(new Set(allTags));
 
   const handleSave = async () => {
     try {
@@ -202,10 +198,6 @@ export function DataManagement() {
     level.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredTags = uniqueTags.filter(tag =>
-    tag.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const filteredTerritories = territories?.filter(territory =>
     territory.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
     territory.country.toLowerCase().includes(searchTerm.toLowerCase())
@@ -228,7 +220,6 @@ export function DataManagement() {
             <TabsTrigger value="statuses" className="flex-shrink-0">Statuses</TabsTrigger>
             <TabsTrigger value="storeTypes" className="flex-shrink-0">Store Types</TabsTrigger>
             <TabsTrigger value="buyingPower" className="flex-shrink-0">Buying Power</TabsTrigger>
-            <TabsTrigger value="tags" className="flex-shrink-0">Tags</TabsTrigger>
             <TabsTrigger value="territories" className="flex-shrink-0">Territories</TabsTrigger>
           </TabsList>
         </div>
@@ -488,33 +479,7 @@ export function DataManagement() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tags" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tags</CardTitle>
-              <CardDescription>
-                Tags currently used in the system (read-only)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {filteredTags.map((tag, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Tag className="h-4 w-4 text-muted-foreground" />
-                      <Badge variant="secondary">{tag}</Badge>
-                    </div>
-                  </div>
-                ))}
-                {filteredTags.length === 0 && (
-                  <p className="text-muted-foreground text-center py-4">
-                    No tags found. Tags are automatically added when leads are created.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+
 
         <TabsContent value="territories" className="space-y-4">
           <Card>

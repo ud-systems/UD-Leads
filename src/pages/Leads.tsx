@@ -377,11 +377,11 @@ export default function Leads() {
           
           {/* Filter Controls - In the same row as search */}
         <div className={cn(
-            "flex flex-wrap items-center gap-2",
+            "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2",
           isMobile && !showFilters ? "hidden" : "flex"
         )}>
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -393,7 +393,7 @@ export default function Leads() {
           </Select>
             
           <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -405,7 +405,7 @@ export default function Leads() {
           </Select>
             
           <Select value={selectedBuyingPower} onValueChange={setSelectedBuyingPower}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
               <SelectValue placeholder="Power" />
             </SelectTrigger>
             <SelectContent>
@@ -417,7 +417,7 @@ export default function Leads() {
           </Select>
             
           <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
               <SelectValue placeholder="Territory" />
             </SelectTrigger>
             <SelectContent>
@@ -430,7 +430,7 @@ export default function Leads() {
             
           {userRole !== 'salesperson' && (
             <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                <SelectTrigger className="w-full sm:w-[140px] text-base">
+                <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                 <SelectValue placeholder="Salesperson" />
               </SelectTrigger>
               <SelectContent>
@@ -447,7 +447,7 @@ export default function Leads() {
             value={dateRange}
             onChange={setDateRange}
             placeholder="Select date range..."
-              className="w-full sm:w-[200px] text-base"
+              className="w-full sm:w-[200px] text-base h-10"
             />
           </div>
           

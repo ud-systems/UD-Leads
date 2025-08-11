@@ -281,14 +281,14 @@ export default function Analytics() {
           <h1 className="text-2xl font-bold">{pageTitle}</h1>
           <p className="text-muted-foreground">{pageDescription}</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mobile-filters-stack">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mobile-filters-stack">
           <DatePicker
             value={dateRange}
             onChange={setDateRange}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto h-10"
           />
           <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
-            <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px] h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -300,7 +300,7 @@ export default function Analytics() {
           </Select>
           {!isSalesperson && (
             <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px] h-10">
                 <SelectValue placeholder="All Salespeople" />
               </SelectTrigger>
               <SelectContent>

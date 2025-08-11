@@ -47,12 +47,12 @@ export default function Performance() {
           <h1 className="text-2xl font-bold">{pageTitle}</h1>
           <p className="text-muted-foreground">{pageDescription}</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mobile-filters-stack">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mobile-filters-stack">
           <DatePicker
             value={dateRange}
             onChange={setDateRange}
             placeholder="Select date range..."
-            className="w-full sm:w-[200px] mobile-filter-full"
+            className="w-full sm:w-[200px] mobile-filter-full h-10"
           />
         </div>
       </div>

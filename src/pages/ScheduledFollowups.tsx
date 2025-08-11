@@ -269,11 +269,11 @@ export default function ScheduledFollowups() {
 
           {/* Filter Controls - In the same row as search */}
           <div className={cn(
-            "flex flex-wrap items-center gap-2",
+            "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2",
             isMobile && !showFilters ? "hidden" : "flex"
           )}>
             <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                 <SelectValue placeholder="Store Type" />
               </SelectTrigger>
               <SelectContent>
@@ -287,7 +287,7 @@ export default function ScheduledFollowups() {
             </Select>
 
             <Select value={selectedBuyingPower} onValueChange={setSelectedBuyingPower}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                 <SelectValue placeholder="Buying Power" />
               </SelectTrigger>
               <SelectContent>
@@ -299,7 +299,7 @@ export default function ScheduledFollowups() {
             </Select>
 
             <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base">
+              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                 <SelectValue placeholder="Territory" />
               </SelectTrigger>
               <SelectContent>
@@ -314,7 +314,7 @@ export default function ScheduledFollowups() {
 
             {!isSalesperson && (
               <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                <SelectTrigger className="w-full sm:w-[140px] text-base">
+                <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
                   <SelectValue placeholder="Salesperson" />
                 </SelectTrigger>
                 <SelectContent>
@@ -328,12 +328,12 @@ export default function ScheduledFollowups() {
               </Select>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <DatePicker
                 value={dateRange}
                 onChange={setDateRange}
                 placeholder="Filter by followup date..."
-                className="w-full sm:w-[200px] text-base"
+                className="w-full sm:w-[200px] text-base h-10"
               />
               {dateRange && (
                 <Button

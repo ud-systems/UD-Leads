@@ -173,18 +173,18 @@ export function DateTimeRangePicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <div className="flex">
+      <PopoverContent className="w-auto p-0 max-w-[95vw] sm:max-w-none" align="start">
+        <div className="flex flex-col sm:flex-row">
           {/* Quick Select Panel */}
-          <div className="border-r p-3 min-w-[200px]">
+          <div className="border-b sm:border-b-0 sm:border-r p-3 min-w-[200px] max-w-full sm:max-w-[200px]">
             <h4 className="font-medium text-sm mb-3">Quick Select</h4>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 sm:grid-cols-1 gap-1 sm:gap-2">
               {quickSelectOptions.map((option, index) => (
                 <Button
                   key={index}
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-sm h-8"
+                  className="w-full justify-start text-xs sm:text-sm h-7 sm:h-8"
                   onClick={option.action}
                 >
                   {option.label}
@@ -194,7 +194,7 @@ export function DateTimeRangePicker({
           </div>
 
           {/* Calendar Panel */}
-          <div className="p-3">
+          <div className="p-3 min-w-[280px] max-w-full">
             <div className="flex items-center justify-between mb-3">
               <Button
                 variant="ghost"
