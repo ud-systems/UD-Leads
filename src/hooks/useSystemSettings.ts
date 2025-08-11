@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export type SystemSetting = Tables<'system_settings'>;
 export type SystemSettingInsert = TablesInsert<'system_settings'>;
@@ -16,10 +16,11 @@ const DEFAULT_STATUS_OPTIONS = [
   "Visited - No Interest"
 ];
 
-const DEFAULT_BUYING_POWER_OPTIONS = [
-  "Low",
-  "Medium", 
-  "High"
+const DEFAULT_WEEKLY_SPEND_OPTIONS = [
+  "Less than £1000",
+  "£1000 - £3000", 
+  "£5000 - £9999",
+  "£10,000+"
 ];
 
 const DEFAULT_STORE_TYPE_OPTIONS = [
@@ -30,6 +31,25 @@ const DEFAULT_STORE_TYPE_OPTIONS = [
   "Gas Station",
   "Pharmacy",
   "Other"
+];
+
+const DEFAULT_OWNS_SHOP_OR_WEBSITE_OPTIONS = [
+  "No",
+  "Yes",
+  "NA"
+];
+
+const DEFAULT_NUMBER_OF_STORES_OPTIONS = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10+"
 ];
 
 export const useSystemSettings = () => {
@@ -68,22 +88,25 @@ export const useLeadStatusOptions = () => {
   return DEFAULT_STATUS_OPTIONS;
 };
 
-export const useBuyingPowerOptions = () => {
+export const useWeeklySpendOptions = () => {
   const { data: settings } = useSystemSettings();
   
-  const buyingPowerSetting = settings?.find(s => s.setting_key === 'buying_power_options');
+  const weeklySpendSetting = settings?.find(s => s.setting_key === 'weekly_spend_options');
   
-  if (buyingPowerSetting) {
+  if (weeklySpendSetting) {
     try {
-      return JSON.parse(buyingPowerSetting.setting_value);
+      return JSON.parse(weeklySpendSetting.setting_value);
     } catch (error) {
-      console.error('Error parsing buying power options:', error);
-      return DEFAULT_BUYING_POWER_OPTIONS;
+      console.error('Error parsing weekly spend options:', error);
+      return DEFAULT_WEEKLY_SPEND_OPTIONS;
     }
   }
   
-  return DEFAULT_BUYING_POWER_OPTIONS;
+  return DEFAULT_WEEKLY_SPEND_OPTIONS;
 };
+
+// Legacy hook for backward compatibility
+export const useBuyingPowerOptions = useWeeklySpendOptions;
 
 export const useStoreTypeOptions = () => {
   const { data: settings } = useSystemSettings();
@@ -100,6 +123,40 @@ export const useStoreTypeOptions = () => {
   }
   
   return DEFAULT_STORE_TYPE_OPTIONS;
+};
+
+export const useOwnsShopOrWebsiteOptions = () => {
+  const { data: settings } = useSystemSettings();
+  
+  const ownsShopSetting = settings?.find(s => s.setting_key === 'owns_shop_or_website_options');
+  
+  if (ownsShopSetting) {
+    try {
+      return JSON.parse(ownsShopSetting.setting_value);
+    } catch (error) {
+      console.error('Error parsing owns shop or website options:', error);
+      return DEFAULT_OWNS_SHOP_OR_WEBSITE_OPTIONS;
+    }
+  }
+  
+  return DEFAULT_OWNS_SHOP_OR_WEBSITE_OPTIONS;
+};
+
+export const useNumberOfStoresOptions = () => {
+  const { data: settings } = useSystemSettings();
+  
+  const numberOfStoresSetting = settings?.find(s => s.setting_key === 'number_of_stores_options');
+  
+  if (numberOfStoresSetting) {
+    try {
+      return JSON.parse(numberOfStoresSetting.setting_value);
+    } catch (error) {
+      console.error('Error parsing number of stores options:', error);
+      return DEFAULT_NUMBER_OF_STORES_OPTIONS;
+    }
+  }
+  
+  return DEFAULT_NUMBER_OF_STORES_OPTIONS;
 };
 
 export const useUpdateSystemSetting = () => {

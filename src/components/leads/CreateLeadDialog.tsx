@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useCreateLead } from "@/hooks/useLeads";
 import { useCreateVisit } from "@/hooks/useVisits";
-import { useStoreTypeOptions, useBuyingPowerOptions } from "@/hooks/useSystemSettings";
+import { useStoreTypeOptions, useWeeklySpendOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -39,7 +39,9 @@ export function CreateLeadDialog() {
   const { mutate: createLead, isPending } = useCreateLead();
   const { mutate: createVisit } = useCreateVisit();
   const storeTypeOptions = useStoreTypeOptions();
-  const buyingPowerOptions = useBuyingPowerOptions();
+  const weeklySpendOptions = useWeeklySpendOptions();
+  const ownsShopOrWebsiteOptions = useOwnsShopOrWebsiteOptions();
+  const numberOfStoresOptions = useNumberOfStoresOptions();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
   const { toast } = useToast();
@@ -60,7 +62,10 @@ export function CreateLeadDialog() {
     
     // Location & Business
     store_type: "",
-    buying_power: "",
+    weekly_spend: "",
+    current_supplier: "",
+    owns_shop_or_website: "",
+    number_of_stores: "",
     territory_id: "",
     latitude: "",
     longitude: "",
@@ -156,7 +161,10 @@ export function CreateLeadDialog() {
       ...formData,
       salesperson: isSalesperson ? (currentProfile?.name || user?.email || "Unknown") : formData.salesperson,
       store_type: formData.store_type || undefined,
-      buying_power: formData.buying_power || undefined,
+      weekly_spend: formData.weekly_spend || undefined,
+      current_supplier: formData.current_supplier || undefined,
+      owns_shop_or_website: formData.owns_shop_or_website || undefined,
+      number_of_stores: formData.number_of_stores || undefined,
       territory_id: formData.territory_id || undefined,
       latitude: formData.latitude ? parseFloat(formData.latitude) : null,
       longitude: formData.longitude ? parseFloat(formData.longitude) : null,
@@ -211,7 +219,10 @@ export function CreateLeadDialog() {
           phone_number: "",
           email: "",
           store_type: "",
-          buying_power: "",
+          weekly_spend: "",
+          current_supplier: "",
+          owns_shop_or_website: "",
+          number_of_stores: "",
           territory_id: "",
           latitude: "",
           longitude: "",
@@ -430,13 +441,57 @@ export function CreateLeadDialog() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="buying_power">Buying Power</Label>
-          <Select value={formData.buying_power} onValueChange={(value) => handleInputChange("buying_power", value)}>
+          <Label htmlFor="weekly_spend">Weekly Spend</Label>
+          <Select value={formData.weekly_spend} onValueChange={(value) => handleInputChange("weekly_spend", value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select buying power" />
+              <SelectValue placeholder="Select weekly spend" />
             </SelectTrigger>
             <SelectContent>
-              {buyingPowerOptions.map((option) => (
+              {weeklySpendOptions.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="current_supplier">Current Supplier</Label>
+        <Input
+          id="current_supplier"
+          value={formData.current_supplier}
+          onChange={(e) => handleInputChange("current_supplier", e.target.value)}
+          placeholder="Enter current supplier information"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="owns_shop_or_website">Do you own shop or website?</Label>
+          <Select value={formData.owns_shop_or_website} onValueChange={(value) => handleInputChange("owns_shop_or_website", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select option" />
+            </SelectTrigger>
+            <SelectContent>
+              {ownsShopOrWebsiteOptions.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="number_of_stores">Number of Stores</Label>
+          <Select value={formData.number_of_stores} onValueChange={(value) => handleInputChange("number_of_stores", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select number of stores" />
+            </SelectTrigger>
+            <SelectContent>
+              {numberOfStoresOptions.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
                 </SelectItem>

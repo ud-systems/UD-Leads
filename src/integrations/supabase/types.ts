@@ -17,7 +17,7 @@ export interface Database {
           email: string | null
           status: string | null
           store_type: string | null
-          buying_power: string | null
+          weekly_spend: string | null
           notes: string | null
           created_at: string | null
           updated_at: string | null
@@ -35,6 +35,9 @@ export interface Database {
           interior_photo_url: string | null
           exterior_photos: string[] | null
           interior_photos: string[] | null
+          current_supplier: string | null
+          owns_shop_or_website: string | null
+          number_of_stores: string | null
           manager_id: string | null
         }
         Insert: {
@@ -44,7 +47,7 @@ export interface Database {
           email?: string | null
           status?: string | null
           store_type?: string | null
-          buying_power?: string | null
+          weekly_spend?: string | null
           notes?: string | null
           created_at?: string | null
           updated_at?: string | null
@@ -62,6 +65,9 @@ export interface Database {
           interior_photo_url?: string | null
           exterior_photos?: string[] | null
           interior_photos?: string[] | null
+          current_supplier?: string | null
+          owns_shop_or_website?: string | null
+          number_of_stores?: string | null
           manager_id?: string | null
         }
         Update: {
@@ -71,7 +77,7 @@ export interface Database {
           email?: string | null
           status?: string | null
           store_type?: string | null
-          buying_power?: string | null
+          weekly_spend?: string | null
           notes?: string | null
           created_at?: string | null
           updated_at?: string | null
@@ -89,6 +95,9 @@ export interface Database {
           interior_photo_url?: string | null
           exterior_photos?: string[] | null
           interior_photos?: string[] | null
+          current_supplier?: string | null
+          owns_shop_or_website?: string | null
+          number_of_stores?: string | null
           manager_id?: string | null
         }
       }
