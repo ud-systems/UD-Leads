@@ -87,9 +87,9 @@ export default function Analytics() {
     const discussionRate = totalLeads > 0 ? ((inDiscussionLeads / totalLeads) * 100) : 0;
     const trialRate = totalLeads > 0 ? ((trialOrderLeads / totalLeads) * 100) : 0;
     
-    const highValueLeads = roleFilteredLeads.filter(l => l.buying_power === 'High').length;
-    const mediumValueLeads = roleFilteredLeads.filter(l => l.buying_power === 'Medium').length;
-    const lowValueLeads = roleFilteredLeads.filter(l => l.buying_power === 'Low').length;
+    const highValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === '£10,000+').length;
+    const mediumValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === '£5000 - £9999').length;
+    const lowValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === 'Less than £1000' || l.weekly_spend === '£1000 - £3000').length;
     
     return {
       totalLeads,

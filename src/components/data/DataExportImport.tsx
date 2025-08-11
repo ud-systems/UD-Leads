@@ -477,9 +477,9 @@ export function DataExportImport() {
             continue;
           }
 
-          // Validate buying power
-          if (row.buying_power && !buyingPowerOptions.includes(row.buying_power)) {
-            errors.push(`Row ${rowNumber}: Invalid buying_power "${row.buying_power}"`);
+          // Validate weekly spend
+          if (row.weekly_spend && !buyingPowerOptions.includes(row.weekly_spend)) {
+            errors.push(`Row ${rowNumber}: Invalid weekly_spend "${row.weekly_spend}"`);
             continue;
           }
 
@@ -497,7 +497,7 @@ export function DataExportImport() {
             phone_number: row.phone_number,
             email: row.email || '',
             store_type: row.store_type || '',
-            buying_power: row.buying_power || '',
+            weekly_spend: row.weekly_spend || '',
             territory_id: row.territory_id && row.territory_id.trim() !== '' ? row.territory_id : null,
             latitude: row.latitude ? parseFloat(row.latitude) : null,
             longitude: row.longitude ? parseFloat(row.longitude) : null,

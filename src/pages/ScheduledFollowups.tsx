@@ -127,7 +127,7 @@ export default function ScheduledFollowups() {
       const matchesStoreType = selectedStoreType === "All" || lead.store_type === selectedStoreType;
       
       // Buying power filter
-      const matchesBuyingPower = selectedBuyingPower === "All" || lead.buying_power === selectedBuyingPower;
+      const matchesBuyingPower = selectedBuyingPower === "All" || lead.weekly_spend === selectedBuyingPower;
       
       // Territory filter
       const leadTerritory = territories?.find(t => t.id === lead.territory_id)?.city;

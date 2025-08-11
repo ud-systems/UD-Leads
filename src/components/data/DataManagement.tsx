@@ -67,13 +67,13 @@ export function DataManagement() {
             description: 'Available lead status options'
           });
           break;
-        case "buyingPower":
-          // Update system settings for buying power levels
-          const newBuyingPower = [...buyingPowerLevels, formData.name];
+        case "weeklySpend":
+          // Update system settings for weekly spend levels
+          const newWeeklySpend = [...buyingPowerLevels, formData.name];
           await updateSystemSetting.mutateAsync({
-            key: 'buying_power_options',
-            value: JSON.stringify(newBuyingPower),
-            description: 'Available buying power levels'
+            key: 'weekly_spend_options',
+            value: JSON.stringify(newWeeklySpend),
+            description: 'Available weekly spend levels'
           });
           break;
         case "storeType":
@@ -153,12 +153,12 @@ export function DataManagement() {
             description: 'Available lead status options'
           });
           break;
-        case "buyingPower":
-          const newBuyingPower = buyingPowerLevels.filter((_, index) => index !== item.index);
+        case "weeklySpend":
+          const newWeeklySpend = buyingPowerLevels.filter((_, index) => index !== item.index);
           await updateSystemSetting.mutateAsync({
-            key: 'buying_power_options',
-            value: JSON.stringify(newBuyingPower),
-            description: 'Available buying power levels'
+            key: 'weekly_spend_options',
+            value: JSON.stringify(newWeeklySpend),
+            description: 'Available weekly spend levels'
           });
           break;
         case "storeType":

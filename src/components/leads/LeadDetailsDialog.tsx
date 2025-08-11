@@ -195,13 +195,13 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit }: LeadDeta
                 </div>
               )}
 
-              {lead.buying_power && (
+              {lead.weekly_spend && (
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">Buying Power</p>
-                    <Badge className={getBuyingPowerColor(lead.buying_power)}>
-                      {lead.buying_power}
+                    <p className="text-sm font-medium">Weekly Spend</p>
+                    <Badge className={getBuyingPowerColor(lead.weekly_spend)}>
+                      {lead.weekly_spend}
                     </Badge>
                   </div>
                 </div>

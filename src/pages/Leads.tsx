@@ -44,7 +44,7 @@ export default function Leads() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedStoreType, setSelectedStoreType] = useState("All");
-  const [selectedBuyingPower, setSelectedBuyingPower] = useState("All");
+  const [selectedWeeklySpend, setSelectedWeeklySpend] = useState("All");
   const [selectedTerritory, setSelectedTerritory] = useState("All");
   const [selectedSalesperson, setSelectedSalesperson] = useState("All");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -118,7 +118,7 @@ export default function Leads() {
       const matchesStoreType = selectedStoreType === "All" || lead.store_type === selectedStoreType;
       
       // Buying power filter
-      const matchesBuyingPower = selectedBuyingPower === "All" || lead.buying_power === selectedBuyingPower;
+      const matchesBuyingPower = selectedWeeklySpend === "All" || lead.weekly_spend === selectedWeeklySpend;
       
       // Territory filter
       const leadTerritory = territories.find(t => t.id === lead.territory_id)?.city;
@@ -161,7 +161,7 @@ export default function Leads() {
       return matchesSearch && matchesStatus && matchesStoreType && matchesBuyingPower && 
              matchesTerritory && matchesSalesperson && matchesDateRange;
     });
-  }, [roleFilteredLeads, searchTerm, selectedStatus, selectedStoreType, selectedBuyingPower, 
+  }, [roleFilteredLeads, searchTerm, selectedStatus, selectedStoreType, selectedWeeklySpend, 
       selectedTerritory, selectedSalesperson, dateRange, territories, userRole, currentUser]);
 
   // Calculate if all leads are selected
@@ -404,7 +404,7 @@ export default function Leads() {
             </SelectContent>
           </Select>
             
-          <Select value={selectedBuyingPower} onValueChange={setSelectedBuyingPower}>
+          <Select value={selectedWeeklySpend} onValueChange={setSelectedWeeklySpend}>
               <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
               <SelectValue placeholder="Power" />
             </SelectTrigger>
@@ -659,9 +659,9 @@ export default function Leads() {
                       {lead.store_type}
                     </Badge>
                   )}
-                  {lead.buying_power && (
+                  {lead.weekly_spend && (
                     <Badge variant="outline" className="text-xs">
-                      {lead.buying_power}
+                      {lead.weekly_spend}
                     </Badge>
                   )}
                 </div>

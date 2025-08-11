@@ -588,11 +588,11 @@ export default function LeadDetails() {
               <div className="border-t border-border pt-3"></div>
               
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Buying Power:</span>
+                <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Weekly Spend:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    field="buying_power" 
-                    value={lead.buying_power?.toString() || ""} 
+                    field="weekly_spend" 
+                    value={lead.weekly_spend?.toString() || ""} 
                     type="text"
                   />
                 </div>
