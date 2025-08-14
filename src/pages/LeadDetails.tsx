@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/useTheme";
 import { LeadPhotoDisplay } from "@/components/leads/LeadPhotoDisplay";
 import { DeleteLeadDialog } from "@/components/leads/DeleteLeadDialog";
+import { PhotoPreviewDialog } from "@/components/leads/PhotoPreviewDialog";
 import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 
@@ -50,6 +51,12 @@ export default function LeadDetails() {
   const [newComment, setNewComment] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Photo preview dialog state
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
+  const [photoPreviewPhotos, setPhotoPreviewPhotos] = useState<string[]>([]);
+  const [photoPreviewTitle, setPhotoPreviewTitle] = useState("");
+  const [photoPreviewInitialIndex, setPhotoPreviewInitialIndex] = useState(0);
 
   useEffect(() => {
     if (leads && id) {
@@ -234,6 +241,14 @@ export default function LeadDetails() {
     }
   };
 
+  // Function to open photo preview dialog
+  const openPhotoPreview = (photos: string[], title: string, initialIndex: number = 0) => {
+    setPhotoPreviewPhotos(photos);
+    setPhotoPreviewTitle(title);
+    setPhotoPreviewInitialIndex(initialIndex);
+    setPhotoPreviewOpen(true);
+  };
+
   // Inline edit component
   const InlineEdit = ({ field, value, type = "text", options = [] }: { 
     field: string; 
@@ -388,7 +403,11 @@ export default function LeadDetails() {
               {lead.exterior_photos && lead.exterior_photos.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {lead.exterior_photos.map((photo, index) => (
-                    <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg">
+                    <div 
+                      key={index} 
+                      className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200"
+                      onClick={() => openPhotoPreview(lead.exterior_photos || [], "Exterior Photos", index)}
+                    >
                       <img
                         src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
                         alt={`Store exterior ${index + 1}`}
@@ -408,6 +427,11 @@ export default function LeadDetails() {
                       <Badge variant="secondary" className="absolute top-2 left-2 text-xs">
                         {index + 1}
                       </Badge>
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center">
+                        <div className="opacity-0 hover:opacity-100 transition-opacity duration-200">
+                          <ImageIcon className="h-8 w-8 text-white" />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -435,7 +459,11 @@ export default function LeadDetails() {
               {lead.interior_photos && lead.interior_photos.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {lead.interior_photos.map((photo, index) => (
-                    <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg">
+                    <div 
+                      key={index} 
+                      className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-200"
+                      onClick={() => openPhotoPreview(lead.interior_photos || [], "Interior Photos", index)}
+                    >
                       <img
                         src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/lead-photos/${photo}`}
                         alt={`Store interior ${index + 1}`}
@@ -455,6 +483,11 @@ export default function LeadDetails() {
                       <Badge variant="secondary" className="absolute top-2 left-2 text-xs">
                         {index + 1}
                       </Badge>
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center">
+                        <div className="opacity-0 hover:opacity-100 transition-opacity duration-200">
+                          <ImageIcon className="h-8 w-8 text-white" />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -783,6 +816,15 @@ export default function LeadDetails() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Photo Preview Dialog */}
+      <PhotoPreviewDialog
+        isOpen={photoPreviewOpen}
+        onClose={() => setPhotoPreviewOpen(false)}
+        photos={photoPreviewPhotos}
+        title={photoPreviewTitle}
+        initialIndex={photoPreviewInitialIndex}
+      />
     </div>
   );
 } 
