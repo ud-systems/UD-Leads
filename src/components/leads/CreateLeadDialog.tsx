@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCreateLead } from "@/hooks/useLeads";
-import { useCreateVisit } from "@/hooks/useVisits";
 import { useStoreTypeOptions, useWeeklySpendOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useUsers } from "@/hooks/useUsers";
@@ -37,7 +36,6 @@ export function CreateLeadDialog() {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   
   const { mutate: createLead, isPending } = useCreateLead();
-  const { mutate: createVisit } = useCreateVisit();
   const storeTypeOptions = useStoreTypeOptions();
   const weeklySpendOptions = useWeeklySpendOptions();
   const ownsShopOrWebsiteOptions = useOwnsShopOrWebsiteOptions();
@@ -180,33 +178,6 @@ export function CreateLeadDialog() {
 
     createLead(leadData as any, {
       onSuccess: (createdLead) => {
-        // Automatically create an initial visit for the new lead
-        if (createdLead && createdLead.id) {
-          const visitData = {
-            lead_id: createdLead.id,
-            date: new Date().toISOString().split('T')[0], // Today's date
-            time: new Date().toLocaleTimeString('en-US', { 
-              hour12: false, 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            }),
-            status: 'completed',
-            salesperson: leadData.salesperson,
-            notes: `Initial visit - Lead created on ${new Date().toLocaleDateString()}`,
-            manager_id: isManager ? user?.id : null
-          };
-
-          createVisit(visitData, {
-            onSuccess: () => {
-              console.log('Initial visit created for lead:', createdLead.id);
-            },
-            onError: (error) => {
-              console.error('Failed to create initial visit:', error);
-              // Don't show error to user since lead was created successfully
-            }
-          });
-        }
-
         toast({
           title: "Success",
           description: "Lead created successfully with initial visit",

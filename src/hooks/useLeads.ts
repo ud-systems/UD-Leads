@@ -133,28 +133,50 @@ export const useCreateLead = () => {
       const currentDate = new Date().toISOString().split('T')[0];
       const currentTime = new Date().toTimeString().split(' ')[0];
       
-      const { data: visitData, error: visitError } = await supabase
+      // Check if a visit already exists for this lead today to prevent duplicates
+      const { data: existingVisit, error: checkError } = await supabase
         .from('visits')
-        .insert({
-          lead_id: newLead.id,
-          date: currentDate,
-          time: currentTime,
-          status: 'completed',
-          salesperson: profile?.name || user?.email || 'Unknown',
-          manager_id: managerId,
-          notes: lead.notes || 'Initial lead discovery'
-        })
-        .select()
+        .select('id')
+        .eq('lead_id', newLead.id)
+        .eq('date', currentDate)
         .single();
-
-      if (visitError) {
-        console.error('Error creating initial visit:', visitError);
-        // Try to delete the lead if visit creation fails
-        await supabase.from('leads').delete().eq('id', newLead.id);
-        throw new Error(`Failed to create initial visit: ${visitError.message}`);
+      
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking for existing visit:', checkError);
       }
       
-      console.log('Successfully created lead and initial visit:', { lead: newLead.id, visit: visitData?.id });
+      // Only create visit if none exists for today
+      if (!existingVisit) {
+        // Create enhanced notes for the initial visit
+        const visitNotes = lead.notes 
+          ? `Initial Discovery - ${lead.notes}`
+          : `Initial Discovery - Lead discovered during field visit. Store: ${lead.store_name || 'Unknown'}`;
+        
+        const { data: visitData, error: visitError } = await supabase
+          .from('visits')
+          .insert({
+            lead_id: newLead.id,
+            date: currentDate,
+            time: currentTime,
+            status: 'completed',
+            salesperson: profile?.name || user?.email || 'Unknown',
+            manager_id: managerId,
+            notes: visitNotes
+          })
+          .select()
+          .single();
+
+        if (visitError) {
+          console.error('Error creating initial visit:', visitError);
+          // Try to delete the lead if visit creation fails
+          await supabase.from('leads').delete().eq('id', newLead.id);
+          throw new Error(`Failed to create initial visit: ${visitError.message}`);
+        }
+        
+        console.log('Successfully created lead and initial visit:', { lead: newLead.id, visit: visitData?.id });
+      } else {
+        console.log('Visit already exists for this lead today, skipping visit creation');
+      }
       return newLead;
     },
     onSuccess: () => {
