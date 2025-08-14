@@ -1,13 +1,14 @@
 
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { DashboardFilters, DashboardFilters as DashboardFiltersType } from "@/components/dashboard/DashboardFilters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Users, Calendar, DollarSign, Target, Activity, CheckCircle, XCircle, Building, ShoppingCart, Clock } from "lucide-react";
+import { TrendingUp, Users, Calendar, DollarSign, Target, Activity, CheckCircle, XCircle, Building, ShoppingCart, Clock, RefreshCw } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisits } from "@/hooks/useVisits";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -21,10 +22,11 @@ import { useProfile } from "@/hooks/useProfile";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { data: leads = [], isLoading: leadsLoading } = useLeads();
-  const { data: territories = [], isLoading: territoriesLoading } = useTerritories();
-  const { data: visits = [], isLoading: visitsLoading } = useVisits();
-  const { data: users = [], isLoading: usersLoading } = useUsers();
+  const queryClient = useQueryClient();
+  const { data: leads = [], isLoading: leadsLoading, refetch: refetchLeads } = useLeads();
+  const { data: territories = [], isLoading: territoriesLoading, refetch: refetchTerritories } = useTerritories();
+  const { data: visits = [], isLoading: visitsLoading, refetch: refetchVisits } = useVisits();
+  const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useUsers();
   const { userRole } = useRoleAccess();
   const { user: currentUser } = useAuth();
   const { data: profile } = useProfile(currentUser?.id);
@@ -42,6 +44,18 @@ export default function Dashboard() {
 
   // Get daily visit target achievements
   const { data: dailyTargetAchievements = [], isLoading: targetsLoading } = useTargetAchievements(currentUserId, 'daily');
+
+  // Refresh function to manually update dashboard data
+  const handleRefresh = async () => {
+    console.log('Refreshing dashboard data...');
+    await Promise.all([
+      refetchLeads(),
+      refetchVisits(),
+      refetchUsers(),
+      refetchTerritories()
+    ]);
+    console.log('Dashboard data refreshed');
+  };
 
   // Get salespeople for filter dropdown
   const salespeople = useMemo(() => {
@@ -174,9 +188,13 @@ export default function Dashboard() {
     const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
     const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
     
+    // Get all visits (not filtered by date) for visit completion stats
+    const allVisitsUnfiltered = visits?.flatMap(groupedVisit => groupedVisit.allVisits || []) || [];
+    const completedVisits = allVisitsUnfiltered.filter(v => v.status === 'completed').length;
+    const scheduledVisits = allVisitsUnfiltered.filter(v => v.status === 'scheduled').length;
+    
+    // Get filtered visits for daily target calculation
     const allVisits = filteredVisits.flatMap(groupedVisit => groupedVisit.allVisits || []);
-    const completedVisits = allVisits.filter(v => v.status === 'completed').length;
-    const scheduledVisits = allVisits.filter(v => v.status === 'scheduled').length;
     
                     const scheduledFollowups = filteredLeads.filter(l => l.next_visit).length;
     const activeSalespeople = [...new Set(filteredLeads.map(l => l.salesperson).filter(Boolean))].length;
@@ -185,11 +203,25 @@ export default function Dashboard() {
     const totalSalespeople = salespeople.length;
     const dailyTarget = totalSalespeople * 15;
     
-    // Get daily visit target
-    const dailyVisitTarget = dailyTargetAchievements.find(t => t.metric_type === 'visits');
-    const visitTargetAchievement = dailyVisitTarget?.achievement_percentage || 0;
-    const visitTargetCompleted = dailyVisitTarget?.is_completed || false;
-    const visitsToday = dailyVisitTarget?.achieved_value || 0;
+    // Calculate visits completed today from actual visits data
+    const today = new Date().toISOString().split('T')[0];
+    const visitsToday = allVisits.filter(v => v.date === today && v.status === 'completed').length;
+    const visitTargetAchievement = dailyTarget > 0 ? (visitsToday / dailyTarget) * 100 : 0;
+    const visitTargetCompleted = visitsToday >= dailyTarget;
+    
+    // Debug logging
+    console.log('Dashboard Stats Debug:', {
+      today,
+      totalSalespeople,
+      dailyTarget,
+      visitsToday,
+      visitTargetAchievement,
+      visitTargetCompleted,
+      completedVisits,
+      scheduledVisits,
+      totalVisits: allVisits.length,
+      totalVisitsUnfiltered: allVisitsUnfiltered.length
+    });
     
     return [
       {
@@ -363,6 +395,15 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Your sales performance overview</p>
         </div>
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline" 
+          size="sm"
+          disabled={leadsLoading || visitsLoading || usersLoading || territoriesLoading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${(leadsLoading || visitsLoading || usersLoading || territoriesLoading) ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Global Filters */}
@@ -379,38 +420,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Daily Visit Target Progress */}
-      {dailyTargetAchievements.length > 0 && (
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-blue-500" />
-              Daily Visit Target Progress
-            </CardTitle>
-            <CardDescription>
-              {dailyTargetAchievements.find(t => t.metric_type === 'visits')?.achieved_value || 0} of 15 visits completed today
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>{Math.round(dailyTargetAchievements.find(t => t.metric_type === 'visits')?.achievement_percentage || 0)}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${dailyTargetAchievements.find(t => t.metric_type === 'visits')?.achievement_percentage || 0}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{dailyTargetAchievements.find(t => t.metric_type === 'visits')?.achieved_value || 0} completed</span>
-                <span>{15 - (dailyTargetAchievements.find(t => t.metric_type === 'visits')?.achieved_value || 0)} remaining</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Charts Section */}
       <LeadsGrowthChart
