@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, Target, Users, Award, FileText, Download, Calendar, DollarSign, Activity, BarChart3, CheckCircle, XCircle, RefreshCw, MapPin, Building, ShoppingCart } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisits } from "@/hooks/useVisits";
@@ -125,7 +126,7 @@ export default function Analytics() {
     }, {} as Record<string, { total: number; active: number }>);
 
     return Object.entries(storeTypeStats)
-      .map(([type, stats]) => ({
+      .map(([type, stats]: [string, { total: number; active: number }]) => ({
         name: type,
         total: stats.total,
         active: stats.active,
@@ -148,7 +149,7 @@ export default function Analytics() {
     }, {} as Record<string, { total: number; active: number; prospect: number }>);
 
     return Object.entries(territoryStats)
-      .map(([territory, stats]) => ({
+      .map(([territory, stats]: [string, { total: number; active: number; prospect: number }]) => ({
         name: territory,
         total: stats.total,
         active: stats.active,
@@ -172,7 +173,7 @@ export default function Analytics() {
     }, {} as Record<string, { total: number; active: number; prospect: number }>);
 
     return Object.entries(salespersonStats)
-      .map(([salesperson, stats]) => ({
+      .map(([salesperson, stats]: [string, { total: number; active: number; prospect: number }]) => ({
         name: salesperson,
         total: stats.total,
         active: stats.active,
@@ -255,7 +256,7 @@ export default function Analytics() {
     }, {} as Record<string, { total: number; active: number }>);
 
     return Object.entries(productStats)
-      .map(([product, stats]) => ({
+      .map(([product, stats]: [string, { total: number; active: number }]) => ({
         name: product,
         total: stats.total,
         active: stats.active,
@@ -296,7 +297,7 @@ export default function Analytics() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Salespeople</SelectItem>
-                {users.filter(u => u.role === 'salesperson').map((user) => (
+                {users.filter((u: any) => u.role === 'salesperson').map((user: any) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name || user.email}
                   </SelectItem>
@@ -370,138 +371,150 @@ export default function Analytics() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Lead Status Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Lead Status Distribution
-            </CardTitle>
-            <CardDescription>Breakdown of leads by current status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EnhancedPieChart
-              data={leadStatusData}
-              title="Lead Status"
-              description="Distribution of leads across different stages"
-            />
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="leads" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="leads">Leads</TabsTrigger>
+          <TabsTrigger value="conversions">Conversions</TabsTrigger>
+        </TabsList>
+        <TabsContent value="leads">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Lead Status Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Lead Status Distribution
+                </CardTitle>
+                <CardDescription>Breakdown of leads by current status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EnhancedPieChart
+                  data={leadStatusData}
+                  title="Lead Status"
+                  description="Distribution of leads across different stages"
+                  showTitle={false}
+                />
+              </CardContent>
+            </Card>
 
-        {/* Weekly Spend Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Weekly Spend Distribution
-            </CardTitle>
-            <CardDescription>Leads categorized by weekly spend</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EnhancedPieChart
-              data={weeklySpendData}
-              title="Weekly Spend"
-              description="Distribution of leads by weekly spend"
-            />
-          </CardContent>
-        </Card>
+            {/* Weekly Spend Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Weekly Spend Distribution
+                </CardTitle>
+                <CardDescription>Leads categorized by weekly spend</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EnhancedPieChart
+                  data={weeklySpendData}
+                  title="Weekly Spend"
+                  description="Distribution of leads by weekly spend"
+                  showTitle={false}
+                />
+              </CardContent>
+            </Card>
 
-        {/* Monthly Trends */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Monthly Lead Trends
-            </CardTitle>
-            <CardDescription>Lead generation and conversion trends</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EnhancedLineChart
-              data={monthlyTrends}
-              title="Monthly Trends"
-              description="Lead generation and conversion trends by month"
-            />
-          </CardContent>
-        </Card>
+            {/* Monthly Trends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Monthly Lead Trends
+                </CardTitle>
+                <CardDescription>Lead generation and conversion trends</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EnhancedLineChart
+                  data={monthlyTrends}
+                  title="Monthly Trends"
+                  description="Lead generation and conversion trends by month"
+                  showTitle={false}
+                />
+              </CardContent>
+            </Card>
 
-        {/* Store Type Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              Store Type Performance
-            </CardTitle>
-            <CardDescription>Conversion rates by store type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EnhancedBarChart
-              data={storeTypeChartData}
-              title="Store Type Conversion"
-              description="Conversion rates by store type"
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Territory and Salesperson Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Territory Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Territory Performance
-            </CardTitle>
-            <CardDescription>Lead performance by territory</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {territoryData.slice(0, 5).map((territory, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <div className="font-medium">{territory.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {territory.active}/{territory.total} active
+            {/* Store Type Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Store Type Performance
+                </CardTitle>
+                <CardDescription>Conversion rates by store type</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EnhancedBarChart
+                  data={storeTypeChartData}
+                  title="Store Type Conversion"
+                  description="Conversion rates by store type"
+                  showTitle={false}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        <TabsContent value="conversions">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Territory Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Territory Performance
+                </CardTitle>
+                <CardDescription>Lead performance by territory</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {territoryData.slice(0, 5).map((territory, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">{territory.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {territory.active}/{territory.total} active
+                        </div>
+                      </div>
+                      <Badge variant="secondary">
+                        {territory.conversionRate}%
+                      </Badge>
                     </div>
-                  </div>
-                  <Badge variant="secondary">
-                    {territory.conversionRate}%
-                  </Badge>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Salesperson Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Salesperson Performance
-            </CardTitle>
-            <CardDescription>Lead performance by salesperson</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {salespersonData.slice(0, 5).map((salesperson, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <div className="font-medium">{salesperson.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {salesperson.active}/{salesperson.total} active
+            {/* Salesperson Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Salesperson Performance
+                </CardTitle>
+                <CardDescription>Lead performance by salesperson</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {salespersonData.slice(0, 5).map((salesperson, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">{salesperson.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {salesperson.active}/{salesperson.total} active
+                        </div>
+                      </div>
+                      <Badge variant="secondary">
+                        {salesperson.conversionRate}%
+                      </Badge>
                     </div>
-                  </div>
-                  <Badge variant="secondary">
-                    {salesperson.conversionRate}%
-                  </Badge>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Products Analysis */}
       <Card>

@@ -14,6 +14,9 @@ interface FileUploadProps {
   folder?: string;
   accept?: string;
   maxSize?: number; // in MB
+  maxWidth?: number; // maximum width for compression
+  maxHeight?: number; // maximum height for compression
+  quality?: number; // compression quality (0.1 to 1.0)
 }
 
 export function FileUpload({ 
@@ -23,13 +26,68 @@ export function FileUpload({
   bucket, 
   folder = "", 
   accept = "image/*",
-  maxSize = 5 
+  maxSize = 5,
+  maxWidth = 1920,
+  maxHeight = 1080,
+  quality = 0.8
 }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(value ? `https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/${bucket}/${value}` : null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Function to compress image using Canvas API
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress image
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob with compression
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              // Create new file with compressed data
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              reject(new Error('Failed to compress image'));
+            }
+          },
+          file.type,
+          quality
+        );
+      };
+
+      img.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+
+      // Load image from file
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -39,16 +97,6 @@ export function FileUpload({
       toast({
         title: "Authentication error",
         description: "Please log in to upload files",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size
-    if (file.size > maxSize * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: `File size must be less than ${maxSize}MB`,
         variant: "destructive",
       });
       return;
@@ -67,14 +115,32 @@ export function FileUpload({
     setIsUploading(true);
 
     try {
+      // Compress the image before upload
+      const compressedFile = await compressImage(file);
+      
+      // Check compressed file size
+      if (compressedFile.size > maxSize * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `Compressed file size is still too large. Please try a smaller image.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Show compression info
+      const originalSize = (file.size / 1024 / 1024).toFixed(2);
+      const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+      const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
+
       // Generate unique filename with user ID folder structure
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload file
+      // Upload compressed file
       const { data, error } = await supabase.storage
         .from(bucket)
-        .upload(fileName, file, {
+        .upload(fileName, compressedFile, {
           cacheControl: '3600',
           upsert: false
         });
@@ -93,7 +159,7 @@ export function FileUpload({
 
       toast({
         title: "Upload successful",
-        description: "File uploaded successfully",
+        description: `File uploaded successfully! Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
       });
 
     } catch (error) {
@@ -191,7 +257,7 @@ export function FileUpload({
           {isUploading ? (
             <div className="flex flex-col items-center space-y-2">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-sm text-muted-foreground">Uploading...</p>
+              <p className="text-sm text-muted-foreground">Compressing and uploading...</p>
             </div>
           ) : (
             <div className="flex flex-col items-center space-y-2">
@@ -199,7 +265,10 @@ export function FileUpload({
               <div>
                 <p className="text-sm font-medium">Click to upload</p>
                 <p className="text-xs text-muted-foreground">
-                  {accept === "image/*" ? "Image files" : "Files"} up to {maxSize}MB
+                  Images will be automatically compressed to save storage
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Max {maxSize}MB • {maxWidth}x{maxHeight}px
                 </p>
               </div>
             </div>

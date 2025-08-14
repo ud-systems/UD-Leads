@@ -27,35 +27,39 @@ function ChartCard({
   title, 
   description, 
   trend, 
-  children 
+  children,
+  showTitle = true
 }: { 
   title: string; 
   description?: string; 
   trend?: { value: number; isPositive: boolean };
   children: React.ReactNode;
+  showTitle?: boolean;
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">{title}</h3>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
+      {showTitle && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">{title}</h3>
+            {description && (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            )}
+          </div>
+          {trend && (
+            <div className="flex items-center gap-2">
+              {trend.isPositive ? (
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500" />
+              )}
+              <Badge variant={trend.isPositive ? "default" : "destructive"}>
+                {trend.isPositive ? '+' : ''}{trend.value}%
+              </Badge>
+            </div>
           )}
         </div>
-        {trend && (
-          <div className="flex items-center gap-2">
-            {trend.isPositive ? (
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-red-500" />
-            )}
-            <Badge variant={trend.isPositive ? "default" : "destructive"}>
-              {trend.isPositive ? '+' : ''}{trend.value}%
-            </Badge>
-          </div>
-        )}
-      </div>
+      )}
       <div className="h-64 w-full">
         {children}
       </div>
@@ -64,14 +68,15 @@ function ChartCard({
 }
 
 // Enhanced Line Chart using Recharts
-export function EnhancedLineChart({ data, title, description, trend }: {
+export function EnhancedLineChart({ data, title, description, trend, showTitle = true }: {
   data: any[];
   title: string;
   description?: string;
   trend?: { value: number; isPositive: boolean };
+  showTitle?: boolean;
 }) {
   return (
-    <ChartCard title={title} description={description} trend={trend}>
+    <ChartCard title={title} description={description} trend={trend} showTitle={showTitle}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -126,14 +131,15 @@ export function EnhancedLineChart({ data, title, description, trend }: {
 }
 
 // Enhanced Bar Chart using Recharts
-export function EnhancedBarChart({ data, title, description, trend }: {
+export function EnhancedBarChart({ data, title, description, trend, showTitle = true }: {
   data: any[];
   title: string;
   description?: string;
   trend?: { value: number; isPositive: boolean };
+  showTitle?: boolean;
 }) {
   return (
-    <ChartCard title={title} description={description} trend={trend}>
+    <ChartCard title={title} description={description} trend={trend} showTitle={showTitle}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -181,16 +187,17 @@ export function EnhancedBarChart({ data, title, description, trend }: {
 }
 
 // Enhanced Pie Chart using Recharts
-export function EnhancedPieChart({ data, title, description, trend }: {
+export function EnhancedPieChart({ data, title, description, trend, showTitle = true }: {
   data: any[];
   title: string;
   description?: string;
   trend?: { value: number; isPositive: boolean };
+  showTitle?: boolean;
 }) {
   const COLORS = [chartColors.primary, chartColors.secondary, chartColors.accent, chartColors.danger, chartColors.warning];
 
   return (
-    <ChartCard title={title} description={description} trend={trend}>
+    <ChartCard title={title} description={description} trend={trend} showTitle={showTitle}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie

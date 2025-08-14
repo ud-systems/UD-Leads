@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/useTheme";
 import { LeadPhotoDisplay } from "@/components/leads/LeadPhotoDisplay";
 import { DeleteLeadDialog } from "@/components/leads/DeleteLeadDialog";
-import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 
 export default function LeadDetails() {
@@ -306,6 +306,12 @@ export default function LeadDetails() {
       );
     }
     
+    // Helper function to get territory name
+    const getTerritoryName = (territoryId: string) => {
+      const territory = territories.find(t => t.id === territoryId);
+      return territory?.city || 'Unknown Territory';
+    };
+    
     return (
       <div className="flex items-center justify-between w-full">
         <div className="flex-1">
@@ -317,6 +323,8 @@ export default function LeadDetails() {
             <Badge variant="store-type" storeType={value} isDark={isDark}>
               {value || "Not set"}
             </Badge>
+          ) : field === 'territory_id' ? (
+            <span>{value ? getTerritoryName(value) : "Not set"}</span>
           ) : field === 'last_visit' || field === 'next_visit' ? (
             <span>{value ? new Date(value).toLocaleDateString() : "Not set"}</span>
           ) : (
@@ -579,7 +587,22 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Coordinates:</span>
                 <div className="flex-1 flex items-center gap-2">
-                  <span className="text-sm">{lead.latitude || "Not set"}, {lead.longitude || "Not set"}</span>
+                  {lead.latitude && lead.longitude ? (
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-sm text-blue-600 hover:text-blue-800 underline"
+                      title="Click to open in Google Maps"
+                      onClick={() => {
+                        const url = `https://www.google.com/maps?q=${lead.latitude},${lead.longitude}`;
+                        window.open(url, '_blank');
+                      }}
+                    >
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {lead.latitude}, {lead.longitude}
+                    </Button>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Not set</span>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"

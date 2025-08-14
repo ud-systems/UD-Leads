@@ -15,6 +15,9 @@ interface MultiPhotoUploadProps {
   accept?: string;
   maxSize?: number; // in MB
   maxPhotos?: number; // maximum number of photos allowed
+  maxWidth?: number; // maximum width for compression
+  maxHeight?: number; // maximum height for compression
+  quality?: number; // compression quality (0.1 to 1.0)
 }
 
 export function MultiPhotoUpload({ 
@@ -25,12 +28,67 @@ export function MultiPhotoUpload({
   folder = "", 
   accept = "image/*",
   maxSize = 5,
-  maxPhotos = 10
+  maxPhotos = 10,
+  maxWidth = 1920,
+  maxHeight = 1080,
+  quality = 0.8
 }: MultiPhotoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Function to compress image using Canvas API
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress image
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convert to blob with compression
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              // Create new file with compressed data
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              reject(new Error('Failed to compress image'));
+            }
+          },
+          file.type,
+          quality
+        );
+      };
+
+      img.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+
+      // Load image from file
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,16 +113,6 @@ export function MultiPhotoUpload({
       return;
     }
 
-    // Validate file size
-    if (file.size > maxSize * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: `File size must be less than ${maxSize}MB`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
@@ -78,14 +126,32 @@ export function MultiPhotoUpload({
     setIsUploading(true);
 
     try {
+      // Compress the image before upload
+      const compressedFile = await compressImage(file);
+      
+      // Check compressed file size
+      if (compressedFile.size > maxSize * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `Compressed file size is still too large. Please try a smaller image.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Show compression info
+      const originalSize = (file.size / 1024 / 1024).toFixed(2);
+      const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2);
+      const compressionRatio = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
+
       // Generate unique filename with user ID folder structure
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload file
+      // Upload compressed file
       const { data, error } = await supabase.storage
         .from(bucket)
-        .upload(fileName, file, {
+        .upload(fileName, compressedFile, {
           cacheControl: '3600',
           upsert: false
         });
@@ -101,7 +167,7 @@ export function MultiPhotoUpload({
 
       toast({
         title: "Upload successful",
-        description: "Photo uploaded successfully",
+        description: `Photo uploaded successfully! Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
       });
 
     } catch (error) {
@@ -209,7 +275,7 @@ export function MultiPhotoUpload({
           {isUploading ? (
             <div className="flex flex-col items-center space-y-2">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-              <p className="text-sm text-muted-foreground">Uploading...</p>
+              <p className="text-sm text-muted-foreground">Compressing and uploading...</p>
             </div>
           ) : (
             <div className="flex flex-col items-center space-y-2">
@@ -217,7 +283,10 @@ export function MultiPhotoUpload({
               <div>
                 <p className="text-sm font-medium">Add Photo</p>
                 <p className="text-xs text-muted-foreground">
-                  {accept === "image/*" ? "Image files" : "Files"} up to {maxSize}MB
+                  Images will be automatically compressed to save storage
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Max {maxSize}MB • {maxWidth}x{maxHeight}px
                 </p>
               </div>
             </div>
