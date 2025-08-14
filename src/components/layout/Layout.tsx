@@ -80,7 +80,7 @@ export function Layout({ children }: LayoutProps) {
             {/* Center - Page Title */}
             <div className="flex-1 text-center">
               <h1 className="text-lg font-semibold text-foreground truncate">
-                Retail Lead Compass
+                Ian Katana
               </h1>
             </div>
 

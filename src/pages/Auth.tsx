@@ -119,7 +119,7 @@ export default function Auth() {
       <div className="relative z-10 w-full max-w-md">
         <Card className="w-full shadow-2xl">
           <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl font-bold text-primary">Retail Lead Compass</CardTitle>
+            <CardTitle className="text-2xl font-bold text-primary">Ian Katana</CardTitle>
             <CardDescription className="text-base">
               Sign in to your account
             </CardDescription>

@@ -1,4 +1,4 @@
-# Retail Lead Compass - System Improvements
+# Ian Katana - System Improvements
 
 ## 🚀 **Recent Improvements Implemented**
 

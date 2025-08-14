@@ -78,7 +78,7 @@ export function SystemThemeManager() {
           <div>
             <Label className="text-base font-medium">Current Theme</Label>
             <p className="text-sm text-muted-foreground mt-1">
-              Choose how Retail Lead Compass looks and feels across the entire system
+              Choose how Ian Katana looks and feels across the entire system
             </p>
           </div>
 

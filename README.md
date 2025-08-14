@@ -1,73 +1,85 @@
-# Welcome to your Lovable project
+# Welcome to your Ian Katana project
 
-## Project info
+This is a comprehensive retail management solution built with React, TypeScript, and Supabase.
 
-**URL**: https://lovable.dev/projects/b82b79e3-7e65-4cff-bb02-860d5bb06ac2
+## Quick Start
 
-## How can I edit this code?
+**URL**: https://iankatana.com
 
-There are several ways of editing your application.
+## Development
 
-**Use Lovable**
+### Use Ian Katana
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b82b79e3-7e65-4cff-bb02-860d5bb06ac2) and start prompting.
+Simply visit the [Ian Katana Project](https://iankatana.com) and start prompting.
 
-Changes made via Lovable will be committed automatically to this repo.
+Changes made via Ian Katana will be committed automatically to this repo.
 
-**Use your preferred IDE**
+### Local Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Ian Katana.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+# Clone the repository
+git clone <your-repo-url>
 
-Follow these steps:
+# Install dependencies
+npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
+
+# Build for production
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+## Features
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **Lead Management**: Comprehensive lead tracking and management
+- **Territory Management**: Geographic territory assignment and tracking
+- **Visit Scheduling**: Plan and track sales visits
+- **Analytics Dashboard**: Real-time insights and reporting
+- **Photo Management**: Store and view lead photos
+- **Mobile Responsive**: Works perfectly on all devices
+- **Real-time Updates**: Live data synchronization
+- **User Management**: Role-based access control
+- **System Settings**: Configurable options and themes
 
-**Use GitHub Codespaces**
+## Technology Stack
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Components**: Shadcn/ui, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Charts**: Recharts
+- **Maps**: Leaflet.js
+- **State Management**: React Query
+- **Routing**: React Router
 
-## What technologies are used for this project?
+## Database Schema
 
-This project is built with:
+### Core Tables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **leads**: Lead information and details
+- **visits**: Visit tracking and scheduling
+- **territories**: Geographic territory management
+- **users**: User accounts and roles
+- **system_settings**: Configurable system options
 
-## How can I deploy this project?
+### Key Features
 
-Simply open [Lovable](https://lovable.dev/projects/b82b79e3-7e65-4cff-bb02-860d5bb06ac2) and click on Share -> Publish.
+- **Multiple Photo Uploads**: Support for exterior and interior photos
+- **Geolocation**: GPS coordinates and map integration
+- **Status Tracking**: Configurable lead statuses
+- **Visit History**: Complete visit tracking
+- **Analytics**: Comprehensive reporting
 
-## Can I connect a custom domain to my Lovable project?
+## Deployment
 
-Yes, you can!
+Simply open [Ian Katana](https://iankatana.com) and click on Share -> Publish.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Custom Domain
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Can I connect a custom domain to my Ian Katana project?
+
+Yes! You can connect a custom domain to your Ian Katana project.
+
+Read more here: [Setting up a custom domain](https://iankatana.com/docs/custom-domain)
