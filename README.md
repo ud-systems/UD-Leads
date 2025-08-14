@@ -1,4 +1,4 @@
-# Welcome to your Ian Katana project
+# Welcome to your UD Retail Leads project
 
 This is a comprehensive retail management solution built with React, TypeScript, and Supabase.
 
@@ -8,15 +8,15 @@ This is a comprehensive retail management solution built with React, TypeScript,
 
 ## Development
 
-### Use Ian Katana
+### Use UD Retail Leads
 
-Simply visit the [Ian Katana Project](https://iankatana.com) and start prompting.
+Simply visit the [UD Retail Leads Project](https://iankatana.com) and start prompting.
 
-Changes made via Ian Katana will be committed automatically to this repo.
+Changes made via UD Retail Leads will be committed automatically to this repo.
 
 ### Local Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Ian Katana.
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in UD Retail Leads.
 
 ```bash
 # Clone the repository
@@ -74,12 +74,12 @@ npm run build
 
 ## Deployment
 
-Simply open [Ian Katana](https://iankatana.com) and click on Share -> Publish.
+Simply open [UD Retail Leads](https://iankatana.com) and click on Share -> Publish.
 
 ## Custom Domain
 
-### Can I connect a custom domain to my Ian Katana project?
+### Can I connect a custom domain to my UD Retail Leads project?
 
-Yes! You can connect a custom domain to your Ian Katana project.
+Yes! You can connect a custom domain to your UD Retail Leads project.
 
 Read more here: [Setting up a custom domain](https://iankatana.com/docs/custom-domain)
