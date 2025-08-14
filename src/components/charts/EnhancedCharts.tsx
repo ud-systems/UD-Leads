@@ -138,6 +138,9 @@ export function EnhancedBarChart({ data, title, description, trend, showTitle = 
   trend?: { value: number; isPositive: boolean };
   showTitle?: boolean;
 }) {
+  // Determine if this is a count chart or conversion rate chart
+  const isCountChart = data.length > 0 && data[0].hasOwnProperty('count');
+  
   return (
     <ChartCard title={title} description={description} trend={trend} showTitle={showTitle}>
       <ResponsiveContainer width="100%" height="100%">
@@ -158,7 +161,7 @@ export function EnhancedBarChart({ data, title, description, trend, showTitle = 
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `${value}%`}
+            tickFormatter={(value) => isCountChart ? `${value}` : `${value}%`}
           />
           <Tooltip 
             contentStyle={{
@@ -167,7 +170,10 @@ export function EnhancedBarChart({ data, title, description, trend, showTitle = 
               borderRadius: '8px',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
             }}
-            formatter={(value: any) => [`${value}%`, 'Conversion Rate']}
+            formatter={(value: any) => [
+              isCountChart ? `${value} stores` : `${value}%`, 
+              isCountChart ? 'Store Count' : 'Conversion Rate'
+            ]}
           />
           <Legend 
             verticalAlign="top" 
@@ -176,7 +182,7 @@ export function EnhancedBarChart({ data, title, description, trend, showTitle = 
             wrapperStyle={{ paddingBottom: '10px' }}
           />
           <Bar 
-            dataKey="conversionRate" 
+            dataKey={isCountChart ? "count" : "conversionRate"} 
             fill={chartColors.primary}
             radius={[4, 4, 0, 0]}
           />
