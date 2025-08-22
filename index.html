@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UD Retail Leads</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png" />
+    <meta name="msapplication-TileImage" content="/favicon.png" />
+    <meta name="description" content="UD Retail Leads - Your comprehensive retail management solution" />
+    <meta name="keywords" content="retail, management, leads, sales, ud retail leads" />
+    <meta name="author" content="UD Retail Leads" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="UD Retail Leads" />
+    <meta property="og:description" content="UD Retail Leads - Your comprehensive retail management solution" />
+    <meta property="og:image" content="https://iankatana.com/iankatana-opengraph-image.png" />
+    <meta property="og:url" content="https://iankatana.com" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@_ian.katana" />
+    <meta name="twitter:image" content="https://iankatana.com/iankatana-opengraph-image.png" />
+    
+    <!-- Additional Meta Tags -->
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#000000" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Handle SPA routing for Netlify
+      (function(){
+        let redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect != location.href) {
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+  </body>
+</html>
