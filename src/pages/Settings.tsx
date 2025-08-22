@@ -7,6 +7,7 @@ import { ColorPaletteSelector } from "@/components/admin/ColorPaletteSelector";
 import { CompanyLogoManager } from "@/components/admin/CompanyLogoManager";
 import { SystemThemeManager } from "@/components/admin/SystemThemeManager";
 import { VisitTargetSettings } from "@/components/admin/VisitTargetSettings";
+import { StatusColorManager } from "@/components/admin/StatusColorManager";
 import { DataManagement } from "@/components/data/DataManagement";
 import { DataExportImport } from "@/components/data/DataExportImport";
 import { PushNotificationSettings } from "@/components/notifications/PushNotificationSettings";
@@ -35,6 +36,7 @@ export default function Settings() {
             <TabsTrigger value="notifications" className="flex-shrink-0">Notifications</TabsTrigger>
             <TabsTrigger value="data" className="flex-shrink-0">Data</TabsTrigger>
             {isAdmin && <TabsTrigger value="dataManagement" className="flex-shrink-0">Data Management</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="statusColors" className="flex-shrink-0">Status Colors</TabsTrigger>}
             {(isAdmin || isManager) && <TabsTrigger value="users" className="flex-shrink-0">Users</TabsTrigger>}
           </TabsList>
         </div>
@@ -67,6 +69,12 @@ export default function Settings() {
         {isAdmin && (
           <TabsContent value="dataManagement" className="space-y-6">
             <DataManagement />
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="statusColors" className="space-y-6">
+            <StatusColorManager />
           </TabsContent>
         )}
 

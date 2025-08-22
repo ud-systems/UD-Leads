@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Phone, Mail, MapPin, Calendar, Loader2, Grid3X3, List, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare, Square, Edit, Trash2, ArrowUpRight } from "lucide-react";
 import { useLeads, useBulkUpdateLeads, useBulkDeleteLeads, useLeadVisitCount } from "@/hooks/useLeads";
@@ -555,9 +556,7 @@ export default function Leads() {
                     </div>
                   </TableCell>
                   <TableCell className="small-desktop-text">
-                    <Badge variant="lead-status" status={lead.status} isDark={isDark} className="text-xs flex-shrink-0">
-                      {lead.status || 'No Status'}
-                    </Badge>
+                                            <StatusBadge status={lead.status} className="text-xs flex-shrink-0" />
                   </TableCell>
                   <TableCell className="small-desktop-text">
                     <Badge variant="store-type" storeType={lead.store_type} isDark={isDark}>
@@ -620,9 +619,7 @@ export default function Leads() {
                       {lead.company_name}
                     </CardDescription>
                   </div>
-                  <Badge variant={getStatusVariant(lead.status)} className="text-xs flex-shrink-0">
-                    {lead.status || 'No Status'}
-                  </Badge>
+                                          <StatusBadge status={lead.status} className="text-xs flex-shrink-0" />
                 </div>
               </CardHeader>
               

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { useCreateLead } from "@/hooks/useLeads";
 import { useStoreTypeOptions, useWeeklySpendOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
+import { useStatusColors } from "@/hooks/useStatusColors";
 import { useToast } from "@/hooks/use-toast";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -45,6 +46,7 @@ export function CreateLeadDialog() {
   const ownsShopOrWebsiteOptions = useOwnsShopOrWebsiteOptions();
   const numberOfStoresOptions = useNumberOfStoresOptions();
   const leadStatusOptions = useLeadStatusOptions();
+  const { data: statusColors = [] } = useStatusColors();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
   const { toast } = useToast();
@@ -670,11 +672,22 @@ export function CreateLeadDialog() {
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              {leadStatusOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
+              {leadStatusOptions.map((option) => {
+                const statusColor = statusColors.find(sc => sc.status_name === option);
+                return (
+                  <SelectItem key={option} value={option}>
+                    <div className="flex items-center gap-2">
+                      {statusColor && (
+                        <div
+                          className="w-3 h-3 rounded-full border"
+                          style={{ backgroundColor: statusColor.color_code }}
+                        />
+                      )}
+                      {option}
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

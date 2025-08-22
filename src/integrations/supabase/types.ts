@@ -47,6 +47,7 @@ export interface Database {
           followup_completed_date: string | null
           followup_completed_time: string | null
           followup_notes: string | null
+          status_color_id: number | null
         }
         Insert: {
           id?: string
@@ -116,6 +117,7 @@ export interface Database {
           followup_completed_date?: string | null
           followup_completed_time?: string | null
           followup_notes?: string | null
+          status_color_id?: number | null
         }
       }
       visits: {
@@ -250,6 +252,38 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
           manager_id?: string | null
+        }
+      }
+      status_colors: {
+        Row: {
+          id: number
+          status_name: string
+          color_code: string
+          background_color: string
+          text_color: string
+          is_active: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          status_name: string
+          color_code: string
+          background_color: string
+          text_color: string
+          is_active?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          status_name?: string
+          color_code?: string
+          background_color?: string
+          text_color?: string
+          is_active?: boolean
+          created_at?: string | null
+          updated_at?: string | null
         }
       }
       system_settings: {
