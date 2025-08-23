@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Users, TrendingUp, Calendar, Target, Building } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Users, TrendingUp, Calendar, Target, Building, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface LeadPoint {
   id: string;
@@ -40,6 +42,7 @@ export function SalespersonDetailMap({
   leads = [], 
   territories = [] 
 }: SalespersonDetailMapProps) {
+  const navigate = useNavigate();
   
   // Convert leads to map points with coordinate mapping
   const mapData = useMemo(() => {
@@ -223,10 +226,20 @@ export function SalespersonDetailMap({
                   className="cursor-pointer hover:opacity-80 transition-opacity"
                   style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
                 />
-                {/* Store name (on hover or simplified) */}
-                <title>
-                  {point.storeName} • {point.status} • Lat: {point.latitude.toFixed(4)}, Lng: {point.longitude.toFixed(4)}
-                </title>
+                                 {/* Store name (on hover or simplified) */}
+                 <title>
+                   {point.storeName} • {point.status} • Lat: {point.latitude.toFixed(4)}, Lng: {point.longitude.toFixed(4)}
+                 </title>
+                 {/* Clickable area for navigation */}
+                 <rect
+                   x={point.x - 8}
+                   y={point.y - 8}
+                   width="16"
+                   height="16"
+                   fill="transparent"
+                   className="cursor-pointer"
+                   onClick={() => navigate(`/leads/${point.id}`)}
+                 />
               </g>
             ))}
           </svg>
@@ -253,26 +266,36 @@ export function SalespersonDetailMap({
                   key={lead.id}
                   className="p-3 rounded-lg border bg-white dark:bg-gray-900"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h5 className="font-medium text-sm">{lead.storeName}</h5>
-                    <Badge 
-                      variant="secondary"
-                      style={{ backgroundColor: lead.color + '20', color: lead.color }}
-                      className="text-xs"
-                    >
-                      {lead.status}
-                    </Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div className="flex justify-between">
-                      <span>Lat:</span>
-                      <span>{lead.latitude.toFixed(4)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Lng:</span>
-                      <span>{lead.longitude.toFixed(4)}</span>
-                    </div>
-                  </div>
+                                     <div className="flex items-center justify-between mb-2">
+                     <h5 className="font-medium text-sm">{lead.storeName}</h5>
+                     <div className="flex items-center gap-1">
+                       <Badge 
+                         variant="secondary"
+                         style={{ backgroundColor: lead.color + '20', color: lead.color }}
+                         className="text-xs"
+                       >
+                         {lead.status}
+                       </Badge>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => navigate(`/leads/${lead.id}`)}
+                         className="h-5 w-5 p-0 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+                       >
+                         <ArrowUpRight className="h-3 w-3" />
+                       </Button>
+                     </div>
+                   </div>
+                   <div className="text-xs text-muted-foreground space-y-1">
+                     <div className="flex justify-between">
+                       <span>Lat:</span>
+                       <span>{lead.latitude.toFixed(4)}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span>Lng:</span>
+                       <span>{lead.longitude.toFixed(4)}</span>
+                     </div>
+                   </div>
                 </div>
               ))}
               {mapData.length > 12 && (

@@ -1,5 +1,6 @@
 
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,20 +10,60 @@ import { useTerritories } from "@/hooks/useTerritories";
 import { useUsers } from "@/hooks/useUsers";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
-import { MapPin, Users, Building, Calendar, Target, Filter } from "lucide-react";
+import { MapPin, Users, Building, Calendar, Target, Filter, ArrowUpRight } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix for default markers in React Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// Create custom colored markers based on lead status
+const createColoredMarker = (status: string) => {
+  let color = '#6b7280'; // gray default
+  
+  switch (status?.toLowerCase()) {
+    case 'active':
+    case 'new prospect - not registered':
+      color = '#10b981'; // green
+      break;
+    case 'converted':
+      color = '#8b5cf6'; // purple
+      break;
+    case 'pending':
+    case 'follow up':
+      color = '#f59e0b'; // orange
+      break;
+    case 'qualified':
+      color = '#06b6d4'; // cyan
+      break;
+    case 'lost':
+    case 'unqualified':
+      color = '#ef4444'; // red
+      break;
+    case 'inactive':
+    case 'on hold':
+      color = '#6b7280'; // gray
+      break;
+  }
+
+  return L.divIcon({
+    html: `<div style="
+      background-color: ${color};
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    "></div>`,
+    className: 'custom-marker',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
+};
 
 export default function Territory() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: users = [] } = useUsers();
   const { data: leads = [] } = useLeads();
@@ -247,15 +288,22 @@ export default function Territory() {
                 <Marker
                   key={lead.id}
                   position={[parseFloat(lead.latitude), parseFloat(lead.longitude)]}
+                  icon={createColoredMarker(lead.status)}
                 >
                   <Popup>
                     <div className="p-2">
-                      <h3 className="font-semibold text-sm mb-2">{lead.store_name}</h3>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-sm">{lead.store_name}</h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/leads/${lead.id}`)}
+                          className="h-6 w-6 p-0 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+                        >
+                          <ArrowUpRight className="h-3 w-3" />
+                        </Button>
+                      </div>
                       <div className="space-y-1 text-xs">
-                        <p><strong>Contact:</strong> {lead.contact_person}</p>
-                        <p><strong>Company:</strong> {lead.company_name}</p>
-                        <p><strong>Phone:</strong> {lead.phone_number}</p>
-                        <p><strong>Email:</strong> {lead.email}</p>
                         <p><strong>Status:</strong> 
                           <Badge variant="outline" className="ml-1 text-xs">
                             {lead.status || 'No Status'}
