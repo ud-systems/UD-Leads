@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Users, TrendingUp, Calendar, Target, Building, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useStatusColors, getStatusColor } from '@/hooks/useStatusColors';
 
 interface LeadPoint {
   id: string;
@@ -43,6 +44,7 @@ export function SalespersonDetailMap({
   territories = [] 
 }: SalespersonDetailMapProps) {
   const navigate = useNavigate();
+  const { data: statusColors = [] } = useStatusColors();
   
   // Convert leads to map points with coordinate mapping
   const mapData = useMemo(() => {
@@ -53,32 +55,9 @@ export function SalespersonDetailMap({
       .map(lead => {
         const svgCoords = latLngToSVG(parseFloat(lead.latitude), parseFloat(lead.longitude));
         
-        // Determine color based on status
-        let color = '#6b7280'; // gray default
-        switch (lead.status?.toLowerCase()) {
-          case 'active':
-          case 'new prospect - not registered':
-            color = '#10b981'; // green
-            break;
-          case 'converted':
-            color = '#8b5cf6'; // purple
-            break;
-          case 'pending':
-          case 'follow up':
-            color = '#f59e0b'; // orange
-            break;
-          case 'qualified':
-            color = '#06b6d4'; // cyan
-            break;
-          case 'lost':
-          case 'unqualified':
-            color = '#ef4444'; // red
-            break;
-          case 'inactive':
-          case 'on hold':
-            color = '#6b7280'; // gray
-            break;
-        }
+                 // Determine color based on status from database
+         const statusColor = getStatusColor(statusColors, lead.status);
+         const color = statusColor.color_code;
 
         return {
           id: lead.id,
@@ -269,13 +248,16 @@ export function SalespersonDetailMap({
                                      <div className="flex items-center justify-between mb-2">
                      <h5 className="font-medium text-sm">{lead.storeName}</h5>
                      <div className="flex items-center gap-1">
-                       <Badge 
-                         variant="secondary"
-                         style={{ backgroundColor: lead.color + '20', color: lead.color }}
-                         className="text-xs"
-                       >
-                         {lead.status}
-                       </Badge>
+                                               <Badge 
+                          variant="secondary"
+                          style={{
+                            backgroundColor: getStatusColor(statusColors, lead.status).background_color,
+                            color: getStatusColor(statusColors, lead.status).text_color
+                          }}
+                          className="text-xs"
+                        >
+                          {lead.status}
+                        </Badge>
                        <Button
                          variant="ghost"
                          size="sm"

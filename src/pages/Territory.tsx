@@ -10,39 +10,16 @@ import { useTerritories } from "@/hooks/useTerritories";
 import { useUsers } from "@/hooks/useUsers";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
+import { useStatusColors, getStatusColor } from "@/hooks/useStatusColors";
 import { MapPin, Users, Building, Calendar, Target, Filter, ArrowUpRight } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Create custom colored markers based on lead status
-const createColoredMarker = (status: string) => {
-  let color = '#6b7280'; // gray default
-  
-  switch (status?.toLowerCase()) {
-    case 'active':
-    case 'new prospect - not registered':
-      color = '#10b981'; // green
-      break;
-    case 'converted':
-      color = '#8b5cf6'; // purple
-      break;
-    case 'pending':
-    case 'follow up':
-      color = '#f59e0b'; // orange
-      break;
-    case 'qualified':
-      color = '#06b6d4'; // cyan
-      break;
-    case 'lost':
-    case 'unqualified':
-      color = '#ef4444'; // red
-      break;
-    case 'inactive':
-    case 'on hold':
-      color = '#6b7280'; // gray
-      break;
-  }
+// Create custom colored markers based on lead status from database
+const createColoredMarker = (status: string, statusColors: any[]) => {
+  const statusColor = getStatusColor(statusColors, status);
+  const color = statusColor.color_code;
 
   return L.divIcon({
     html: `<div style="
@@ -68,6 +45,7 @@ export default function Territory() {
   const { data: users = [] } = useUsers();
   const { data: leads = [] } = useLeads();
   const { data: territories = [] } = useTerritories();
+  const { data: statusColors = [] } = useStatusColors();
   const { isSalesperson, isManager, isAdmin } = useRoleAccess();
   
   // Filter states
@@ -288,7 +266,7 @@ export default function Territory() {
                 <Marker
                   key={lead.id}
                   position={[parseFloat(lead.latitude), parseFloat(lead.longitude)]}
-                  icon={createColoredMarker(lead.status)}
+                  icon={createColoredMarker(lead.status, statusColors)}
                 >
                   <Popup>
                     <div className="p-2">
@@ -304,11 +282,20 @@ export default function Territory() {
                         </Button>
                       </div>
                       <div className="space-y-1 text-xs">
-                        <p><strong>Status:</strong> 
-                          <Badge variant="outline" className="ml-1 text-xs">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs"><strong>Status:</strong></span>
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{
+                              backgroundColor: getStatusColor(statusColors, lead.status).background_color,
+                              color: getStatusColor(statusColors, lead.status).text_color,
+                              borderColor: getStatusColor(statusColors, lead.status).color_code
+                            }}
+                          >
                             {lead.status || 'No Status'}
                           </Badge>
-                        </p>
+                        </div>
                         <p><strong>Store Type:</strong> {lead.store_type}</p>
                         <p><strong>Territory:</strong> {territories.find(t => t.id === lead.territory_id)?.city || 'Unknown'}</p>
                         <p><strong>Salesperson:</strong> {lead.salesperson}</p>
