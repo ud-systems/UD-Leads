@@ -15,6 +15,7 @@ import { useTerritories, useCreateTerritory, useUpdateTerritory, useDeleteTerrit
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useSystemSettings, useUpdateSystemSetting } from "@/hooks/useSystemSettings";
 import { useLeadStatusOptions, useBuyingPowerOptions, useStoreTypeOptions } from "@/hooks/useSystemSettings";
+import { useStatusColors, useCreateStatusColor, useUpdateStatusColor, useDeleteStatusColor, getStatusColor } from "@/hooks/useStatusColors";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Plus, Edit, Trash2, Store, MapPin, DollarSign, Search, Filter, Users, CheckSquare, Square, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,10 @@ export function DataManagement() {
   const leadStatuses = useLeadStatusOptions();
   const buyingPowerLevels = useBuyingPowerOptions();
   const storeTypeOptions = useStoreTypeOptions();
+  const { data: statusColors = [] } = useStatusColors();
+  const createStatusColor = useCreateStatusColor();
+  const updateStatusColor = useUpdateStatusColor();
+  const deleteStatusColor = useDeleteStatusColor();
 
   const [activeTab, setActiveTab] = useState("statuses");
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,7 +54,11 @@ export function DataManagement() {
     color: "default",
     city: "",
     country: "United Kingdom",
-    status: "Active"
+    status: "Active",
+    // Status color fields
+    color_code: "#3B82F6",
+    background_color: "#DBEAFE",
+    text_color: "#1E40AF",
   });
 
   // Use system settings for store types instead of extracting from leads
@@ -59,13 +68,47 @@ export function DataManagement() {
     try {
       switch (dialogType) {
         case "status":
-          // Update system settings for lead statuses
-          const newStatuses = [...leadStatuses, formData.name];
-          await updateSystemSetting.mutateAsync({
-            key: 'lead_status_options',
-            value: JSON.stringify(newStatuses),
-            description: 'Available lead status options'
-          });
+          if (editingItem) {
+            // Update existing status
+            const newStatuses = leadStatuses.map((status, index) => 
+              index === editingItem.index ? formData.name : status
+            );
+            await updateSystemSetting.mutateAsync({
+              key: 'lead_status_options',
+              value: JSON.stringify(newStatuses),
+              description: 'Available lead status options'
+            });
+            
+            // Update status color
+            const existingColor = statusColors.find(sc => sc.status_name === editingItem.name);
+            if (existingColor) {
+              await updateStatusColor.mutateAsync({
+                id: existingColor.id,
+                updates: {
+                  status_name: formData.name,
+                  color_code: formData.color_code,
+                  background_color: formData.background_color,
+                  text_color: formData.text_color,
+                }
+              });
+            }
+          } else {
+            // Create new status
+            const newStatuses = [...leadStatuses, formData.name];
+            await updateSystemSetting.mutateAsync({
+              key: 'lead_status_options',
+              value: JSON.stringify(newStatuses),
+              description: 'Available lead status options'
+            });
+            
+            // Create status color for the new status
+            await createStatusColor.mutateAsync({
+              status_name: formData.name,
+              color_code: formData.color_code,
+              background_color: formData.background_color,
+              text_color: formData.text_color,
+            });
+          }
           break;
         case "weeklySpend":
           // Update system settings for weekly spend levels
@@ -106,7 +149,10 @@ export function DataManagement() {
         color: "default",
         city: "",
         country: "United Kingdom",
-        status: "Active"
+        status: "Active",
+        color_code: "#3B82F6",
+        background_color: "#DBEAFE",
+        text_color: "#1E40AF",
       });
     } catch (error) {
       toast({
@@ -127,7 +173,24 @@ export function DataManagement() {
         color: "default",
         city: item.city || "",
         country: item.country || "United Kingdom",
-        status: item.status || "Active"
+        status: item.status || "Active",
+        color_code: "#3B82F6",
+        background_color: "#DBEAFE",
+        text_color: "#1E40AF",
+      });
+    } else if (type === "status") {
+      // Find existing status color for this status
+      const existingColor = statusColors.find(sc => sc.status_name === item.name);
+      setFormData({
+        name: item.name || item,
+        description: item.description || "",
+        color: item.color || "default",
+        city: "",
+        country: "United Kingdom",
+        status: "Active",
+        color_code: existingColor?.color_code || "#3B82F6",
+        background_color: existingColor?.background_color || "#DBEAFE",
+        text_color: existingColor?.text_color || "#1E40AF",
       });
     } else {
       setFormData({
@@ -136,7 +199,10 @@ export function DataManagement() {
         color: item.color || "default",
         city: "",
         country: "United Kingdom",
-        status: "Active"
+        status: "Active",
+        color_code: "#3B82F6",
+        background_color: "#DBEAFE",
+        text_color: "#1E40AF",
       });
     }
     setOpenDialog(true);
@@ -152,6 +218,12 @@ export function DataManagement() {
             value: JSON.stringify(newStatuses),
             description: 'Available lead status options'
           });
+          
+          // Delete status color
+          const existingColor = statusColors.find(sc => sc.status_name === item.name);
+          if (existingColor) {
+            await deleteStatusColor.mutateAsync(existingColor.id);
+          }
           break;
         case "weeklySpend":
           const newWeeklySpend = buyingPowerLevels.filter((_, index) => index !== item.index);
@@ -282,6 +354,106 @@ export function DataManagement() {
                       </Select>
                     </div>
                   </>
+                ) : dialogType === "status" ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Status Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Enter status name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Input
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Enter description (optional)"
+                      />
+                    </div>
+                    
+                    {/* Color Settings */}
+                    <div className="space-y-4">
+                      <Label>Status Colors</Label>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="color_code">Primary Color</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="color_code"
+                              type="color"
+                              value={formData.color_code}
+                              onChange={(e) => setFormData({ ...formData, color_code: e.target.value })}
+                              className="w-12 h-10 p-1"
+                            />
+                            <Input
+                              value={formData.color_code}
+                              onChange={(e) => setFormData({ ...formData, color_code: e.target.value })}
+                              placeholder="#3B82F6"
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="background_color">Background Color</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="background_color"
+                              type="color"
+                              value={formData.background_color}
+                              onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
+                              className="w-12 h-10 p-1"
+                            />
+                            <Input
+                              value={formData.background_color}
+                              onChange={(e) => setFormData({ ...formData, background_color: e.target.value })}
+                              placeholder="#DBEAFE"
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="text_color">Text Color</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="text_color"
+                              type="color"
+                              value={formData.text_color}
+                              onChange={(e) => setFormData({ ...formData, text_color: e.target.value })}
+                              className="w-12 h-10 p-1"
+                            />
+                            <Input
+                              value={formData.text_color}
+                              onChange={(e) => setFormData({ ...formData, text_color: e.target.value })}
+                              placeholder="#1E40AF"
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Preview */}
+                      <div className="space-y-2">
+                        <Label>Preview</Label>
+                        <div className="p-4 border rounded-lg">
+                          <Badge
+                            style={{
+                              backgroundColor: formData.background_color,
+                              color: formData.text_color,
+                              borderColor: formData.color_code,
+                            }}
+                          >
+                            {formData.name || "Sample Status"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <>
                     <div className="space-y-2">
@@ -325,44 +497,56 @@ export function DataManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {filteredStatuses.map((status, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{status}</span>
+                {filteredStatuses.map((status, index) => {
+                  const statusColor = getStatusColor(statusColors, status);
+                  return (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Activity className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{status}</span>
+                        <Badge
+                          style={{
+                            backgroundColor: statusColor.background_color,
+                            color: statusColor.text_color,
+                            borderColor: statusColor.color_code,
+                          }}
+                        >
+                          {status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit({ name: status, index }, "status")}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Status</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{status}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete({ name: status, index }, "status")}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit({ name: status, index }, "status")}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Status</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "{status}"? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete({ name: status, index }, "status")}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
