@@ -31,7 +31,9 @@ import { FloatingLabelInput } from "@/components/ui/floating-label-input";
 import { FormFieldWithValidation, SelectFieldWithValidation } from "@/components/ui/form-field-with-validation";
 import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-validation";
 import { EnhancedTerritorySelect } from "@/components/ui/enhanced-territory-select";
-import { Plus, Navigation, Loader2, X } from "lucide-react";
+import { Plus, Navigation, Loader2, X, Save, ArrowRight } from "lucide-react";
+import { useLeadDraft } from "@/hooks/useLeadDraft";
+import { DraftRecoveryDialog } from "./DraftRecoveryDialog";
 
 export function CreateLeadDialog() {
   const [open, setOpen] = useState(false);
@@ -39,6 +41,18 @@ export function CreateLeadDialog() {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [formStartTime, setFormStartTime] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showDraftRecovery, setShowDraftRecovery] = useState(false);
+  
+  // Draft functionality
+  const { 
+    draft, 
+    hasDraft, 
+    saveDraft, 
+    clearDraft, 
+    updateDraftStep, 
+    updateDraftData, 
+    setFormStartTime: setDraftFormStartTime 
+  } = useLeadDraft();
   
   const { mutate: createLead, isPending } = useCreateLead();
   const storeTypeOptions = useStoreTypeOptions();
@@ -91,6 +105,33 @@ export function CreateLeadDialog() {
     notes: ""
   });
 
+  // Load draft data when dialog opens
+  const handleDialogOpen = () => {
+    if (hasDraft && draft) {
+      setShowDraftRecovery(true);
+    } else {
+      setOpen(true);
+    }
+  };
+
+  // Continue with draft
+  const handleContinueDraft = () => {
+    if (draft) {
+      setFormData(draft.formData);
+      setCurrentStep(draft.step);
+      setFormStartTime(draft.formStartTime);
+      setShowDraftRecovery(false);
+      setOpen(true);
+    }
+  };
+
+  // Discard draft and start fresh
+  const handleDiscardDraft = () => {
+    clearDraft();
+    setShowDraftRecovery(false);
+    setOpen(true);
+  };
+
   // Auto-fill coordinates from user location
   const getCurrentLocation = async () => {
     setIsLoadingLocation(true);
@@ -111,8 +152,13 @@ export function CreateLeadDialog() {
       
       // Record start time when coordinates are first filled
       if (!formStartTime) {
-        setFormStartTime(new Date().toISOString());
+        const startTime = new Date().toISOString();
+        setFormStartTime(startTime);
+        setDraftFormStartTime(startTime);
       }
+      
+      // Save draft when coordinates are filled
+      saveDraft(currentStep, formData, formStartTime);
       
       toast({
         title: "Location Updated",
@@ -127,6 +173,16 @@ export function CreateLeadDialog() {
     } finally {
       setIsLoadingLocation(false);
     }
+  };
+
+  const handleSaveAndExit = () => {
+    // Save current progress and close dialog
+    saveDraft(currentStep, formData, formStartTime);
+    setOpen(false);
+    toast({
+      title: "Draft Saved",
+      description: "Your progress has been saved. You can continue later.",
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -207,6 +263,7 @@ export function CreateLeadDialog() {
           description: "Lead created successfully with initial visit",
         });
         setOpen(false);
+        clearDraft(); // Clear draft after successful submission
         setCurrentStep(1);
         setFormStartTime(null);
         setTouched({});
@@ -295,15 +352,20 @@ export function CreateLeadDialog() {
   };
 
   const handleInputChange = (field: string, value: string | boolean | string[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
     
     // Record start time when coordinates are first filled manually
     if ((field === 'latitude' || field === 'longitude') && value && !formStartTime) {
-      const newFormData = { ...formData, [field]: value };
       if (newFormData.latitude && newFormData.longitude) {
-        setFormStartTime(new Date().toISOString());
+        const startTime = new Date().toISOString();
+        setFormStartTime(startTime);
+        setDraftFormStartTime(startTime);
       }
     }
+    
+    // Save draft on every input change
+    saveDraft(currentStep, newFormData, formStartTime);
   };
 
   const nextStep = () => {
@@ -361,13 +423,19 @@ export function CreateLeadDialog() {
     }
 
     if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
+      const nextStepNumber = currentStep + 1;
+      setCurrentStep(nextStepNumber);
+      // Save draft with new step
+      saveDraft(nextStepNumber, formData, formStartTime);
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      const prevStepNumber = currentStep - 1;
+      setCurrentStep(prevStepNumber);
+      // Save draft with new step
+      saveDraft(prevStepNumber, formData, formStartTime);
     }
   };
 
@@ -750,58 +818,85 @@ export function CreateLeadDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Lead
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full">
-        <DialogHeader>
-          <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
-          <DialogDescription className="text-left">
-            {getStepDescription()}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button className="flex items-center gap-2" onClick={handleDialogOpen}>
+            <Plus className="h-4 w-4" />
+            Add Lead
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full sm:max-w-2xl mx-auto sm:mx-0 bottom-0 sm:bottom-auto">
+          <DialogHeader>
+            <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
+            <DialogDescription className="text-left">
+              {getStepDescription()}
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-4">
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              {currentStep === 1 && renderStep1()}
+              {currentStep === 2 && renderStep2()}
+              {currentStep === 3 && renderStep3()}
+            </div>
 
-          <DialogFooter className="flex justify-between">
-            <div className="flex gap-2">
-              {currentStep > 1 && (
-                <Button type="button" variant="outline" onClick={prevStep}>
-                  Previous
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              {currentStep < 3 ? (
-                <Button type="button" onClick={nextStep}>
-                  Next
-                </Button>
-              ) : (
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Lead"
-                  )}
-                </Button>
-              )}
-            </div>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter className="flex justify-between">
+              <div className="flex gap-2">
+                {currentStep > 1 && (
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    Previous
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                {/* Save & Exit button - shows when form has data */}
+                {(formData.store_name || formData.contact_person || formData.latitude) && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleSaveAndExit}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save & Exit
+                  </Button>
+                )}
+                
+                {currentStep < 3 ? (
+                  <Button type="button" onClick={nextStep} className="flex items-center gap-2">
+                    Next
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Lead"
+                    )}
+                  </Button>
+                )}
+              </div>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Draft Recovery Dialog */}
+      {draft && (
+        <DraftRecoveryDialog
+          isOpen={showDraftRecovery}
+          onClose={() => setShowDraftRecovery(false)}
+          draft={draft}
+          onContinueDraft={handleContinueDraft}
+          onDiscardDraft={handleDiscardDraft}
+        />
+      )}
+    </>
   );
 } 
