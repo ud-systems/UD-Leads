@@ -66,6 +66,9 @@ export function DataManagement() {
 
   const handleSave = async () => {
     try {
+      console.log('Saving with dialogType:', dialogType, 'editingItem:', editingItem);
+      console.log('Form data:', formData);
+      
       switch (dialogType) {
         case "status":
           if (editingItem) {
@@ -79,9 +82,13 @@ export function DataManagement() {
               description: 'Available lead status options'
             });
             
-            // Update status color
+            // Handle status color update
             const existingColor = statusColors.find(sc => sc.status_name === editingItem.name);
+            console.log('Existing color found:', existingColor);
+            
             if (existingColor) {
+              // Update existing color record
+              console.log('Updating existing color with ID:', existingColor.id);
               await updateStatusColor.mutateAsync({
                 id: existingColor.id,
                 updates: {
@@ -91,6 +98,17 @@ export function DataManagement() {
                   text_color: formData.text_color,
                 }
               });
+              console.log('Color update completed');
+            } else {
+              // Create new color record if none exists
+              console.log('Creating new color record');
+              await createStatusColor.mutateAsync({
+                status_name: formData.name,
+                color_code: formData.color_code,
+                background_color: formData.background_color,
+                text_color: formData.text_color,
+              });
+              console.log('Color creation completed');
             }
           } else {
             // Create new status
@@ -143,6 +161,7 @@ export function DataManagement() {
       });
       
       setOpenDialog(false);
+      setEditingItem(null);
       setFormData({
         name: "",
         description: "",
@@ -477,7 +496,21 @@ export function DataManagement() {
                   </>
                 )}
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setOpenDialog(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setOpenDialog(false);
+                    setEditingItem(null);
+                    setFormData({
+                      name: "",
+                      description: "",
+                      color: "default",
+                      city: "",
+                      country: "United Kingdom",
+                      status: "Active",
+                      color_code: "#3B82F6",
+                      background_color: "#DBEAFE",
+                      text_color: "#1E40AF",
+                    });
+                  }}>
                     Cancel
                   </Button>
                   <Button onClick={handleSave}>Save</Button>
