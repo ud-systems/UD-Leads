@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Palette } from "lucide-react";
 import { useStatusColors, useCreateStatusColor, useUpdateStatusColor, useDeleteStatusColor, type StatusColor } from "@/hooks/useStatusColors";
+import { useLeadStatusOptions } from "@/hooks/useLeadStatusOptions";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function StatusColorManager() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -21,6 +23,7 @@ export function StatusColorManager() {
   });
 
   const { data: statusColors = [], isLoading } = useStatusColors();
+  const { data: leadStatusOptions = [], isLoading: isLoadingOptions } = useLeadStatusOptions();
   const { mutate: createStatusColor, isPending: isCreating } = useCreateStatusColor();
   const { mutate: updateStatusColor, isPending: isUpdating } = useUpdateStatusColor();
   const { mutate: deleteStatusColor, isPending: isDeleting } = useDeleteStatusColor();
@@ -28,6 +31,15 @@ export function StatusColorManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.status_name) {
+      toast({
+        title: "Error",
+        description: "Please select a status name.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (editingStatus) {
       updateStatusColor(
@@ -121,7 +133,7 @@ export function StatusColorManager() {
     resetForm();
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingOptions) {
     return (
       <Card>
         <CardHeader>
@@ -141,7 +153,9 @@ export function StatusColorManager() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Status Color Management</CardTitle>
-            <CardDescription>Manage colors for different lead statuses</CardDescription>
+            <CardDescription>
+              Manage colors for different lead statuses. {leadStatusOptions.length} status options available from your leads.
+            </CardDescription>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
@@ -165,13 +179,27 @@ export function StatusColorManager() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="status_name">Status Name</Label>
-                  <Input
-                    id="status_name"
+                  <Select
                     value={formData.status_name}
-                    onChange={(e) => setFormData({ ...formData, status_name: e.target.value })}
-                    placeholder="e.g., New Prospect - Not Registered"
-                    required
-                  />
+                    onValueChange={(value) => setFormData({ ...formData, status_name: value })}
+                    disabled={editingStatus !== null} // Disable when editing to prevent changing status name
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a status from your leads" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {leadStatusOptions.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editingStatus && (
+                    <p className="text-xs text-muted-foreground">
+                      Status name cannot be changed when editing. Create a new entry to change the status name.
+                    </p>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-3 gap-4">
