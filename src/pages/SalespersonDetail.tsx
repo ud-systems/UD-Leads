@@ -31,7 +31,7 @@ import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { StatsCard } from "@/components/dashboard/StatsCard";
-import { SalespersonCoverageMap } from "@/components/territories/SalespersonCoverageMap";
+import { SalespersonDetailMap } from "@/components/territories/SalespersonDetailMap";
 import { LeadsGrowthChart } from "@/components/charts/LeadsGrowthChart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -350,7 +350,7 @@ export default function SalespersonDetail() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SalespersonCoverageMap 
+          <SalespersonDetailMap 
             salespersonName={salespersonName}
             leads={salespersonLeads}
             territories={territories}
