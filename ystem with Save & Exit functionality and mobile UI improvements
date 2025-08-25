@@ -1,0 +1,5 @@
+[33m353864b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Replace SalespersonDetailMap with exact React Leaflet map functionality from Territory page
+[33me5a379b[m Fix status color update functionality with improved error handling and state management
+[33m9c57174[m Integrate status color management into Data Management Statuses tab
+[33me587654[m Update StatusColorManager to only show lead status options from database
+[33m5c63fb1[m Fix DOM nesting warning and use database status colors instead of hardcoded colors

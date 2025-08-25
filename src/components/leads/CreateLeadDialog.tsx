@@ -826,7 +826,7 @@ export function CreateLeadDialog() {
             Add Lead
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full sm:max-w-2xl mx-auto sm:mx-0 bottom-0 sm:bottom-auto">
+        <DialogContent className="max-w-2xl h-auto sm:max-h-[90vh] overflow-y-auto w-full sm:w-full sm:max-w-2xl left-0 sm:left-[50%] translate-x-0 sm:translate-x-[-50%] bottom-0 sm:bottom-auto sm:top-[50%] sm:translate-y-[-50%]">
           <DialogHeader>
             <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
             <DialogDescription className="text-left">
