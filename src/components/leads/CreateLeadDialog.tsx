@@ -220,10 +220,16 @@ export function CreateLeadDialog() {
       'postal_code', 'status', 'notes', 'exterior_photos', 'interior_photos'
     ];
 
+    // Check if any required field has an error
     for (const field of requiredFields) {
       if (getFieldError(field)) {
-        return;
+        return; // Stop submission if any field has an error
       }
+    }
+
+    // Additional validation for Step 3 specific fields
+    if (!formData.status.trim() || !formData.notes.trim()) {
+      return; // Stop submission if status or notes are empty
     }
 
     const formSubmitTime = new Date().toISOString();
@@ -422,6 +428,7 @@ export function CreateLeadDialog() {
       }
     }
 
+    // Only proceed to next step if we're not at the last step
     if (currentStep < 3) {
       const nextStepNumber = currentStep + 1;
       setCurrentStep(nextStepNumber);
@@ -735,29 +742,38 @@ export function CreateLeadDialog() {
       {/* Status and Visit Dates - 3 columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
-            <SelectTrigger className="h-12">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {leadStatusOptions.map((option) => {
-                const statusColor = statusColors.find(sc => sc.status_name === option);
-                return (
-                  <SelectItem key={option} value={option}>
-                    <div className="flex items-center gap-2">
-                      {statusColor && (
-                        <div
-                          className="w-3 h-3 rounded-full border"
-                          style={{ backgroundColor: statusColor.color_code }}
-                        />
-                      )}
-                      {option}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+          <SelectFieldWithValidation
+            label="Status *"
+            value={formData.status}
+            onValueChange={(value) => handleInputChange("status", value)}
+            placeholder="Select status"
+            required={true}
+            error={getFieldError('status')}
+          >
+            <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
+              <SelectTrigger className={`h-12 ${getFieldError('status') ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {leadStatusOptions.map((option) => {
+                  const statusColor = statusColors.find(sc => sc.status_name === option);
+                  return (
+                    <SelectItem key={option} value={option}>
+                      <div className="flex items-center gap-2">
+                        {statusColor && (
+                          <div
+                            className="w-3 h-3 rounded-full border"
+                            style={{ backgroundColor: statusColor.color_code }}
+                          />
+                        )}
+                        {option}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </SelectFieldWithValidation>
         </div>
 
         <div>
