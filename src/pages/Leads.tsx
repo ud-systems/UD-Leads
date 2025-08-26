@@ -70,7 +70,7 @@ export default function Leads() {
   const { data: territories = [] } = useTerritories();
   const { data: users = [] } = useUsers();
   const { user: currentUser } = useAuth();
-  const { data: profile } = useProfile(currentUser?.id);
+  const { data: profile } = useProfile(currentUser?.id || "");
 
   // Set view mode based on screen size
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function Leads() {
     
     if (userRole === 'salesperson') {
       // Salesperson sees only their leads - match by either name or email
-      const salespersonName = profile?.name || currentUser.email;
+      const salespersonName = (profile as any)?.name || currentUser.email;
       const salespersonEmail = currentUser.email;
       return leads.filter(lead => 
         lead.salesperson === salespersonName || lead.salesperson === salespersonEmail
@@ -363,7 +363,7 @@ export default function Leads() {
         {/* Search and Filter Row - All in one horizontal row */}
         <div className="flex flex-col lg:flex-row gap-3 w-full">
           {/* Search Bar */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search leads..."
@@ -379,7 +379,7 @@ export default function Leads() {
           isMobile && !showFilters ? "hidden" : "flex"
         )}>
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -391,7 +391,7 @@ export default function Leads() {
           </Select>
             
           <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -403,7 +403,7 @@ export default function Leads() {
           </Select>
             
           <Select value={selectedWeeklySpend} onValueChange={setSelectedWeeklySpend}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
               <SelectValue placeholder="Power" />
             </SelectTrigger>
             <SelectContent>
@@ -415,7 +415,7 @@ export default function Leads() {
           </Select>
             
           <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
               <SelectValue placeholder="Territory" />
             </SelectTrigger>
             <SelectContent>
@@ -428,13 +428,13 @@ export default function Leads() {
             
           {userRole !== 'salesperson' && (
             <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+                <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
                 <SelectValue placeholder="Salesperson" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Salespeople</SelectItem>
                 {users.map(user => (
-                  <SelectItem key={user.id} value={user.name}>{user.name}</SelectItem>
+                  <SelectItem key={(user as any).id} value={(user as any).name}>{(user as any).name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -445,7 +445,7 @@ export default function Leads() {
             value={dateRange}
             onChange={setDateRange}
             placeholder="Select date range..."
-              className="w-full sm:w-[200px] text-base h-10"
+              className="w-full sm:w-[160px] lg:w-[200px] text-sm lg:text-base h-10 min-w-0"
             />
           </div>
           
@@ -466,43 +466,45 @@ export default function Leads() {
 
       {/* Bulk Actions */}
       {canBulkOperations && selectedLeads.length > 0 && (
-        <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg">
-          <Badge variant="secondary" className="text-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-4 bg-muted/50 rounded-lg">
+          <Badge variant="secondary" className="text-sm w-fit">
             {selectedLeads.length} selected
           </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsBulkEditOpen(true)}
-            className="h-8"
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            Bulk Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsBulkDeleteOpen(true)}
-            className="h-8 text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Bulk Delete
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedLeads([])}
-            className="h-8"
-          >
-            Clear Selection
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBulkEditOpen(true)}
+              className="h-8"
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Bulk Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBulkDeleteOpen(true)}
+              className="h-8 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Bulk Delete
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedLeads([])}
+              className="h-8"
+            >
+              Clear Selection
+            </Button>
+          </div>
         </div>
       )}
 
       {/* Table View - Only when viewMode is list */}
       {viewMode === "list" && (
-        <div className="rounded-md">
-          <Table className="small-desktop-table">
+        <div className="rounded-md overflow-x-auto">
+          <Table className="small-desktop-table min-w-full">
             <TableHeader>
               <TableRow className="border-b">
                 {canBulkOperations && (
@@ -515,14 +517,14 @@ export default function Leads() {
                     />
                   </TableHead>
                 )}
-                <TableHead className="small-desktop-text">Store Name</TableHead>
-                <TableHead className="small-desktop-text">Contact</TableHead>
-                <TableHead className="small-desktop-text">Status</TableHead>
-                <TableHead className="small-desktop-text">Store Type</TableHead>
-                <TableHead className="small-desktop-text">Territory</TableHead>
-                <TableHead className="small-desktop-text">Salesperson</TableHead>
-                <TableHead className="small-desktop-text">Created</TableHead>
-                <TableHead className="text-right small-desktop-text">Actions</TableHead>
+                <TableHead className="small-desktop-text min-w-[150px]">Store Name</TableHead>
+                <TableHead className="small-desktop-text min-w-[120px]">Contact</TableHead>
+                <TableHead className="small-desktop-text min-w-[100px]">Status</TableHead>
+                <TableHead className="small-desktop-text min-w-[100px]">Store Type</TableHead>
+                <TableHead className="small-desktop-text min-w-[100px]">Territory</TableHead>
+                <TableHead className="small-desktop-text min-w-[120px]">Salesperson</TableHead>
+                <TableHead className="small-desktop-text min-w-[100px]">Created</TableHead>
+                <TableHead className="text-right small-desktop-text w-12">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -544,14 +546,14 @@ export default function Leads() {
                     </TableCell>
                   )}
                   <TableCell className="small-desktop-text">
-                    <div className="font-medium">{lead.store_name}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="font-medium truncate">{lead.store_name}</div>
+                    <div className="text-sm text-muted-foreground truncate">
                       {lead.company_name}
                     </div>
                   </TableCell>
                   <TableCell className="small-desktop-text">
-                    <div className="font-medium">{lead.contact_person}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="font-medium truncate">{lead.contact_person}</div>
+                    <div className="text-sm text-muted-foreground truncate">
                       {lead.phone_number}
                     </div>
                   </TableCell>
@@ -559,14 +561,14 @@ export default function Leads() {
                                             <StatusBadge status={lead.status} className="text-xs flex-shrink-0" />
                   </TableCell>
                   <TableCell className="small-desktop-text">
-                    <Badge variant="store-type" storeType={lead.store_type} isDark={isDark}>
+                    <Badge variant="store-type" storeType={lead.store_type} isDark={isDark} className="text-xs truncate">
                       {lead.store_type}
                     </Badge>
                   </TableCell>
-                  <TableCell className="small-desktop-text">
+                  <TableCell className="small-desktop-text truncate">
                     {territories.find(t => t.id === lead.territory_id)?.city || 'Unknown'}
                   </TableCell>
-                  <TableCell className="small-desktop-text">{lead.salesperson}</TableCell>
+                  <TableCell className="small-desktop-text truncate">{lead.salesperson}</TableCell>
                   <TableCell className="small-desktop-text">
                     {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}
                   </TableCell>
@@ -662,13 +664,13 @@ export default function Leads() {
                 
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-2">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground truncate">
                     {lead.salesperson}
                   </div>
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    className="group-hover:bg-primary/10 group-hover:text-primary transition-colors"
+                    className="group-hover:bg-primary/10 group-hover:text-primary transition-colors flex-shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/leads/${lead.id}`);
@@ -685,16 +687,17 @@ export default function Leads() {
 
       {/* Pagination Controls */}
       {filteredLeads.length > 0 && (
-        <div className="flex items-center justify-between border-t pt-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t pt-4 gap-4">
           <div className="text-sm text-muted-foreground">
             Showing {startIndex + 1} to {Math.min(startIndex + leadsPerPage, filteredLeads.length)} of {filteredLeads.length} leads
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
+              className="h-8 w-8 p-0"
             >
               <ChevronsLeft className="h-4 w-4" />
             </Button>
@@ -703,35 +706,42 @@ export default function Leads() {
               size="sm"
               onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage === 1}
+              className="h-8 w-8 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
             <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
+              {(() => {
+                // Show fewer page numbers on mobile
+                const maxVisible = isMobile ? 3 : 5;
+                const length = Math.min(maxVisible, totalPages);
                 
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className="w-8 h-8 p-0"
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
+                return Array.from({ length }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= maxVisible) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= Math.ceil(maxVisible / 2)) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - Math.floor(maxVisible / 2)) {
+                    pageNum = totalPages - maxVisible + i + 1;
+                  } else {
+                    pageNum = currentPage - Math.floor(maxVisible / 2) + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className="w-8 h-8 p-0 text-xs"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                });
+              })()}
             </div>
             
             <Button
@@ -739,6 +749,7 @@ export default function Leads() {
               size="sm"
               onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage === totalPages}
+              className="h-8 w-8 p-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -747,6 +758,7 @@ export default function Leads() {
               size="sm"
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
+              className="h-8 w-8 p-0"
             >
               <ChevronsRight className="h-4 w-4" />
             </Button>
