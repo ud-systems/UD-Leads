@@ -65,7 +65,7 @@ export function CreateLeadDialog() {
   const { data: territories = [] } = useTerritories();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: currentProfile } = useProfile(user?.id);
+  const { data: currentProfile } = useProfile(user?.id || "");
   const { isAdmin, isManager, isSalesperson } = useRoleAccess();
 
   // Filter users with salesperson role
@@ -233,7 +233,7 @@ export function CreateLeadDialog() {
 
     const leadData = {
       ...formData,
-      salesperson: isSalesperson ? (currentProfile?.name || user?.email || "Unknown") : formData.salesperson || "",
+             salesperson: isSalesperson ? ((currentProfile as any)?.name || user?.email || "Unknown") : formData.salesperson || "",
       store_type: formData.store_type || undefined,
       weekly_spend: formData.weekly_spend || undefined,
       current_supplier: formData.current_supplier || undefined,
@@ -578,7 +578,7 @@ export function CreateLeadDialog() {
         <div>
           {isSalesperson ? (
             <div className="px-3 py-4 text-sm text-muted-foreground bg-muted rounded-md border border-gray-300 dark:border-gray-600">
-              {currentProfile?.name || user?.email || "Unknown"}
+                             {(currentProfile as any)?.name || user?.email || "Unknown"}
             </div>
           ) : (
             <Select
@@ -826,7 +826,7 @@ export function CreateLeadDialog() {
             Add Lead
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl h-auto sm:max-h-[90vh] overflow-y-auto w-full sm:w-full sm:max-w-2xl left-0 sm:left-[50%] translate-x-0 sm:translate-x-[-50%] bottom-0 sm:bottom-auto sm:top-[50%] sm:translate-y-[-50%]">
+        <DialogContent className="max-w-2xl h-auto sm:max-h-[90vh] sm:overflow-y-auto w-full sm:w-full sm:max-w-2xl left-0 sm:left-[50%] translate-x-0 sm:translate-x-[-50%] top-[50%] sm:top-[50%] translate-y-[-50%] sm:translate-y-[-50%]">
           <DialogHeader>
             <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
             <DialogDescription className="text-left">
