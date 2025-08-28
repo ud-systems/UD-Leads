@@ -73,8 +73,14 @@ export default function Analytics() {
     if (!isSalesperson && selectedSalesperson !== "all") {
       const selectedUser = users.find((u: any) => u.id === selectedSalesperson);
       if (selectedUser) {
-        filteredLeads = filteredLeads.filter(lead => lead.salesperson === selectedUser.email);
-        console.log('Filtering for salesperson:', selectedUser.email, 'Filtered leads count:', filteredLeads.length);
+        // Try matching by email first, then by name
+        filteredLeads = filteredLeads.filter(lead => 
+          lead.salesperson === selectedUser.email || 
+          lead.salesperson === selectedUser.name ||
+          lead.salesperson === `${selectedUser.name} (${selectedUser.email})`
+        );
+        console.log('Filtering for salesperson:', selectedUser.email, 'User name:', selectedUser.name, 'Filtered leads count:', filteredLeads.length);
+        console.log('Sample leads salesperson field:', filteredLeads.slice(0, 3).map(l => l.salesperson));
       }
     }
     
