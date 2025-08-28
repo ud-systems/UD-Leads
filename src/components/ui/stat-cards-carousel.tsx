@@ -39,9 +39,9 @@ export function StatCardsCarousel({ cards, className }: StatCardsCarouselProps) 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Show arrows if more than 6 cards on desktop, or more than 1 card on mobile
-  const shouldShowArrows = isMobile ? cards.length > 1 : cards.length > 6;
-  const cardsPerView = isMobile ? 1 : 6;
+  // Show arrows only on desktop if more than 6 cards
+  const shouldShowArrows = !isMobile && cards.length > 6;
+  const cardsPerView = 6;
 
   useEffect(() => {
     setShowLeftArrow(currentIndex > 0);
@@ -91,7 +91,7 @@ export function StatCardsCarousel({ cards, className }: StatCardsCarouselProps) 
 
   if (!shouldShowArrows) {
     // If no carousel needed, show them in a regular grid
-    const gridCols = isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6";
+    const gridCols = isMobile ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6";
     return (
       <div className={cn(`grid ${gridCols} gap-4`, className)}>
         {cards.map((card, index) => (
