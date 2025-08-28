@@ -12,7 +12,7 @@ import { useTerritories } from "@/hooks/useTerritories";
 import { useUsers } from "@/hooks/useUsers";
 import { useTargetAchievements } from "@/hooks/useTargets";
 import { useLeadStatusOptions } from "@/hooks/useSystemSettings";
-import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount } from "@/hooks/useConversionRules";
+import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount, useConversionRules, calculateConversionRateWithRules, getConvertedLeadsCountWithRules } from "@/hooks/useConversionRules";
 import { EnhancedLineChart, EnhancedBarChart, EnhancedPieChart } from "@/components/charts/EnhancedCharts";
 import { WeeklySpendAreaChart } from "@/components/charts/WeeklySpendAreaChart";
 import { StoreTypeAreaChart } from "@/components/charts/StoreTypeAreaChart";
@@ -101,6 +101,7 @@ export default function Analytics() {
   const { data: conversionHistory = [] } = useConversionHistory(
     roleFilteredLeads.map(lead => lead.id)
   );
+  const { data: conversionRules = [] } = useConversionRules();
   
   const keyMetrics = useMemo(() => {
     const totalLeads = roleFilteredLeads.length;
@@ -111,11 +112,11 @@ export default function Analytics() {
       return acc;
     }, {} as Record<string, number>);
     
-    // Calculate conversion rate using conversion history
-    const conversionRate = calculateConversionRate(roleFilteredLeads, conversionHistory);
+    // Calculate conversion rate using conversion rules from settings
+    const conversionRate = calculateConversionRateWithRules(roleFilteredLeads, conversionRules);
     
-    // Calculate converted leads count
-    const convertedLeads = getConvertedLeadsCount(roleFilteredLeads, conversionHistory);
+    // Calculate converted leads count using conversion rules
+    const convertedLeads = getConvertedLeadsCountWithRules(roleFilteredLeads, conversionRules);
     
     // Weekly spend distribution
     const highValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === '£10,000+').length;
@@ -130,7 +131,7 @@ export default function Analytics() {
       mediumValueLeads,
       lowValueLeads
     };
-  }, [roleFilteredLeads, conversionHistory, leadStatusOptions]);
+  }, [roleFilteredLeads, conversionHistory, leadStatusOptions, conversionRules]);
 
   // Weekly Spend Distribution - Area Chart Data
   const weeklySpendAreaData = useMemo(() => {
@@ -246,7 +247,7 @@ export default function Analytics() {
       {
         title: "Conversion Rate",
         value: `${keyMetrics.conversionRate.toFixed(1)}%`,
-        description: `${keyMetrics.statusCounts['Active - Registered'] || 0} of ${keyMetrics.totalLeads} leads`,
+        description: `${getConvertedLeadsCountWithRules(roleFilteredLeads, conversionRules)} of ${keyMetrics.totalLeads} leads`,
         icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />
       }
     ];
@@ -267,7 +268,7 @@ export default function Analytics() {
     });
 
     return cards;
-  }, [keyMetrics, leadStatusOptions, dateRange, selectedSalesperson]);
+  }, [keyMetrics, leadStatusOptions, dateRange, selectedSalesperson, roleFilteredLeads, conversionRules]);
 
   // Products Analysis
   const productsData = useMemo(() => {

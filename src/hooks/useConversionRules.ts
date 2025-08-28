@@ -239,3 +239,111 @@ export const getConvertedLeads = (
     convertedLeadIds.has(lead.id)
   );
 };
+
+// Utility function to calculate conversion rate using conversion rules from settings
+export const calculateConversionRateWithRules = (
+  leads: any[], 
+  conversionRules: ConversionRule[]
+): number => {
+  const totalLeads = leads.length;
+  if (totalLeads === 0) return 0;
+  
+  // Get the default active rule
+  const defaultRule = conversionRules.find(rule => rule.is_default && rule.is_active);
+  if (!defaultRule) return 0;
+  
+  let convertedCount = 0;
+  
+  leads.forEach(lead => {
+    let isConverted = false;
+    
+    // Check if lead was initially created with a converted status
+    if (defaultRule.initial_status_converted && 
+        lead.status === defaultRule.initial_status_converted) {
+      isConverted = true;
+    }
+    
+    // Check if lead has a status transition that counts as conversion
+    if (defaultRule.status_transition_from && 
+        defaultRule.status_transition_to && 
+        lead.status === defaultRule.status_transition_to) {
+      // This would need to be enhanced with actual status history
+      // For now, we'll check if the current status matches the target
+      isConverted = true;
+    }
+    
+    if (isConverted) {
+      convertedCount++;
+    }
+  });
+  
+  return (convertedCount / totalLeads) * 100;
+};
+
+// Utility function to get converted leads count using conversion rules
+export const getConvertedLeadsCountWithRules = (
+  leads: any[], 
+  conversionRules: ConversionRule[]
+): number => {
+  // Get the default active rule
+  const defaultRule = conversionRules.find(rule => rule.is_default && rule.is_active);
+  if (!defaultRule) return 0;
+  
+  let convertedCount = 0;
+  
+  leads.forEach(lead => {
+    let isConverted = false;
+    
+    // Check if lead was initially created with a converted status
+    if (defaultRule.initial_status_converted && 
+        lead.status === defaultRule.initial_status_converted) {
+      isConverted = true;
+    }
+    
+    // Check if lead has a status transition that counts as conversion
+    if (defaultRule.status_transition_from && 
+        defaultRule.status_transition_to && 
+        lead.status === defaultRule.status_transition_to) {
+      // This would need to be enhanced with actual status history
+      // For now, we'll check if the current status matches the target
+      isConverted = true;
+    }
+    
+    if (isConverted) {
+      convertedCount++;
+    }
+  });
+  
+  return convertedCount;
+};
+
+// Utility function to get converted leads using conversion rules
+export const getConvertedLeadsWithRules = (
+  leads: any[], 
+  conversionRules: ConversionRule[]
+): any[] => {
+  // Get the default active rule
+  const defaultRule = conversionRules.find(rule => rule.is_default && rule.is_active);
+  if (!defaultRule) return [];
+  
+  return leads.filter(lead => {
+    let isConverted = false;
+    
+    // Check if lead was initially created with a converted status
+    if (defaultRule.initial_status_converted && 
+        lead.status === defaultRule.initial_status_converted) {
+      isConverted = true;
+    }
+    
+    // Check if lead has a status transition that counts as conversion
+    if (defaultRule.status_transition_from && 
+        defaultRule.status_transition_to && 
+        lead.status === defaultRule.status_transition_to) {
+      // This would need to be enhanced with actual status history
+      // For now, we'll check if the current status matches the target
+      isConverted = true;
+    }
+    
+    return isConverted;
+  });
+};

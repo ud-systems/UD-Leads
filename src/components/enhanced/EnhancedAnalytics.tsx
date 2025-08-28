@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisits } from "@/hooks/useVisits";
-import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount } from "@/hooks/useConversionRules";
+import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount, useConversionRules, calculateConversionRateWithRules, getConvertedLeadsCountWithRules } from "@/hooks/useConversionRules";
 import { TrendingUp, TrendingDown, Calendar, Target, Users, Building } from "lucide-react";
 
 export function EnhancedAnalytics() {
@@ -16,6 +16,7 @@ export function EnhancedAnalytics() {
   const { data: conversionHistory = [] } = useConversionHistory(
     leads.map(lead => lead.id)
   );
+  const { data: conversionRules = [] } = useConversionRules();
 
   const analyticsData = useMemo(() => {
     if (!leads || !visits) return null;
@@ -32,7 +33,7 @@ export function EnhancedAnalytics() {
     // Calculate metrics
     const totalLeads = leads.length;
     const activeLeads = leads.filter(l => l.last_visit).length;
-    const conversionRate = calculateConversionRate(leads, conversionHistory);
+    const conversionRate = calculateConversionRateWithRules(leads, conversionRules);
     const completedVisits = filteredVisits.filter(v => v.status === 'completed').length;
     const scheduledVisits = filteredVisits.filter(v => v.status === 'scheduled').length;
 
@@ -94,7 +95,7 @@ export function EnhancedAnalytics() {
       performanceData,
       monthlyTrends
     };
-  }, [leads, visits, timeRange, conversionHistory]);
+  }, [leads, visits, timeRange, conversionHistory, conversionRules]);
 
   const territoryData = useMemo(() => {
     if (!leads) return [];
@@ -119,7 +120,7 @@ export function EnhancedAnalytics() {
       conversions: t.converted,
       color: `hsl(${Math.random() * 360}, 70%, 50%)`
     }));
-  }, [leads, conversionHistory]);
+  }, [leads, conversionHistory, conversionRules]);
 
   const metrics = [
     {
