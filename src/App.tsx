@@ -47,7 +47,7 @@ function AppContent() {
   }
 
   return (
-          <Router future={{ v7_relativeSplatPath: true }}>
+          <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
         <Route

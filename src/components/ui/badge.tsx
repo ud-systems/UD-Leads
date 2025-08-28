@@ -33,14 +33,14 @@ export interface BadgeProps
   isDark?: boolean; // Theme detection
 }
 
-function Badge({ 
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(({ 
   className, 
   variant, 
   status, 
   storeType, 
   isDark = false,
   ...props 
-}: BadgeProps) {
+}, ref) => {
   // Apply theme-aware colors for lead status or store type
   const getCustomStyles = () => {
     if (variant === "lead-status" && status) {
@@ -56,11 +56,12 @@ function Badge({
 
   return (
     <div
+      ref={ref}
       className={cn(badgeVariants({ variant }), className)}
       style={customStyles}
       {...props}
     />
   )
-}
+});
 
 export { Badge, badgeVariants }
