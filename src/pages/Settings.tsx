@@ -7,6 +7,7 @@ import { ColorPaletteSelector } from "@/components/admin/ColorPaletteSelector";
 import { CompanyLogoManager } from "@/components/admin/CompanyLogoManager";
 import { SystemThemeManager } from "@/components/admin/SystemThemeManager";
 import { VisitTargetSettings } from "@/components/admin/VisitTargetSettings";
+import { ConversionRulesManager } from "@/components/admin/ConversionRulesManager";
 
 import { DataManagement } from "@/components/data/DataManagement";
 import { DataExportImport } from "@/components/data/DataExportImport";
@@ -36,6 +37,7 @@ export default function Settings() {
             <TabsTrigger value="notifications" className="flex-shrink-0">Notifications</TabsTrigger>
             <TabsTrigger value="data" className="flex-shrink-0">Data</TabsTrigger>
             {isAdmin && <TabsTrigger value="dataManagement" className="flex-shrink-0">Data Management</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="conversionRules" className="flex-shrink-0">Conversion Rules</TabsTrigger>}
 
             {(isAdmin || isManager) && <TabsTrigger value="users" className="flex-shrink-0">Users</TabsTrigger>}
           </TabsList>
@@ -72,7 +74,11 @@ export default function Settings() {
           </TabsContent>
         )}
 
-
+        {isAdmin && (
+          <TabsContent value="conversionRules" className="space-y-6">
+            <ConversionRulesManager />
+          </TabsContent>
+        )}
 
         {(isAdmin || isManager) && (
           <TabsContent value="users">

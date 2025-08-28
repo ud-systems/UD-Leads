@@ -36,7 +36,7 @@ interface EditFollowupDialogProps {
 export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { mutate: updateLead } = useUpdateLead();
-  const statusOptions = useLeadStatusOptions();
+  const { data: statusOptions = [] } = useLeadStatusOptions();
   const { data: territories = [] } = useTerritories();
   const { data: users = [] } = useUsers();
   const { toast } = useToast();

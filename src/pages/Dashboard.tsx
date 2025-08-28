@@ -19,6 +19,7 @@ import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { LeadsGrowthChart } from "@/components/charts/LeadsGrowthChart";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount } from "@/hooks/useConversionRules";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ export default function Dashboard() {
     }
 
     return filtered;
-  }, [leads, userRole, currentUser, users, filters, salespeople, profile]);
+  }, [leads, userRole, currentUser, filters, salespeople, profile]);
 
   const filteredVisits = useMemo(() => {
     if (!visits) return [];
@@ -177,13 +178,22 @@ export default function Dashboard() {
     }
 
     return filtered;
-  }, [visits, userRole, currentUser, users, filters, salespeople, profile]);
+  }, [visits, userRole, currentUser, filters, salespeople, profile]);
 
+    // Get conversion history for all leads
+  const { data: conversionHistory = [] } = useConversionHistory(
+    filteredLeads.map(lead => lead.id)
+  );
+  
   // Calculate dashboard metrics based on filtered data
   const dashboardStats = useMemo(() => {
     const totalLeads = filteredLeads.length;
-    const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
-    const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
+    
+    // Calculate conversion rate using conversion history
+    const conversionRate = calculateConversionRate(filteredLeads, conversionHistory);
+    
+    // Calculate converted leads count
+    const convertedLeads = getConvertedLeadsCount(filteredLeads, conversionHistory);
     
     // Get all visits (not filtered by date) for visit completion stats
     const allVisitsUnfiltered = visits?.flatMap(groupedVisit => groupedVisit.allVisits || []) || [];
@@ -357,7 +367,7 @@ export default function Dashboard() {
     return allActivities
       .sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime())
       .slice(0, 10);
-  }, [filteredLeads, filteredVisits, territories]);
+  }, [filteredLeads, filteredVisits, territories, conversionHistory, navigate, visits]);
 
   // Show loading state
   if (leadsLoading || territoriesLoading || visitsLoading || usersLoading || targetsLoading) {

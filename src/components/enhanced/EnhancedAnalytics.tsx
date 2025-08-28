@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChartCard } from "@/components/dashboard/ChartCard";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisits } from "@/hooks/useVisits";
+import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount } from "@/hooks/useConversionRules";
 import { TrendingUp, TrendingDown, Calendar, Target, Users, Building } from "lucide-react";
 
 export function EnhancedAnalytics() {
@@ -12,6 +13,9 @@ export function EnhancedAnalytics() {
   const [selectedTerritory, setSelectedTerritory] = useState("all");
   const { data: leads } = useLeads();
   const { data: visits } = useVisits();
+  const { data: conversionHistory = [] } = useConversionHistory(
+    leads.map(lead => lead.id)
+  );
 
   const analyticsData = useMemo(() => {
     if (!leads || !visits) return null;
@@ -28,7 +32,7 @@ export function EnhancedAnalytics() {
     // Calculate metrics
     const totalLeads = leads.length;
     const activeLeads = leads.filter(l => l.last_visit).length;
-    const conversionRate = totalLeads > 0 ? (leads.filter(l => l.status === 'Converted').length / totalLeads) * 100 : 0;
+    const conversionRate = calculateConversionRate(leads, conversionHistory);
     const completedVisits = filteredVisits.filter(v => v.status === 'completed').length;
     const scheduledVisits = filteredVisits.filter(v => v.status === 'scheduled').length;
 
@@ -39,7 +43,9 @@ export function EnhancedAnalytics() {
         acc[salesperson] = { name: salesperson, total: 0, converted: 0, visits: 0 };
       }
       acc[salesperson].total += 1;
-      if (lead.status === 'Converted') {
+      // Check if this lead has been converted based on conversion history
+      const isConverted = conversionHistory.some(conv => conv.lead_id === lead.id);
+      if (isConverted) {
         acc[salesperson].converted += 1;
       }
       return acc;
@@ -88,7 +94,7 @@ export function EnhancedAnalytics() {
       performanceData,
       monthlyTrends
     };
-  }, [leads, visits, timeRange]);
+  }, [leads, visits, timeRange, conversionHistory]);
 
   const territoryData = useMemo(() => {
     if (!leads) return [];
@@ -99,7 +105,9 @@ export function EnhancedAnalytics() {
         acc[territory] = { name: territory, count: 0, converted: 0 };
       }
       acc[territory].count += 1;
-      if (lead.status === 'Converted') {
+      // Check if this lead has been converted based on conversion history
+      const isConverted = conversionHistory.some(conv => conv.lead_id === lead.id);
+      if (isConverted) {
         acc[territory].converted += 1;
       }
       return acc;
@@ -111,7 +119,7 @@ export function EnhancedAnalytics() {
       conversions: t.converted,
       color: `hsl(${Math.random() * 360}, 70%, 50%)`
     }));
-  }, [leads]);
+  }, [leads, conversionHistory]);
 
   const metrics = [
     {

@@ -312,6 +312,70 @@ export interface Database {
           updated_at?: string | null
         }
       }
+      lead_status_history: {
+        Row: {
+          id: number
+          lead_id: string
+          old_status: string | null
+          new_status: string
+          changed_at: string | null
+          changed_by: string | null
+          conversion_counted: boolean
+        }
+        Insert: {
+          id?: number
+          lead_id: string
+          old_status?: string | null
+          new_status: string
+          changed_at?: string | null
+          changed_by?: string | null
+          conversion_counted?: boolean
+        }
+        Update: {
+          id?: number
+          lead_id?: string
+          old_status?: string | null
+          new_status?: string
+          changed_at?: string | null
+          changed_by?: string | null
+          conversion_counted?: boolean
+        }
+      }
+      conversion_rules: {
+        Row: {
+          id: number
+          rule_name: string
+          rule_type: string
+          from_status: string | null
+          to_status: string
+          is_active: boolean
+          is_default: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          rule_name: string
+          rule_type: string
+          from_status?: string | null
+          to_status: string
+          is_active?: boolean
+          is_default?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          rule_name?: string
+          rule_type?: string
+          from_status?: string | null
+          to_status?: string
+          is_active?: boolean
+          is_default?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
     }
     Views: {
       [_ in never]: never

@@ -34,6 +34,8 @@ import { EnhancedTerritorySelect } from "@/components/ui/enhanced-territory-sele
 import { Plus, Navigation, Loader2, X, Save, ArrowRight } from "lucide-react";
 import { useLeadDraft } from "@/hooks/useLeadDraft";
 import { DraftRecoveryDialog } from "./DraftRecoveryDialog";
+import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { OfflineStatusIndicator } from "@/components/ui/offline-status-indicator";
 
 export function CreateLeadDialog() {
   const [open, setOpen] = useState(false);
@@ -55,11 +57,11 @@ export function CreateLeadDialog() {
   } = useLeadDraft();
   
   const { mutate: createLead, isPending } = useCreateLead();
-  const storeTypeOptions = useStoreTypeOptions();
-  const weeklySpendOptions = useWeeklySpendOptions();
-  const ownsShopOrWebsiteOptions = useOwnsShopOrWebsiteOptions();
-  const numberOfStoresOptions = useNumberOfStoresOptions();
-  const leadStatusOptions = useLeadStatusOptions();
+  const { data: storeTypeOptions = [] } = useStoreTypeOptions();
+  const { data: weeklySpendOptions = [] } = useWeeklySpendOptions();
+  const { data: ownsShopOrWebsiteOptions = [] } = useOwnsShopOrWebsiteOptions();
+  const { data: numberOfStoresOptions = [] } = useNumberOfStoresOptions();
+  const { data: leadStatusOptions = [] } = useLeadStatusOptions();
   const { data: statusColors = [] } = useStatusColors();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
@@ -67,6 +69,14 @@ export function CreateLeadDialog() {
   const { user } = useAuth();
   const { data: currentProfile } = useProfile(user?.id || "");
   const { isAdmin, isManager, isSalesperson } = useRoleAccess();
+
+  // Offline storage functionality
+  const { 
+    isOnline, 
+    saveDraft: saveOfflineDraft, 
+    completeLead, 
+    getPendingCount 
+  } = useOfflineStorage();
 
   // Filter users with salesperson role
   const salespeople = users.filter(user => (user as any).role === 'salesperson');
@@ -262,50 +272,111 @@ export function CreateLeadDialog() {
       form_duration_ms: formDurationMs
     };
 
-    createLead(leadData as any, {
-      onSuccess: (createdLead) => {
-        toast({
-          title: "Success",
-          description: "Lead created successfully with initial visit",
-        });
-        setOpen(false);
-        clearDraft(); // Clear draft after successful submission
-        setCurrentStep(1);
-        setFormStartTime(null);
-        setTouched({});
-        setFormData({
-          store_name: "",
-          company_name: "",
-          contact_person: "",
-          phone_number: "",
-          email: "",
-          store_type: "",
-          weekly_spend: "",
-          current_supplier: "",
-          owns_shop_or_website: "",
-          number_of_stores: "",
-          territory_id: "",
-          latitude: "",
-          longitude: "",
-          postal_code: "",
-          products_currently_sold: "",
-          status: "New Prospect",
-          salesperson: "",
-          last_visit: "",
-          next_visit: "",
-          exterior_photos: [],
-          interior_photos: [],
-          notes: ""
-        });
-      },
-      onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to create lead",
-          variant: "destructive",
-        });
-      },
-    });
+    // Check if we're online and can sync directly
+    if (isOnline) {
+      // Online - create lead directly
+      createLead(leadData as any, {
+        onSuccess: (createdLead) => {
+          toast({
+            title: "Success",
+            description: "Lead created successfully with initial visit",
+          });
+          setOpen(false);
+          clearDraft(); // Clear draft after successful submission
+          setCurrentStep(1);
+          setFormStartTime(null);
+          setTouched({});
+          setFormData({
+            store_name: "",
+            company_name: "",
+            contact_person: "",
+            phone_number: "",
+            email: "",
+            store_type: "",
+            weekly_spend: "",
+            current_supplier: "",
+            owns_shop_or_website: "",
+            number_of_stores: "",
+            territory_id: "",
+            latitude: "",
+            longitude: "",
+            postal_code: "",
+            products_currently_sold: "",
+            status: "New Prospect",
+            salesperson: "",
+            last_visit: "",
+            next_visit: "",
+            exterior_photos: [],
+            interior_photos: [],
+            notes: ""
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to create lead",
+            variant: "destructive",
+          });
+        },
+      });
+    } else {
+      // Offline - save to pending sync
+      const draftId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Convert photos to offline format
+      const offlinePhotos = [
+        ...formData.exterior_photos.map((photo, index) => ({
+          id: `exterior_${draftId}_${index}`,
+          data: photo,
+          filename: `exterior_${index}.jpg`,
+          timestamp: Date.now()
+        })),
+        ...formData.interior_photos.map((photo, index) => ({
+          id: `interior_${draftId}_${index}`,
+          data: photo,
+          filename: `interior_${index}.jpg`,
+          timestamp: Date.now()
+        }))
+      ];
+
+      // Save photos to offline storage
+      offlinePhotos.forEach(photo => {
+        // This will be handled by the completeLead function
+      });
+
+      // Complete the lead (move from draft to pending sync)
+      completeLead(draftId, leadData, offlinePhotos);
+      
+      setOpen(false);
+      clearDraft(); // Clear draft after successful offline save
+      setCurrentStep(1);
+      setFormStartTime(null);
+      setTouched({});
+      setFormData({
+        store_name: "",
+        company_name: "",
+        contact_person: "",
+        phone_number: "",
+        email: "",
+        store_type: "",
+        weekly_spend: "",
+        current_supplier: "",
+        owns_shop_or_website: "",
+        number_of_stores: "",
+        territory_id: "",
+        latitude: "",
+        longitude: "",
+        postal_code: "",
+        products_currently_sold: "",
+        status: "New Prospect",
+        salesperson: "",
+        last_visit: "",
+        next_visit: "",
+        exterior_photos: [],
+        interior_photos: [],
+        notes: ""
+      });
+    }
   };
 
   // Validation helper - only show errors when user tries to proceed
@@ -614,18 +685,22 @@ export function CreateLeadDialog() {
       {/* Contact Information - 2 columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <FloatingLabelInput
-            label="Contact Person"
+          <FormFieldWithValidation
+            label="Contact Person *"
             value={formData.contact_person}
             onChange={(e) => handleInputChange("contact_person", e.target.value)}
+            required={true}
+            error={getFieldError('contact_person')}
           />
         </div>
 
         <div>
-          <FloatingLabelInput
-            label="Company Name"
+          <FormFieldWithValidation
+            label="Company Name *"
             value={formData.company_name}
             onChange={(e) => handleInputChange("company_name", e.target.value)}
+            required={true}
+            error={getFieldError('company_name')}
           />
         </div>
       </div>
@@ -633,19 +708,23 @@ export function CreateLeadDialog() {
       {/* Email and Phone - 2 columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <FloatingLabelInput
-            label="Email"
+          <FormFieldWithValidation
+            label="Email *"
             type="email"
             value={formData.email}
             onChange={(e) => handleInputChange("email", e.target.value)}
+            required={true}
+            error={getFieldError('email')}
           />
         </div>
 
         <div>
-          <FloatingLabelInput
-            label="Phone Number"
+          <FormFieldWithValidation
+            label="Phone Number *"
             value={formData.phone_number}
             onChange={(e) => handleInputChange("phone_number", e.target.value)}
+            required={true}
+            error={getFieldError('phone_number')}
           />
         </div>
       </div>
@@ -653,25 +732,36 @@ export function CreateLeadDialog() {
       {/* Number of Stores and Current Supplier - 2 columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Select value={formData.number_of_stores} onValueChange={(value) => handleInputChange("number_of_stores", value)}>
-            <SelectTrigger className="h-12">
-              <SelectValue placeholder="Select number of stores" />
-            </SelectTrigger>
-            <SelectContent>
-              {numberOfStoresOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SelectFieldWithValidation
+            label="Number of Stores *"
+            value={formData.number_of_stores}
+            onValueChange={(value) => handleInputChange("number_of_stores", value)}
+            placeholder="Select number of stores"
+            required={true}
+            error={getFieldError('number_of_stores')}
+          >
+            <Select value={formData.number_of_stores} onValueChange={(value) => handleInputChange("number_of_stores", value)}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Select number of stores" />
+              </SelectTrigger>
+              <SelectContent>
+                {numberOfStoresOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SelectFieldWithValidation>
         </div>
 
         <div>
-          <FloatingLabelInput
-            label="Current Supplier"
+          <FormFieldWithValidation
+            label="Current Supplier *"
             value={formData.current_supplier}
             onChange={(e) => handleInputChange("current_supplier", e.target.value)}
+            required={true}
+            error={getFieldError('current_supplier')}
           />
         </div>
       </div>
@@ -679,45 +769,71 @@ export function CreateLeadDialog() {
       {/* Weekly Spend and Owns Shop/Website - 2 columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Select value={formData.weekly_spend} onValueChange={(value) => handleInputChange("weekly_spend", value)}>
-            <SelectTrigger className="h-12">
-              <SelectValue placeholder="Select weekly spend" />
-            </SelectTrigger>
-            <SelectContent>
-              {weeklySpendOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SelectFieldWithValidation
+            label="Weekly Spend *"
+            value={formData.weekly_spend}
+            onValueChange={(value) => handleInputChange("weekly_spend", value)}
+            placeholder="Select weekly spend"
+            required={true}
+            error={getFieldError('weekly_spend')}
+          >
+            <Select value={formData.weekly_spend} onValueChange={(value) => handleInputChange("weekly_spend", value)}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Select weekly spend" />
+              </SelectTrigger>
+              <SelectContent>
+                {weeklySpendOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SelectFieldWithValidation>
         </div>
 
         <div>
-          <Select value={formData.owns_shop_or_website} onValueChange={(value) => handleInputChange("owns_shop_or_website", value)}>
-            <SelectTrigger className="h-12">
-              <SelectValue placeholder="Do you own Shop or Website?" />
-            </SelectTrigger>
-            <SelectContent>
-              {ownsShopOrWebsiteOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SelectFieldWithValidation
+            label="Owns Shop or Website *"
+            value={formData.owns_shop_or_website}
+            onValueChange={(value) => handleInputChange("owns_shop_or_website", value)}
+            placeholder="Do you own Shop or Website?"
+            required={true}
+            error={getFieldError('owns_shop_or_website')}
+          >
+            <Select value={formData.owns_shop_or_website} onValueChange={(value) => handleInputChange("owns_shop_or_website", value)}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Do you own Shop or Website?" />
+              </SelectTrigger>
+              <SelectContent>
+                {ownsShopOrWebsiteOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SelectFieldWithValidation>
         </div>
       </div>
 
       {/* Products Currently Sold - Full width */}
-      <div>
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-foreground">
+          Products Currently Sold *
+        </label>
         <Textarea
           value={formData.products_currently_sold}
           onChange={(e) => handleInputChange("products_currently_sold", e.target.value)}
           placeholder="Products Currently Sold (comma-separated)"
           rows={3}
-          className="h-12 min-h-[3rem]"
+          className={`h-12 min-h-[3rem] ${getFieldError('products_currently_sold') ? 'border-red-500' : ''}`}
         />
+        {getFieldError('products_currently_sold') && (
+          <div className="flex items-center gap-1.5 text-xs px-1 text-red-600 dark:text-red-400">
+            <span className="leading-tight">{getFieldError('products_currently_sold')}</span>
+          </div>
+        )}
       </div>
 
       {/* Interior Photo */}
@@ -777,7 +893,7 @@ export function CreateLeadDialog() {
         </div>
 
         <div>
-          <FloatingLabelInput
+          <FormFieldWithValidation
             label="Last Visit Date"
             type="date"
             value={formData.last_visit}
@@ -786,7 +902,7 @@ export function CreateLeadDialog() {
         </div>
 
         <div>
-          <FloatingLabelInput
+          <FormFieldWithValidation
             label="Next Visit Date"
             type="date"
             value={formData.next_visit}
@@ -844,10 +960,19 @@ export function CreateLeadDialog() {
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto sm:max-h-[90vh] sm:overflow-y-auto w-full sm:w-full sm:max-w-2xl left-0 sm:left-[50%] translate-x-0 sm:translate-x-[-50%] top-[50%] sm:top-[50%] translate-y-[-50%] sm:translate-y-[-50%]">
           <DialogHeader>
-            <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
-            <DialogDescription className="text-left">
-              {getStepDescription()}
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
+                <DialogDescription className="text-left">
+                  {getStepDescription()}
+                </DialogDescription>
+              </div>
+              <OfflineStatusIndicator 
+                showSyncButton={false}
+                showExportButton={false}
+                className="ml-4"
+              />
+            </div>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">

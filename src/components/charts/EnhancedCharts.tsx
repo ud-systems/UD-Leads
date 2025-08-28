@@ -139,7 +139,7 @@ export function EnhancedBarChart({ data, title, description, trend, showTitle = 
   showTitle?: boolean;
 }) {
   // Determine if this is a count chart or conversion rate chart
-  const isCountChart = data.length > 0 && data[0].hasOwnProperty('count');
+  const isCountChart = data.length > 0 && Object.prototype.hasOwnProperty.call(data[0], 'count');
   
   return (
     <ChartCard title={title} description={description} trend={trend} showTitle={showTitle}>

@@ -32,9 +32,9 @@ export function DataExportImport() {
   const { data: suppliers } = useSuppliers();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
-  const storeTypeOptions = useStoreTypeOptions();
-  const buyingPowerOptions = useBuyingPowerOptions();
-  const statusOptions = useLeadStatusOptions();
+  const { data: storeTypeOptions = [] } = useStoreTypeOptions();
+  const { data: buyingPowerOptions = [] } = useBuyingPowerOptions();
+  const { data: statusOptions = [] } = useLeadStatusOptions();
   const { isAdmin, isManager, isSalesperson } = useRoleAccess();
 
   // Filter salespeople from users

@@ -64,9 +64,9 @@ export default function Leads() {
   const { isCollapsed, getGridClasses } = useSidebarCollapsed();
   const bulkUpdateLeads = useBulkUpdateLeads();
   const bulkDeleteLeads = useBulkDeleteLeads();
-  const storeTypeOptions = useStoreTypeOptions();
-  const buyingPowerOptions = useBuyingPowerOptions();
-  const statusOptions = useLeadStatusOptions();
+  const { data: storeTypeOptions = [] } = useStoreTypeOptions();
+  const { data: buyingPowerOptions = [] } = useBuyingPowerOptions();
+  const { data: statusOptions = [] } = useLeadStatusOptions();
   const { data: territories = [] } = useTerritories();
   const { data: users = [] } = useUsers();
   const { user: currentUser } = useAuth();

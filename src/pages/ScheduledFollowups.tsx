@@ -263,7 +263,7 @@ export default function ScheduledFollowups() {
               placeholder="Search leads..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 text-base"
+              className="pl-10"
             />
           </div>
 
@@ -273,7 +273,7 @@ export default function ScheduledFollowups() {
             isMobile && !showFilters ? "hidden" : "flex"
           )}>
             <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+              <SelectTrigger className="w-full sm:w-[140px] h-10">
                 <SelectValue placeholder="Store Type" />
               </SelectTrigger>
               <SelectContent>
@@ -287,7 +287,7 @@ export default function ScheduledFollowups() {
             </Select>
 
             <Select value={selectedBuyingPower} onValueChange={setSelectedBuyingPower}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+              <SelectTrigger className="w-full sm:w-[140px] h-10">
                 <SelectValue placeholder="Buying Power" />
               </SelectTrigger>
               <SelectContent>
@@ -299,7 +299,7 @@ export default function ScheduledFollowups() {
             </Select>
 
             <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+              <SelectTrigger className="w-full sm:w-[140px] h-10">
                 <SelectValue placeholder="Territory" />
               </SelectTrigger>
               <SelectContent>
@@ -314,7 +314,7 @@ export default function ScheduledFollowups() {
 
             {!isSalesperson && (
               <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
+                <SelectTrigger className="w-full sm:w-[140px] h-10">
                   <SelectValue placeholder="Salesperson" />
                 </SelectTrigger>
                 <SelectContent>
@@ -333,7 +333,7 @@ export default function ScheduledFollowups() {
                 value={dateRange}
                 onChange={setDateRange}
                 placeholder="Filter by followup date..."
-                className="w-full sm:w-[200px] text-base h-10"
+                className="w-full sm:w-[200px] h-10"
               />
               {dateRange && (
                 <Button
@@ -363,7 +363,7 @@ export default function ScheduledFollowups() {
         </div>
 
         {/* Results Summary */}
-        <div className="flex items-center justify-between text-sm sm:text-base text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             Showing {filteredLeads.length} of {leadsWithFollowups.length} scheduled followups
           </span>
@@ -385,12 +385,12 @@ export default function ScheduledFollowups() {
                   onCheckedChange={handleSelectAll}
                 />
               </th>
-              <th className="text-left p-2 text-base font-semibold">Store Name</th>
-              <th className="text-left p-2 text-base font-semibold">Contact</th>
-              <th className="text-left p-2 text-base font-semibold">Followup Date</th>
-              <th className="text-left p-2 text-base font-semibold">Territory</th>
-              <th className="text-left p-2 text-base font-semibold">Salesperson</th>
-              <th className="text-left p-2 text-base font-semibold">Actions</th>
+              <th className="text-left p-2 text-sm font-semibold">Store Name</th>
+              <th className="text-left p-2 text-sm font-semibold">Contact</th>
+              <th className="text-left p-2 text-sm font-semibold">Followup Date</th>
+              <th className="text-left p-2 text-sm font-semibold">Territory</th>
+              <th className="text-left p-2 text-sm font-semibold">Salesperson</th>
+              <th className="text-left p-2 text-sm font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -425,8 +425,8 @@ export default function ScheduledFollowups() {
                   </td>
                   <td className="p-2">
                     <div>
-                      <div className="font-medium">{lead.store_name}</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <div className="font-medium text-sm">{lead.store_name}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
                         <Store className="h-3 w-3" />
                         {lead.store_type}
                       </div>
@@ -434,13 +434,13 @@ export default function ScheduledFollowups() {
                   </td>
                   <td className="p-2">
                     <div>
-                      <div className="font-medium">{lead.contact_person}</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <div className="font-medium text-sm">{lead.contact_person}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
                         <Phone className="h-3 w-3" />
                         {lead.phone_number}
                       </div>
                       {lead.email && (
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
                           <Mail className="h-3 w-3" />
                           {lead.email}
                         </div>
@@ -451,11 +451,11 @@ export default function ScheduledFollowups() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-blue-500" />
                       <div>
-                        <div className="font-medium">
+                        <div className="font-medium text-sm">
                           {lead.next_visit ? format(new Date(lead.next_visit), 'MMM dd, yyyy') : 'Not set'}
                         </div>
                         {lead.next_visit && (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-xs text-muted-foreground">
                             {format(new Date(lead.next_visit), 'EEEE')}
                           </div>
                         )}
@@ -463,13 +463,13 @@ export default function ScheduledFollowups() {
                     </div>
                   </td>
                   <td className="p-2">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 text-sm">
                       <MapPin className="h-3 w-3" />
                       {territories?.find(t => t.id === lead.territory_id)?.city || 'Unknown'}
                     </div>
                   </td>
                   <td className="p-2">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 text-sm">
                       <Users className="h-3 w-3" />
                       {lead.salesperson}
                     </div>
@@ -527,8 +527,8 @@ export default function ScheduledFollowups() {
               <div key={lead.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/leads/${lead.id}`)}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-base mb-1">{lead.store_name}</h3>
-                    <p className="text-sm text-muted-foreground">{lead.contact_person}</p>
+                    <h3 className="font-semibold text-sm mb-1">{lead.store_name}</h3>
+                    <p className="text-xs text-muted-foreground">{lead.contact_person}</p>
                   </div>
                   <Checkbox
                     checked={selectedLeads.includes(lead.id)}
@@ -537,7 +537,7 @@ export default function ScheduledFollowups() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-blue-500" />
                     <span className="font-medium">

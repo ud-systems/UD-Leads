@@ -33,9 +33,9 @@ export function DataManagement() {
   const updateSystemSetting = useUpdateSystemSetting();
 
   // Get database-driven options
-  const leadStatuses = useLeadStatusOptions();
-  const buyingPowerLevels = useBuyingPowerOptions();
-  const storeTypeOptions = useStoreTypeOptions();
+  const { data: leadStatuses = [] } = useLeadStatusOptions();
+  const { data: buyingPowerLevels = [] } = useBuyingPowerOptions();
+  const { data: storeTypeOptions = [] } = useStoreTypeOptions();
   const { data: statusColors = [] } = useStatusColors();
   const createStatusColor = useCreateStatusColor();
   const updateStatusColor = useUpdateStatusColor();
@@ -128,7 +128,7 @@ export function DataManagement() {
             });
           }
           break;
-        case "weeklySpend":
+        case "weeklySpend": {
           // Update system settings for weekly spend levels
           const newWeeklySpend = [...buyingPowerLevels, formData.name];
           await updateSystemSetting.mutateAsync({
@@ -137,7 +137,8 @@ export function DataManagement() {
             description: 'Available weekly spend levels'
           });
           break;
-        case "storeType":
+        }
+        case "storeType": {
           // Update system settings for store types
           const newStoreTypes = [...storeTypeOptions, formData.name];
           await updateSystemSetting.mutateAsync({
@@ -146,13 +147,15 @@ export function DataManagement() {
             description: 'Available store type options'
           });
           break;
-        case "territory":
+        }
+        case "territory": {
           await createTerritory.mutateAsync({
             city: formData.city,
             country: formData.country,
             status: formData.status
           });
           break;
+        }
       }
       
       toast({
@@ -230,7 +233,7 @@ export function DataManagement() {
   const handleDelete = async (item: any, type: string) => {
     try {
       switch (type) {
-        case "status":
+        case "status": {
           const newStatuses = leadStatuses.filter((_, index) => index !== item.index);
           await updateSystemSetting.mutateAsync({
             key: 'lead_status_options',
@@ -244,7 +247,8 @@ export function DataManagement() {
             await deleteStatusColor.mutateAsync(existingColor.id);
           }
           break;
-        case "weeklySpend":
+        }
+        case "weeklySpend": {
           const newWeeklySpend = buyingPowerLevels.filter((_, index) => index !== item.index);
           await updateSystemSetting.mutateAsync({
             key: 'weekly_spend_options',
@@ -252,7 +256,8 @@ export function DataManagement() {
             description: 'Available weekly spend levels'
           });
           break;
-        case "storeType":
+        }
+        case "storeType": {
           const newStoreTypes = storeTypeOptions.filter((_, index) => index !== item.index);
           await updateSystemSetting.mutateAsync({
             key: 'store_type_options',
@@ -260,9 +265,11 @@ export function DataManagement() {
             description: 'Available store type options'
           });
           break;
-        case "territory":
+        }
+        case "territory": {
           await deleteTerritory.mutateAsync(item.id);
           break;
+        }
       }
       toast({
         title: "Success",

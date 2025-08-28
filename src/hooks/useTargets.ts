@@ -120,24 +120,28 @@ export function calculateTargetPeriod(targetType: 'daily' | 'weekly' | 'monthly'
   let periodEnd: Date;
 
   switch (targetType) {
-    case 'daily':
+    case 'daily': {
       periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       periodEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
       break;
-    case 'weekly':
+    }
+    case 'weekly': {
       const dayOfWeek = now.getDay();
       const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToSubtract);
       periodEnd = new Date(periodStart.getTime() + 6 * 24 * 60 * 60 * 1000 + 23 * 60 * 60 * 1000 + 59 * 60 * 1000 + 59 * 1000);
       break;
-    case 'monthly':
+    }
+    case 'monthly': {
       periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
       periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
       break;
-    case 'yearly':
+    }
+    case 'yearly': {
       periodStart = new Date(now.getFullYear(), 0, 1);
       periodEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
       break;
+    }
   }
 
   return { periodStart, periodEnd };

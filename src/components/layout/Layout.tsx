@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EnhancedSearch } from "@/components/ui/enhanced-search";
 
 import { useProfile } from "@/hooks/useProfile";
+import { OfflineStatusIndicator } from "@/components/ui/offline-status-indicator";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -67,13 +68,13 @@ export function Layout({ children }: LayoutProps) {
       {/* Enhanced Mobile Header */}
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b border-border/50 shadow-sm">
-          <div className="flex items-center justify-between px-3 py-2 h-12">
+          <div className="flex items-center justify-between px-3 py-3 h-14">
             {/* Menu Button */}
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleSidebar}
-              className="h-8 w-8 p-0 rounded-lg hover:bg-accent mobile-touch-target"
+              className="h-8 w-8 p-0 rounded-lg hover:bg-accent flex-shrink-0"
             >
               {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
@@ -86,13 +87,20 @@ export function Layout({ children }: LayoutProps) {
               />
             </div>
 
-            {/* Right Side - Profile */}
-            <div className="flex items-center gap-2">
+            {/* Right Side - Profile & Offline Status */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Offline Status Indicator */}
+              <OfflineStatusIndicator 
+                showSyncButton={true}
+                showExportButton={true}
+                className="hidden sm:flex"
+              />
+              
               {/* User Avatar */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 rounded-lg hover:bg-accent mobile-touch-target"
+                className="h-8 w-8 p-0 rounded-lg hover:bg-accent flex-shrink-0"
                 onClick={() => navigate('/profile')}
                 title={`${profile?.name || user?.email || 'User'} Profile`}
               >
@@ -134,7 +142,7 @@ export function Layout({ children }: LayoutProps) {
       <div
         className={`h-screen flex flex-col transition-all duration-300 ${
           isMobile
-            ? 'w-full pt-12' // Reduced top padding for mobile header
+            ? 'w-full pt-14' // Updated top padding for mobile header
             : isSmallDesktop
             ? sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64' // Fixed widths for small desktop
             : sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-80' // Larger widths for larger screens

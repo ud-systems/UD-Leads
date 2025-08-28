@@ -33,7 +33,7 @@ export default function LeadDetails() {
   const { mutate: updateLeadMutation, isPending } = useUpdateLead();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
-  const storeTypeOptions = useStoreTypeOptions();
+  const { data: storeTypeOptions = [] } = useStoreTypeOptions();
   const { toast } = useToast();
   const [lead, setLead] = useState<any>(null);
   

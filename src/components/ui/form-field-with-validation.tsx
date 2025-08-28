@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FloatingLabelInput } from "./floating-label-input";
+import { SelectTrigger } from "./select";
 
 interface FormFieldWithValidationProps {
   label: string;
@@ -91,7 +92,16 @@ export function SelectFieldWithValidation({
   return (
     <div className={cn("space-y-1", className)}>
       <div className="relative">
-        {children}
+        {React.cloneElement(children as React.ReactElement, {
+          children: React.Children.map((children as React.ReactElement).props.children, (child) => {
+            if (React.isValidElement(child) && child.type === SelectTrigger) {
+              return React.cloneElement(child, {
+                className: cn(child.props.className, finalError ? 'border-red-500' : '')
+              });
+            }
+            return child;
+          })
+        })}
       </div>
       
       {(finalError || success) && (

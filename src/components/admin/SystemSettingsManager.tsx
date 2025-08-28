@@ -79,8 +79,8 @@ export function SystemSettingsManager() {
     }
   };
 
-  const statusOptions = settings?.find(s => s.setting_key === 'retailer_status_options');
-  const buyingPowerOptions = settings?.find(s => s.setting_key === 'buying_power_options');
+  const statusOptions = settings?.find(s => s.setting_key === 'lead_status_options');
+  const weeklySpendOptions = settings?.find(s => s.setting_key === 'weekly_spend_options');
 
   const parseJsonSetting = (setting: any) => {
     try {
@@ -91,7 +91,7 @@ export function SystemSettingsManager() {
   };
 
   const statusList = statusOptions ? parseJsonSetting(statusOptions) : [];
-  const buyingPowerList = buyingPowerOptions ? parseJsonSetting(buyingPowerOptions) : [];
+  const weeklySpendList = weeklySpendOptions ? parseJsonSetting(weeklySpendOptions) : [];
 
   return (
     <div className="space-y-6">
@@ -105,8 +105,8 @@ export function SystemSettingsManager() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="statuses">Retailer Statuses</TabsTrigger>
-          <TabsTrigger value="buying-power">Buying Power</TabsTrigger>
+          <TabsTrigger value="statuses">Lead Statuses</TabsTrigger>
+          <TabsTrigger value="weekly-spend">Weekly Spend</TabsTrigger>
           <TabsTrigger value="all-settings">All Settings</TabsTrigger>
         </TabsList>
 
@@ -145,27 +145,27 @@ export function SystemSettingsManager() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
-                  Buying Power Options
+                  Weekly Spend Options
                 </CardTitle>
                 <CardDescription>
-                  {buyingPowerList.length} buying power levels configured
+                  {weeklySpendList.length} weekly spend levels configured
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {buyingPowerList.map((power: string, index: number) => (
+                  {weeklySpendList.map((spend: string, index: number) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                      <span>{power}</span>
+                      <span>{spend}</span>
                     </div>
                   ))}
                 </div>
                 <Button 
                   variant="outline" 
                   className="w-full mt-4"
-                  onClick={() => handleEdit(buyingPowerOptions)}
+                  onClick={() => handleEdit(weeklySpendOptions)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
-                  Edit Buying Power Options
+                  Edit Weekly Spend Options
                 </Button>
               </CardContent>
             </Card>
@@ -175,7 +175,7 @@ export function SystemSettingsManager() {
         <TabsContent value="statuses" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Retailer Status Options</CardTitle>
+              <CardTitle>Lead Status Options</CardTitle>
               <CardDescription>
                 Manage the available status options for leads
               </CardDescription>
@@ -205,18 +205,18 @@ export function SystemSettingsManager() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="buying-power" className="space-y-6">
+        <TabsContent value="weekly-spend" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Buying Power Options</CardTitle>
+              <CardTitle>Weekly Spend Options</CardTitle>
               <CardDescription>
-                Manage the available buying power levels for leads
+                Manage the available weekly spend levels for leads
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Current Buying Power Options:</span>
+                  <span className="text-sm font-medium">Current Weekly Spend Options:</span>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -304,7 +304,7 @@ export function SystemSettingsManager() {
                 id="key"
                 value={formData.key}
                 onChange={(e) => setFormData({ ...formData, key: e.target.value })}
-                placeholder="e.g., retailer_status_options"
+                                    placeholder="e.g., lead_status_options"
                 disabled={!!editingSetting}
               />
             </div>

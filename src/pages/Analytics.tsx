@@ -12,7 +12,11 @@ import { useTerritories } from "@/hooks/useTerritories";
 import { useUsers } from "@/hooks/useUsers";
 import { useTargetAchievements } from "@/hooks/useTargets";
 import { useLeadStatusOptions } from "@/hooks/useSystemSettings";
+import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount } from "@/hooks/useConversionRules";
 import { EnhancedLineChart, EnhancedBarChart, EnhancedPieChart } from "@/components/charts/EnhancedCharts";
+import { WeeklySpendAreaChart } from "@/components/charts/WeeklySpendAreaChart";
+import { StoreTypeAreaChart } from "@/components/charts/StoreTypeAreaChart";
+import { StatCardsCarousel } from "@/components/ui/stat-cards-carousel";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -78,7 +82,10 @@ export default function Analytics() {
   }, [leads, userRole, currentUser, dateRange]);
 
   // Key Metrics - Get actual status values from database
-  const leadStatusOptions = useLeadStatusOptions();
+  const { data: leadStatusOptions = [] } = useLeadStatusOptions();
+  const { data: conversionHistory = [] } = useConversionHistory(
+    roleFilteredLeads.map(lead => lead.id)
+  );
   
   const keyMetrics = useMemo(() => {
     const totalLeads = roleFilteredLeads.length;
@@ -89,9 +96,11 @@ export default function Analytics() {
       return acc;
     }, {} as Record<string, number>);
     
-    // Calculate conversion rate based on 'Active - Registered' status
-    const activeLeads = statusCounts['Active - Registered'] || 0;
-    const conversionRate = totalLeads > 0 ? ((activeLeads / totalLeads) * 100) : 0;
+    // Calculate conversion rate using conversion history
+    const conversionRate = calculateConversionRate(roleFilteredLeads, conversionHistory);
+    
+    // Calculate converted leads count
+    const convertedLeads = getConvertedLeadsCount(roleFilteredLeads, conversionHistory);
     
     // Weekly spend distribution
     const highValueLeads = roleFilteredLeads.filter(l => l.weekly_spend === '£10,000+').length;
@@ -106,30 +115,54 @@ export default function Analytics() {
       mediumValueLeads,
       lowValueLeads
     };
+  }, [roleFilteredLeads, conversionHistory, leadStatusOptions]);
+
+  // Weekly Spend Distribution - Area Chart Data
+  const weeklySpendAreaData = useMemo(() => {
+    const spendRanges = [
+      'Less than £1000',
+      '£1000 - £3000', 
+      '£3000 - £5000',
+      '£5000 - £9999',
+      '£10,000+'
+    ];
+    
+    const totalLeads = roleFilteredLeads.length;
+    
+    return spendRanges.map(range => {
+      const count = roleFilteredLeads.filter(l => l.weekly_spend === range).length;
+      const percentage = totalLeads > 0 ? (count / totalLeads) * 100 : 0;
+      
+      return {
+        spendRange: range,
+        count,
+        percentage
+      };
+    }).filter(item => item.count > 0); // Only show ranges with data
   }, [roleFilteredLeads]);
 
-  // Weekly Spend Distribution - Fixed legend issue by using 'name' instead of 'label'
-  const weeklySpendData = useMemo(() => [
-    { id: 'High Value', name: 'High Value (£10,000+)', value: keyMetrics.highValueLeads, color: '#10b981' },
-    { id: 'Medium Value', name: 'Medium Value (£5000-£9999)', value: keyMetrics.mediumValueLeads, color: '#f59e0b' },
-    { id: 'Low Value', name: 'Low Value (<£3000)', value: keyMetrics.lowValueLeads, color: '#ef4444' }
-  ], [keyMetrics]);
-
-  // Store Type Analysis - Simple count per store type (no conversion rates)
-  const storeTypeData = useMemo(() => {
+  // Store Type Analysis - Area Chart Data
+  const storeTypeAreaData = useMemo(() => {
     const storeTypeStats = roleFilteredLeads.reduce((acc, lead) => {
       const type = lead.store_type || 'Unknown';
       if (!acc[type]) {
-        acc[type] = 0;
+        acc[type] = { count: 0, active: 0 };
       }
-      acc[type]++;
+      acc[type].count++;
+      if (lead.status === 'Active - Registered' || lead.status === 'Active - Buyer') {
+        acc[type].active++;
+      }
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { count: number; active: number }>);
+
+    const totalLeads = roleFilteredLeads.length;
 
     return Object.entries(storeTypeStats)
-      .map(([type, count]: [string, number]) => ({
-        name: type,
-        count: count
+      .map(([type, stats]: [string, { count: number; active: number }]) => ({
+        storeType: type,
+        count: stats.count,
+        percentage: totalLeads > 0 ? (stats.count / totalLeads) * 100 : 0,
+        conversionRate: stats.count > 0 ? (stats.active / stats.count) * 100 : 0
       }))
       .sort((a, b) => b.count - a.count);
   }, [roleFilteredLeads]);
@@ -184,13 +217,42 @@ export default function Analytics() {
 
 
 
-  // Store Type Performance - Simple count bar chart
-  const storeTypeChartData = useMemo(() => {
-    return storeTypeData.map(item => ({
-      storeType: item.name,
-      count: item.count
-    }));
-  }, [storeTypeData]);
+  // Dynamic Stat Cards based on database status options
+  const statCards = useMemo(() => {
+    const cards = [
+      {
+        title: "Total Leads",
+        value: keyMetrics.totalLeads,
+        description: dateRange.from && dateRange.to ? 
+          `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}` : 
+          'All time',
+        icon: <Users className="h-4 w-4 text-muted-foreground" />
+      },
+      {
+        title: "Conversion Rate",
+        value: `${keyMetrics.conversionRate.toFixed(1)}%`,
+        description: `${keyMetrics.statusCounts['Active - Registered'] || 0} of ${keyMetrics.totalLeads} leads`,
+        icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />
+      }
+    ];
+
+    // Add dynamic status cards from database
+    leadStatusOptions.forEach(status => {
+      const count = keyMetrics.statusCounts[status] || 0;
+      if (count > 0) {
+        cards.push({
+          title: status,
+          value: count,
+          description: `${status.toLowerCase()} leads`,
+          icon: status.includes('Active') ? 
+            <CheckCircle className="h-4 w-4 text-muted-foreground" /> : 
+            <Users className="h-4 w-4 text-muted-foreground" />
+        });
+      }
+    });
+
+    return cards;
+  }, [keyMetrics, leadStatusOptions, dateRange]);
 
   // Products Analysis
   const productsData = useMemo(() => {
@@ -264,63 +326,8 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.totalLeads}</div>
-            <p className="text-xs text-muted-foreground">
-              {dateRange.from && dateRange.to ? 
-                `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}` : 
-                'All time'
-              }
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Prospect</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.statusCounts['New Prospect'] || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              New prospect leads
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active - Registered</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.statusCounts['Active - Registered'] || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Active registered leads
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{keyMetrics.conversionRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              {keyMetrics.statusCounts['Active - Registered'] || 0} of {keyMetrics.totalLeads} leads
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Dynamic Stat Cards with Carousel */}
+      <StatCardsCarousel cards={statCards} />
 
       {/* Charts Section */}
       <Tabs defaultValue="leads" className="w-full">
@@ -330,43 +337,11 @@ export default function Analytics() {
         </TabsList>
         <TabsContent value="leads">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Weekly Spend Distribution */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Weekly Spend Distribution
-                </CardTitle>
-                <CardDescription>Leads categorized by weekly spend</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EnhancedPieChart
-                  data={weeklySpendData}
-                  title="Weekly Spend"
-                  description="Distribution of leads by weekly spend"
-                  showTitle={false}
-                />
-              </CardContent>
-            </Card>
+            {/* Weekly Spend Distribution - Area Chart */}
+            <WeeklySpendAreaChart data={weeklySpendAreaData} />
 
-            {/* Store Type Performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Store Type Performance
-                </CardTitle>
-                <CardDescription>Number of stores by store type</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EnhancedBarChart
-                  data={storeTypeChartData}
-                  title="Store Type Count"
-                  description="Number of stores by store type"
-                  showTitle={false}
-                />
-              </CardContent>
-            </Card>
+            {/* Store Type Performance - Area Chart */}
+            <StoreTypeAreaChart data={storeTypeAreaData} />
           </div>
         </TabsContent>
         <TabsContent value="conversions">

@@ -110,21 +110,26 @@ function processLeadsData(leads: any[], granularity: 'day' | 'week' | 'month' | 
     let key: string;
 
     switch (granularity) {
-      case 'day':
+      case 'day': {
         key = date.toISOString().split('T')[0]; // YYYY-MM-DD
         break;
-      case 'week':
+      }
+      case 'week': {
         const weekStart = getWeekStart(date);
         key = weekStart.toISOString().split('T')[0];
         break;
-      case 'month':
+      }
+      case 'month': {
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
         break;
-      case 'year':
+      }
+      case 'year': {
         key = date.getFullYear().toString();
         break;
-      default:
+      }
+      default: {
         key = date.toISOString().split('T')[0];
+      }
     }
 
     groupedData.set(key, (groupedData.get(key) || 0) + 1);
@@ -144,20 +149,25 @@ function processLeadsData(leads: any[], granularity: 'day' | 'week' | 'month' | 
     // Format the date for display
     let displayDate: string;
     switch (granularity) {
-      case 'day':
+      case 'day': {
         displayDate = key; // Keep as YYYY-MM-DD
         break;
-      case 'week':
+      }
+      case 'week': {
         displayDate = key; // Keep as YYYY-MM-DD (start of week)
         break;
-      case 'month':
+      }
+      case 'month': {
         displayDate = key; // Keep as YYYY-MM
         break;
-      case 'year':
+      }
+      case 'year': {
         displayDate = key; // Keep as YYYY
         break;
-      default:
+      }
+      default: {
         displayDate = key;
+      }
     }
 
     result.push({

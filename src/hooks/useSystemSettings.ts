@@ -6,15 +6,8 @@ export type SystemSetting = Tables<'system_settings'>;
 export type SystemSettingInsert = TablesInsert<'system_settings'>;
 export type SystemSettingUpdate = TablesUpdate<'system_settings'>;
 
-// Default options if not found in database
-const DEFAULT_STATUS_OPTIONS = [
-  "New Prospect",
-  "In Discussion", 
-  "Trial Order",
-  "Converted",
-  "Visited - Follow-Up Required",
-  "Visited - No Interest"
-];
+// Default options if not found in database - will be overridden by database values
+const DEFAULT_STATUS_OPTIONS: string[] = [];
 
 const DEFAULT_WEEKLY_SPEND_OPTIONS = [
   "Less than £1000",
@@ -72,91 +65,121 @@ export const useSystemSettings = () => {
 };
 
 export const useLeadStatusOptions = () => {
-  const { data: settings } = useSystemSettings();
+  const { data: settings, isLoading, error } = useSystemSettings();
   
   const statusSetting = settings?.find(s => s.setting_key === 'lead_status_options');
   
+  let statusOptions = DEFAULT_STATUS_OPTIONS;
+  
   if (statusSetting) {
     try {
-      return JSON.parse(statusSetting.setting_value);
+      statusOptions = JSON.parse(statusSetting.setting_value);
     } catch (error) {
       console.error('Error parsing lead status options:', error);
-      return DEFAULT_STATUS_OPTIONS;
+      statusOptions = DEFAULT_STATUS_OPTIONS;
     }
   }
   
-  return DEFAULT_STATUS_OPTIONS;
+  return {
+    data: statusOptions,
+    isLoading,
+    error
+  };
 };
 
 export const useWeeklySpendOptions = () => {
-  const { data: settings } = useSystemSettings();
+  const { data: settings, isLoading, error } = useSystemSettings();
   
   const weeklySpendSetting = settings?.find(s => s.setting_key === 'weekly_spend_options');
   
+  let weeklySpendOptions = DEFAULT_WEEKLY_SPEND_OPTIONS;
+  
   if (weeklySpendSetting) {
     try {
-      return JSON.parse(weeklySpendSetting.setting_value);
+      weeklySpendOptions = JSON.parse(weeklySpendSetting.setting_value);
     } catch (error) {
       console.error('Error parsing weekly spend options:', error);
-      return DEFAULT_WEEKLY_SPEND_OPTIONS;
+      weeklySpendOptions = DEFAULT_WEEKLY_SPEND_OPTIONS;
     }
   }
   
-  return DEFAULT_WEEKLY_SPEND_OPTIONS;
+  return {
+    data: weeklySpendOptions,
+    isLoading,
+    error
+  };
 };
 
 // Legacy hook for backward compatibility
 export const useBuyingPowerOptions = useWeeklySpendOptions;
 
 export const useStoreTypeOptions = () => {
-  const { data: settings } = useSystemSettings();
+  const { data: settings, isLoading, error } = useSystemSettings();
   
   const storeTypeSetting = settings?.find(s => s.setting_key === 'store_type_options');
   
+  let storeTypeOptions = DEFAULT_STORE_TYPE_OPTIONS;
+  
   if (storeTypeSetting) {
     try {
-      return JSON.parse(storeTypeSetting.setting_value);
+      storeTypeOptions = JSON.parse(storeTypeSetting.setting_value);
     } catch (error) {
       console.error('Error parsing store type options:', error);
-      return DEFAULT_STORE_TYPE_OPTIONS;
+      storeTypeOptions = DEFAULT_STORE_TYPE_OPTIONS;
     }
   }
   
-  return DEFAULT_STORE_TYPE_OPTIONS;
+  return {
+    data: storeTypeOptions,
+    isLoading,
+    error
+  };
 };
 
 export const useOwnsShopOrWebsiteOptions = () => {
-  const { data: settings } = useSystemSettings();
+  const { data: settings, isLoading, error } = useSystemSettings();
   
   const ownsShopSetting = settings?.find(s => s.setting_key === 'owns_shop_or_website_options');
   
+  let ownsShopOptions = DEFAULT_OWNS_SHOP_OR_WEBSITE_OPTIONS;
+  
   if (ownsShopSetting) {
     try {
-      return JSON.parse(ownsShopSetting.setting_value);
+      ownsShopOptions = JSON.parse(ownsShopSetting.setting_value);
     } catch (error) {
       console.error('Error parsing owns shop or website options:', error);
-      return DEFAULT_OWNS_SHOP_OR_WEBSITE_OPTIONS;
+      ownsShopOptions = DEFAULT_OWNS_SHOP_OR_WEBSITE_OPTIONS;
     }
   }
   
-  return DEFAULT_OWNS_SHOP_OR_WEBSITE_OPTIONS;
+  return {
+    data: ownsShopOptions,
+    isLoading,
+    error
+  };
 };
 
 export const useNumberOfStoresOptions = () => {
-  const { data: settings } = useSystemSettings();
+  const { data: settings, isLoading, error } = useSystemSettings();
   
   const numberOfStoresSetting = settings?.find(s => s.setting_key === 'number_of_stores_options');
   
+  let numberOfStoresOptions = DEFAULT_NUMBER_OF_STORES_OPTIONS;
+  
   if (numberOfStoresSetting) {
     try {
-      return JSON.parse(numberOfStoresSetting.setting_value);
+      numberOfStoresOptions = JSON.parse(numberOfStoresSetting.setting_value);
     } catch (error) {
       console.error('Error parsing number of stores options:', error);
-      return DEFAULT_NUMBER_OF_STORES_OPTIONS;
+      numberOfStoresOptions = DEFAULT_NUMBER_OF_STORES_OPTIONS;
     }
   }
   
-  return DEFAULT_NUMBER_OF_STORES_OPTIONS;
+  return {
+    data: numberOfStoresOptions,
+    isLoading,
+    error
+  };
 };
 
 export const useUpdateSystemSetting = () => {

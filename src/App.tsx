@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, UNSAFE_future } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -47,7 +47,7 @@ function AppContent() {
   }
 
   return (
-    <Router>
+          <Router future={{ v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
         <Route

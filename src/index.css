@@ -1271,3 +1271,28 @@ All colors MUST be HSL.
     min-width: 280px !important;
   }
 }
+
+/* Custom scrollbar hiding for carousel */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 768px) {
+  .mobile-header-stack {
+    @apply flex-col items-start gap-4;
+  }
+  
+  .mobile-filters-stack {
+    @apply flex-col w-full;
+  }
+  
+  .mobile-filter-full {
+    @apply w-full;
+  }
+}
