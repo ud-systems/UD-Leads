@@ -74,6 +74,7 @@ export default function Analytics() {
       const selectedUser = users.find((u: any) => u.id === selectedSalesperson);
       if (selectedUser) {
         filteredLeads = filteredLeads.filter(lead => lead.salesperson === selectedUser.email);
+        console.log('Filtering for salesperson:', selectedUser.email, 'Filtered leads count:', filteredLeads.length);
       }
     }
     
@@ -260,7 +261,7 @@ export default function Analytics() {
     });
 
     return cards;
-  }, [keyMetrics, leadStatusOptions, dateRange]);
+  }, [keyMetrics, leadStatusOptions, dateRange, selectedSalesperson]);
 
   // Products Analysis
   const productsData = useMemo(() => {
