@@ -26,9 +26,22 @@ export function StatCardsCarousel({ cards, className }: StatCardsCarouselProps) 
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
 
-  // Show arrows only if there are more than 6 cards
-  const shouldShowArrows = cards.length > 6;
-  const cardsPerView = 6;
+  // Check if we're on mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Show arrows if more than 6 cards on desktop, or more than 1 card on mobile
+  const shouldShowArrows = isMobile ? cards.length > 1 : cards.length > 6;
+  const cardsPerView = isMobile ? 1 : 6;
 
   useEffect(() => {
     setShowLeftArrow(currentIndex > 0);
@@ -77,9 +90,10 @@ export function StatCardsCarousel({ cards, className }: StatCardsCarouselProps) 
   }, []);
 
   if (!shouldShowArrows) {
-    // If 6 or fewer cards, show them in a regular grid
+    // If no carousel needed, show them in a regular grid
+    const gridCols = isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6";
     return (
-      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4", className)}>
+      <div className={cn(`grid ${gridCols} gap-4`, className)}>
         {cards.map((card, index) => (
           <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -137,7 +151,10 @@ export function StatCardsCarousel({ cards, className }: StatCardsCarouselProps) 
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {cards.map((card, index) => (
-          <Card key={index} className="flex-shrink-0 w-full max-w-[200px]">
+          <Card key={index} className={cn(
+            "flex-shrink-0",
+            isMobile ? "w-full" : "w-full max-w-[200px]"
+          )}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium truncate">{card.title}</CardTitle>
               {card.icon}

@@ -56,7 +56,7 @@ export default function Analytics() {
     refetchTargets();
   };
 
-  // Filter data based on user role and date range
+  // Filter data based on user role, date range, and selected salesperson
   const roleFilteredLeads = useMemo(() => {
     if (!leads || !currentUser) return [];
     
@@ -69,6 +69,14 @@ export default function Analytics() {
       filteredLeads = leads.filter(lead => lead.manager_id === currentUser.id);
     }
     
+    // Apply selected salesperson filtering (for admins/managers)
+    if (!isSalesperson && selectedSalesperson !== "all") {
+      const selectedUser = users.find((u: any) => u.id === selectedSalesperson);
+      if (selectedUser) {
+        filteredLeads = filteredLeads.filter(lead => lead.salesperson === selectedUser.email);
+      }
+    }
+    
     // Apply date range filtering
     if (dateRange.from && dateRange.to) {
       filteredLeads = filteredLeads.filter(lead => {
@@ -79,7 +87,7 @@ export default function Analytics() {
     }
     
     return filteredLeads;
-  }, [leads, userRole, currentUser, dateRange]);
+  }, [leads, userRole, currentUser, dateRange, selectedSalesperson, users, isSalesperson]);
 
   // Key Metrics - Get actual status values from database
   const { data: leadStatusOptions = [] } = useLeadStatusOptions();
