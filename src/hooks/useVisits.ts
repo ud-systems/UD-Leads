@@ -175,6 +175,32 @@ export const useCreateVisit = () => {
         console.error('Error creating visit:', error);
         throw error;
       }
+
+      // If visit has notes, create a separate lead note
+      if (visit.notes && visit.notes.trim() && visit.lead_id) {
+        try {
+          const { error: noteError } = await supabase
+            .from('lead_notes')
+            .insert({
+              lead_id: visit.lead_id,
+              note_text: visit.notes.trim(),
+              note_type: 'visit',
+              visit_id: data.id,
+              salesperson_name: visit.salesperson || 'Unknown',
+              created_by: user?.id || null,
+              created_by_name: user?.email || 'Unknown',
+            });
+
+          if (noteError) {
+            console.error('Error creating lead note from visit:', noteError);
+          } else {
+            console.log('Successfully created lead note from visit');
+          }
+        } catch (error) {
+          console.error('Error processing visit notes:', error);
+          // Don't throw error here - visit was created successfully
+        }
+      }
       
       return data;
     },
@@ -182,6 +208,8 @@ export const useCreateVisit = () => {
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       // Invalidate visit count queries for leads
       queryClient.invalidateQueries({ queryKey: ['leads', 'visitCount'] });
+      // Invalidate leads to refresh notes
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
   });
 };

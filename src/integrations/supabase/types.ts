@@ -286,6 +286,47 @@ export interface Database {
           updated_at?: string | null
         }
       }
+      lead_notes: {
+        Row: {
+          id: string
+          lead_id: string
+          note_text: string
+          note_type: string | null
+          created_by: string | null
+          created_by_name: string | null
+          created_at: string | null
+          updated_at: string | null
+          visit_id: string | null
+          salesperson_name: string | null
+          followup_id: string | null
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          note_text: string
+          note_type?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          visit_id?: string | null
+          salesperson_name?: string | null
+          followup_id?: string | null
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          note_text?: string
+          note_type?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          visit_id?: string | null
+          salesperson_name?: string | null
+          followup_id?: string | null
+        }
+      }
       system_settings: {
         Row: {
           id: string

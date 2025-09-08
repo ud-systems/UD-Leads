@@ -14,9 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLeads, useUpdateLead, useLeadVisitCount } from "@/hooks/useLeads";
-import { useStoreTypeOptions } from "@/hooks/useSystemSettings";
+import { useStoreTypeOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
+import { useLeadNotes, useCreateLeadNote } from "@/hooks/useLeadNotes";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/useTheme";
 import { LeadPhotoDisplay } from "@/components/leads/LeadPhotoDisplay";
@@ -34,11 +35,16 @@ export default function LeadDetails() {
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
   const { data: storeTypeOptions = [] } = useStoreTypeOptions();
+  const { data: leadStatusOptions = [] } = useLeadStatusOptions();
   const { toast } = useToast();
   const [lead, setLead] = useState<any>(null);
   
   // Get visit count for the current lead
   const { data: visitCount = 0 } = useLeadVisitCount(id || '');
+  
+  // Get lead notes
+  const { data: leadNotes = [], isLoading: notesLoading } = useLeadNotes(id || '');
+  const { mutate: createNote, isPending: isCreatingNote } = useCreateLeadNote();
   
   // Filter users with salesperson role
   const salespeople = users.filter(user => (user as any).role === 'salesperson');
@@ -47,7 +53,6 @@ export default function LeadDetails() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [comments, setComments] = useState<Array<{id: string, text: string, user: string, timestamp: string}>>([]);
   const [newComment, setNewComment] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -77,16 +82,6 @@ export default function LeadDetails() {
     if (leads && id) {
       const foundLead = leads.find(l => l.id === id);
       setLead(foundLead);
-      
-      // Initialize comments with the notes field if it exists
-      if (foundLead?.notes) {
-        setComments([{
-          id: 'initial-note',
-          text: foundLead.notes,
-          user: 'System',
-          timestamp: foundLead.created_at || new Date().toISOString()
-        }]);
-      }
     }
   }, [leads, id]);
 
@@ -107,15 +102,28 @@ export default function LeadDetails() {
 
   // Comments functions
   const addComment = () => {
-    if (newComment.trim()) {
-      const comment = {
-        id: Date.now().toString(),
-        text: newComment.trim(),
-        user: "Current User", // This should come from auth context
-        timestamp: new Date().toISOString()
-      };
-      setComments(prev => [comment, ...prev]);
-      setNewComment("");
+    if (newComment.trim() && id) {
+      createNote({
+        lead_id: id,
+        note_text: newComment.trim(),
+        note_type: 'general'
+      }, {
+        onSuccess: () => {
+          setNewComment("");
+          toast({
+            title: "Note added",
+            description: "Your note has been added successfully.",
+          });
+        },
+        onError: (error) => {
+          console.error('Error adding note:', error);
+          toast({
+            title: "Error",
+            description: "Failed to add note. Please try again.",
+            variant: "destructive",
+          });
+        }
+      });
     }
   };
 
@@ -694,12 +702,10 @@ export default function LeadDetails() {
                     field="status" 
                     value={lead.status || ""} 
                     type="select"
-                    options={[
-                      { value: "new", label: "New" },
-                      { value: "prospect", label: "Prospect" },
-                      { value: "active", label: "Active" },
-                      { value: "inactive", label: "Inactive" }
-                    ]}
+                    options={leadStatusOptions.map(status => ({ 
+                      value: status, 
+                      label: status 
+                    }))}
                   />
                 </div>
               </div>
@@ -821,41 +827,56 @@ export default function LeadDetails() {
             />
             <Button 
               onClick={addComment} 
-              disabled={!newComment.trim()}
+              disabled={!newComment.trim() || isCreatingNote}
               className="self-end h-10 px-4"
             >
-              <Send className="h-4 w-4 mr-2" />
-              Send
+              {isCreatingNote ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              {isCreatingNote ? 'Adding...' : 'Send'}
             </Button>
           </div>
 
           {/* Display comments */}
           <div className="space-y-4">
-            {comments.length === 0 ? (
+            {notesLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                <p className="text-muted-foreground">Loading notes...</p>
+              </div>
+            ) : leadNotes.length === 0 ? (
               <div className="text-center py-8">
                 <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No comments yet. Be the first to add one!</p>
               </div>
             ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className="border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 transition-colors">
+              leadNotes.map((note) => (
+                <div key={note.id} className="border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium text-primary">
-                          {comment.user.charAt(0).toUpperCase()}
+                          {note.created_by_name?.charAt(0).toUpperCase() || 'U'}
                         </span>
                       </div>
-                      <span className="font-semibold text-sm">{comment.user}</span>
-                      {comment.id === 'initial-note' && (
-                        <Badge variant="secondary" className="text-xs">Initial Note</Badge>
+                      <span className="font-semibold text-sm">{note.created_by_name || 'Unknown'}</span>
+                      {note.note_type === 'visit' && (
+                        <Badge variant="secondary" className="text-xs">Visit Note</Badge>
+                      )}
+                      {note.note_type === 'followup' && (
+                        <Badge variant="outline" className="text-xs">Follow-up</Badge>
+                      )}
+                      {note.note_type === 'system' && (
+                        <Badge variant="secondary" className="text-xs">System</Badge>
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(comment.timestamp).toLocaleString()}
+                      {new Date(note.created_at || '').toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-sm leading-relaxed">{comment.text}</p>
+                  <p className="text-sm leading-relaxed">{note.note_text}</p>
                 </div>
               ))
             )}

@@ -20,13 +20,31 @@ export function ScheduleVisitDialog() {
   const createVisit = useCreateVisit();
   const { toast } = useToast();
   
+  // Get current date and time
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const time = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+    return { date, time };
+  };
+  
   const [visitData, setVisitData] = useState({
     lead_id: "",
-    date: "",
-    time: "",
+    date: getCurrentDateTime().date,
+    time: getCurrentDateTime().time,
     notes: "",
-    status: "scheduled",
+    status: "completed", // Changed to completed for immediate counting
   });
+
+  // Auto-generate time when lead is selected
+  const handleLeadSelection = (leadId: string) => {
+    const { time } = getCurrentDateTime();
+    setVisitData(prev => ({
+      ...prev,
+      lead_id: leadId,
+      time: time // Auto-generate current time when lead is selected
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,21 +70,21 @@ export function ScheduleVisitDialog() {
       
       toast({
         title: "Success",
-        description: "Visit scheduled successfully",
+        description: "Visit recorded successfully",
       });
       
       setOpen(false);
       setVisitData({
         lead_id: "",
-        date: "",
-        time: "",
+        date: getCurrentDateTime().date,
+        time: getCurrentDateTime().time,
         notes: "",
-        status: "scheduled",
+        status: "completed",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to schedule visit",
+        description: "Failed to record visit",
         variant: "destructive",
       });
     }
@@ -77,21 +95,21 @@ export function ScheduleVisitDialog() {
       <DialogTrigger asChild>
         <Button>
           <Calendar className="h-4 w-4 mr-2" />
-          Schedule Visit
+          Record Visit
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Schedule Follow-up Visit</DialogTitle>
+          <DialogTitle>Record Visit</DialogTitle>
           <DialogDescription>
-            Schedule a follow-up visit with an existing lead.
+            Record a completed visit with an existing lead. Date and time are auto-filled.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="lead">Lead *</Label>
-            <Select value={visitData.lead_id} onValueChange={(value) => setVisitData({ ...visitData, lead_id: value })}>
+            <Select value={visitData.lead_id} onValueChange={handleLeadSelection}>
               <SelectTrigger>
                 <SelectValue placeholder="Select lead" />
               </SelectTrigger>
@@ -135,8 +153,8 @@ export function ScheduleVisitDialog() {
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
@@ -161,12 +179,12 @@ export function ScheduleVisitDialog() {
               {createVisit.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Scheduling...
+                  Recording...
                 </>
               ) : (
                 <>
                   <Clock className="h-4 w-4 mr-2" />
-                  Schedule Visit
+                  Record Visit
                 </>
               )}
             </Button>

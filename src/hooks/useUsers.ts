@@ -267,18 +267,47 @@ export const useDeleteUser = () => {
         throw new Error('Admin client not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY to your .env file');
       }
 
-      // Use the new admin function to delete user
-      const { data, error } = await supabaseAdmin
-        .rpc('admin_delete_user', {
-          user_id: id
-        });
-      
-      if (error) {
-        console.error('Error deleting user:', error);
+      console.log('Deleting user with ID:', id);
+
+      try {
+        // Step 1: Delete user preferences first (if they exist)
+        console.log('Deleting user preferences...');
+        const { error: preferencesError } = await supabaseAdmin
+          .from('user_preferences')
+          .delete()
+          .eq('user_id', id);
+        
+        if (preferencesError) {
+          console.warn('Error deleting user preferences (may not exist):', preferencesError);
+        }
+
+        // Step 2: Delete the profile
+        console.log('Deleting user profile...');
+        const { error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .delete()
+          .eq('id', id);
+        
+        if (profileError) {
+          console.error('Error deleting user profile:', profileError);
+          throw profileError;
+        }
+
+        // Step 3: Delete the user from Supabase Auth
+        console.log('Deleting user from auth...');
+        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
+        
+        if (authError) {
+          console.error('Error deleting user from auth:', authError);
+          throw authError;
+        }
+
+        console.log('User deleted successfully');
+        return { success: true };
+      } catch (error) {
+        console.error('Error in user deletion process:', error);
         throw error;
       }
-
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });

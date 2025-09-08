@@ -15,14 +15,14 @@ export const supabase = (() => {
         storage: localStorage,
         persistSession: true,
         autoRefreshToken: true,
-        storageKey: 'retail-lead-compass-auth'
+        storageKey: 'retail-lead-compass-auth-unique'
       },
       db: {
         schema: 'public'
       },
       global: {
         headers: {
-          'X-Client-Info': 'retail-lead-compass-client'
+          'X-Client-Info': 'retail-lead-compass-client-unique'
         }
       }
     });
