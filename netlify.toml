@@ -9,7 +9,11 @@
   status = 200
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
+  # Ensure devDependencies are installed on Netlify
+  NPM_CONFIG_PRODUCTION = "false"
+  # Disable Husky in CI to avoid prepare hook errors
+  HUSKY = "0"
 
 [[headers]]
   for = "/*"
