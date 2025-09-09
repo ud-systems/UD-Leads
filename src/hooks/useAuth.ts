@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, withRetry } from '@/integrations/supabase/client';
+import { logConnectionDiagnostics } from '@/utils/connectionDiagnostics';
 
 interface AuthState {
   user: User | null;
@@ -42,6 +43,8 @@ export function useAuth() {
               loading: false,
               connectionHealthy: false,
             }));
+            // Run diagnostics on auth errors
+            logConnectionDiagnostics();
           }
         }
       }
@@ -65,6 +68,8 @@ export function useAuth() {
             loading: false,
             connectionHealthy: false,
           }));
+          // Run diagnostics on initial session errors
+          logConnectionDiagnostics();
         } else {
           setAuthState(prev => ({
             ...prev,
@@ -82,6 +87,8 @@ export function useAuth() {
             loading: false,
             connectionHealthy: false,
           }));
+          // Run diagnostics on initialization failures
+          logConnectionDiagnostics();
         }
       }
     };

@@ -1,96 +1,121 @@
-// Connection diagnostics utility for troubleshooting regional access issues
+// Connection diagnostics utility for debugging Supabase connection issues
+import { supabase } from '@/integrations/supabase/client';
 
-export interface ConnectionDiagnostic {
-  dnsResolution: boolean;
-  networkConnectivity: boolean;
-  supabaseAccess: boolean;
-  region: string;
+export interface ConnectionDiagnostics {
+  timestamp: Date;
+  url: string;
+  networkStatus: 'online' | 'offline';
+  supabaseReachable: boolean;
+  authServiceReachable: boolean;
+  databaseReachable: boolean;
+  errors: string[];
   recommendations: string[];
 }
 
-export const runConnectionDiagnostics = async (): Promise<ConnectionDiagnostic> => {
-  const diagnostic: ConnectionDiagnostic = {
-    dnsResolution: false,
-    networkConnectivity: false,
-    supabaseAccess: false,
-    region: 'unknown',
+export const runConnectionDiagnostics = async (): Promise<ConnectionDiagnostics> => {
+  const diagnostics: ConnectionDiagnostics = {
+    timestamp: new Date(),
+    url: import.meta.env.VITE_SUPABASE_URL || 'https://uiprdzdskaqakfwhzssc.supabase.co',
+    networkStatus: navigator.onLine ? 'online' : 'offline',
+    supabaseReachable: false,
+    authServiceReachable: false,
+    databaseReachable: false,
+    errors: [],
     recommendations: []
   };
 
-  try {
-    // Test 1: Basic network connectivity
-    try {
-      const response = await fetch('https://httpbin.org/ip', { 
-        method: 'GET',
-        signal: AbortSignal.timeout(10000)
-      });
-      if (response.ok) {
-        const data = await response.json();
-        diagnostic.networkConnectivity = true;
-        diagnostic.region = data.origin || 'unknown';
-      }
-    } catch (error) {
-      console.warn('Network connectivity test failed:', error);
-    }
-
-    // Test 2: DNS resolution for Supabase
-    try {
-      const response = await fetch('https://uiprdzdskaqakfwhzssc.supabase.co/rest/v1/', {
-        method: 'HEAD',
-        signal: AbortSignal.timeout(10000),
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NTMyMzIsImV4cCI6MjA2ODIyOTIzMn0.FCQX8C1q0QpFl_jKXYNN94rO67QIqmXkY1L4FnrniG8'
-        }
-      });
-      
-      if (response.status === 200 || response.status === 401) {
-        diagnostic.dnsResolution = true;
-        diagnostic.supabaseAccess = true;
-      }
-    } catch (error) {
-      console.warn('Supabase access test failed:', error);
-      
-      if (error instanceof Error) {
-        if (error.message.includes('Failed to fetch') || error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-          diagnostic.dnsResolution = false;
-          diagnostic.recommendations.push('DNS resolution failed. Try using a VPN or different DNS server (8.8.8.8, 1.1.1.1)');
-        } else if (error.message.includes('timeout')) {
-          diagnostic.dnsResolution = true;
-          diagnostic.recommendations.push('Connection timeout. Try using a VPN or check your firewall settings');
-        }
-      }
-    }
-
-    // Generate recommendations based on results
-    if (!diagnostic.networkConnectivity) {
-      diagnostic.recommendations.push('No internet connectivity detected. Check your network connection.');
-    }
-
-    if (!diagnostic.supabaseAccess && diagnostic.networkConnectivity) {
-      diagnostic.recommendations.push('Supabase service may be blocked in your region. Try using a VPN with UK/US servers.');
-      diagnostic.recommendations.push('Check if your organization blocks cloud services.');
-    }
-
-    if (diagnostic.region && !['GB', 'US', 'CA', 'AU', 'DE', 'FR'].includes(diagnostic.region.split(',')[0])) {
-      diagnostic.recommendations.push('You appear to be in a region that may have restricted access to Supabase. Consider using a VPN.');
-    }
-
-  } catch (error) {
-    console.error('Connection diagnostics failed:', error);
-    diagnostic.recommendations.push('Unable to run diagnostics. Please check your internet connection.');
+  // Test 1: Basic network connectivity
+  if (!navigator.onLine) {
+    diagnostics.errors.push('No internet connection detected');
+    diagnostics.recommendations.push('Check your internet connection');
+    return diagnostics;
   }
 
-  return diagnostic;
+  // Test 2: Supabase URL reachability
+  try {
+    const response = await fetch(diagnostics.url, {
+      method: 'HEAD',
+      mode: 'no-cors',
+      cache: 'no-cache'
+    });
+    diagnostics.supabaseReachable = true;
+  } catch (error) {
+    diagnostics.errors.push(`Supabase URL not reachable: ${error}`);
+    diagnostics.recommendations.push('Check if Supabase service is down or URL is correct');
+  }
+
+  // Test 3: Auth service
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      diagnostics.errors.push(`Auth service error: ${error.message}`);
+    } else {
+      diagnostics.authServiceReachable = true;
+    }
+  } catch (error) {
+    diagnostics.errors.push(`Auth service unreachable: ${error}`);
+    diagnostics.recommendations.push('Check authentication service connectivity');
+  }
+
+  // Test 4: Database connectivity
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      diagnostics.errors.push(`Database error: ${error.message}`);
+      if (error.message.includes('JWT')) {
+        diagnostics.recommendations.push('Check Supabase API key configuration');
+      } else if (error.message.includes('permission')) {
+        diagnostics.recommendations.push('Check database permissions and RLS policies');
+      }
+    } else {
+      diagnostics.databaseReachable = true;
+    }
+  } catch (error) {
+    diagnostics.errors.push(`Database unreachable: ${error}`);
+    diagnostics.recommendations.push('Check database connectivity and configuration');
+  }
+
+  // Generate recommendations based on results
+  if (!diagnostics.supabaseReachable) {
+    diagnostics.recommendations.push('Try using a VPN or different network');
+    diagnostics.recommendations.push('Check firewall settings');
+  }
+
+  if (diagnostics.errors.length === 0) {
+    diagnostics.recommendations.push('All connection tests passed - the issue may be intermittent');
+  }
+
+  return diagnostics;
 };
 
-export const getConnectionStatusMessage = (diagnostic: ConnectionDiagnostic): string => {
-  if (diagnostic.supabaseAccess) {
-    return '✅ Connection to Supabase is working properly.';
-  } else if (diagnostic.dnsResolution) {
-    return '⚠️ DNS resolution works but Supabase access is blocked. Try using a VPN.';
-  } else if (diagnostic.networkConnectivity) {
-    return '⚠️ Internet connection works but DNS resolution failed. Try changing DNS servers.';
-  } else {
-    return '❌ No internet connectivity detected. Check your network connection.';
+export const logConnectionDiagnostics = async () => {
+  console.group('🔍 Supabase Connection Diagnostics');
+  const diagnostics = await runConnectionDiagnostics();
+  
+  console.log('📊 Diagnostics Results:', {
+    timestamp: diagnostics.timestamp.toISOString(),
+    networkStatus: diagnostics.networkStatus,
+    supabaseReachable: diagnostics.supabaseReachable,
+    authServiceReachable: diagnostics.authServiceReachable,
+    databaseReachable: diagnostics.databaseReachable
+  });
+
+  if (diagnostics.errors.length > 0) {
+    console.group('❌ Errors:');
+    diagnostics.errors.forEach(error => console.error(error));
+    console.groupEnd();
   }
+
+  if (diagnostics.recommendations.length > 0) {
+    console.group('💡 Recommendations:');
+    diagnostics.recommendations.forEach(rec => console.log(`• ${rec}`));
+    console.groupEnd();
+  }
+
+  console.groupEnd();
+  return diagnostics;
 };

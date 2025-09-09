@@ -1,12 +1,109 @@
-// Enhanced Supabase client with regional access fixes
-import { supabase as resilientClient, testConnection } from './directConnection';
-import { getSupabaseClient, checkConnectionHealth, withRetry } from './connectionManager';
+// Single Supabase client instance to prevent multiple GoTrueClient warnings
+import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Export the resilient client that bypasses regional restrictions
-export const supabase = resilientClient;
+// Get configuration from environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://uiprdzdskaqakfwhzssc.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NTMyMzIsImV4cCI6MjA2ODIyOTIzMn0.FCQX8C1q0QpFl_jKXYNN94rO67QIqmXkY1L4FnrniG8';
 
-// Test connection on import
+// Create a single, optimized Supabase client instance
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: 'retail-lead-compass-auth',
+    flowType: 'pkce'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'retail-lead-compass-client'
+    },
+    fetch: (url, options = {}) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      return fetch(url, {
+        ...options,
+        signal: controller.signal,
+      }).catch((error) => {
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+          console.warn(`Connection failed for URL: ${url}`);
+          throw new Error(`Connection failed. This may be due to regional restrictions.`);
+        } else if (error.name === 'AbortError') {
+          console.warn(`Connection timeout for URL: ${url}`);
+          throw new Error(`Connection timeout. The server is taking too long to respond.`);
+        }
+        throw error;
+      }).finally(() => {
+        clearTimeout(timeoutId);
+      });
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
+
+// Connection test function
+export const testConnection = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      console.error('Connection test failed:', error);
+      return false;
+    }
+    
+    console.log('✅ Connection test successful');
+    return true;
+  } catch (error) {
+    console.error('Connection test error:', error);
+    return false;
+  }
+};
+
+// Retry wrapper for database operations
+export const withRetry = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      
+      // Don't retry on auth errors or validation errors
+      if (lastError.message.includes('Invalid login credentials') || 
+          lastError.message.includes('validation') ||
+          lastError.message.includes('duplicate key')) {
+        throw lastError;
+      }
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // Exponential backoff
+      const waitTime = delay * Math.pow(2, attempt - 1);
+      console.warn(`Database operation failed (attempt ${attempt}/${maxRetries}), retrying in ${waitTime}ms:`, lastError.message);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+  
+  throw lastError!;
+};
+
+// Test connection on import (but don't block the app)
 testConnection().then(success => {
   if (success) {
     console.log('✅ Supabase connection established successfully');
@@ -16,9 +113,3 @@ testConnection().then(success => {
 }).catch(error => {
   console.warn('⚠️ Connection test error:', error);
 });
-
-// Re-export connection utilities for backward compatibility
-export { checkConnectionHealth, withRetry } from './connectionManager';
-
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
