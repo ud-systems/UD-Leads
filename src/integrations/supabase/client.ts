@@ -34,7 +34,7 @@ export const supabase = (() => {
         headers: {
           'X-Client-Info': 'retail-lead-compass-client-unique'
         },
-        // Add fetch configuration with timeout and DNS fallback
+        // Add fetch configuration with timeout and connection reset handling
         fetch: (url, options = {}) => {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
@@ -43,10 +43,13 @@ export const supabase = (() => {
             ...options,
             signal: controller.signal,
           }).catch((error) => {
-            // Handle DNS resolution errors
+            // Handle different types of connection errors
             if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-              console.error('DNS resolution failed for Supabase URL:', url);
+              console.error('Network error for Supabase URL:', url);
               throw new Error('Unable to connect to the server. Please check your internet connection or try using a VPN if you\'re in a restricted region.');
+            } else if (error.name === 'AbortError') {
+              console.error('Request timeout for Supabase URL:', url);
+              throw new Error('Connection timeout. The server is taking too long to respond. Please try again or use a VPN.');
             }
             throw error;
           }).finally(() => {
@@ -87,19 +90,30 @@ export const checkConnectionHealth = async (): Promise<{ healthy: boolean; laten
   } catch (error) {
     const latency = Date.now() - startTime;
     
-    // If it's a DNS/network error, run diagnostics
+    // If it's a network/connection error, run diagnostics
     if (error instanceof Error && 
         (error.message.includes('Failed to fetch') || 
-         error.message.includes('ERR_NAME_NOT_RESOLVED'))) {
+         error.message.includes('ERR_NAME_NOT_RESOLVED') ||
+         error.message.includes('ERR_CONNECTION_RESET') ||
+         error.message.includes('Connection timeout'))) {
       
       try {
         const { runConnectionDiagnostics } = await import('@/utils/connectionDiagnostics');
         const diagnostic = await runConnectionDiagnostics();
         
+        let errorMessage = 'Connection failed. ';
+        if (error.message.includes('ERR_CONNECTION_RESET')) {
+          errorMessage += 'Your ISP may be blocking Supabase. Try using a VPN with UK/US servers.';
+        } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+          errorMessage += 'DNS resolution failed. Try using a VPN or different DNS servers.';
+        } else {
+          errorMessage += 'Please check your internet connection or try using a VPN.';
+        }
+        
         return { 
           healthy: false, 
           latency, 
-          error: 'DNS resolution failed. Please check your internet connection or try using a VPN.',
+          error: errorMessage,
           diagnostic
         };
       } catch (diagError) {

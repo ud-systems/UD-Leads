@@ -1,7 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+// Import the admin client for data insertion operations
+import { supabaseAdmin } from '@/integrations/supabase/adminClient';
+import { TablesInsert } from '@/integrations/supabase/types';
 
 // UK Cities data - using correct column names: city, country, status
-const ukCities = [
+const ukCities: TablesInsert<'territories'>[] = [
   { city: 'London', country: 'United Kingdom', status: 'active' },
   { city: 'Birmingham', country: 'United Kingdom', status: 'active' },
   { city: 'Manchester', country: 'United Kingdom', status: 'active' },
@@ -116,11 +118,7 @@ const uniqueCities = ukCities.filter((city, index, self) =>
 );
 
 async function populateUKCities() {
-  // Use the same credentials as the client
-  const SUPABASE_URL = "https://uiprdzdskaqakfwhzssc.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NTMyMzIsImV4cCI6MjA2ODIyOTIzMn0.FCQX8C1q0QpFl_jKXYNN94rO67QIqmXkY1L4FnrniG8";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  // Use the existing singleton client to prevent multiple GoTrueClient instances
 
   console.log('Starting to populate UK cities...');
   console.log(`Found ${uniqueCities.length} unique cities to add`);
@@ -131,7 +129,7 @@ async function populateUKCities() {
     for (let i = 0; i < uniqueCities.length; i += batchSize) {
       const batch = uniqueCities.slice(i, i + batchSize);
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabaseAdmin as any)
         .from('territories')
         .insert(batch)
         .select();
@@ -151,7 +149,7 @@ async function populateUKCities() {
     console.log('✅ Successfully populated UK cities in territories table!');
     
     // Verify the data was inserted
-    const { data: count, error: countError } = await supabase
+    const { data: count, error: countError } = await (supabaseAdmin as any)
       .from('territories')
       .select('*', { count: 'exact', head: true });
 
