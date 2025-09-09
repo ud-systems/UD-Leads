@@ -1,5 +1,5 @@
 // Import the admin client for data insertion operations
-import { supabaseAdmin } from '@/integrations/supabase/adminClient';
+import { runDatabaseOperation } from './databaseOperations';
 import { TablesInsert } from '@/integrations/supabase/types';
 
 // UK Cities data - using correct column names: city, country, status
@@ -118,49 +118,33 @@ const uniqueCities = ukCities.filter((city, index, self) =>
 );
 
 async function populateUKCities() {
-  // Use the existing singleton client to prevent multiple GoTrueClient instances
-
   console.log('Starting to populate UK cities...');
-  console.log(`Found ${uniqueCities.length} unique cities to add`);
-
+  
   try {
-    // Insert cities in batches to avoid rate limits
-    const batchSize = 10;
-    for (let i = 0; i < uniqueCities.length; i += batchSize) {
-      const batch = uniqueCities.slice(i, i + batchSize);
+    await runDatabaseOperation(async (dbOps) => {
+      // Check connection first
+      const isConnected = await dbOps.checkConnection();
+      if (!isConnected) {
+        throw new Error('Failed to connect to database');
+      }
       
-      const { data, error } = await (supabaseAdmin as any)
-        .from('territories')
-        .insert(batch)
-        .select();
-
-      if (error) {
-        console.error(`Error inserting batch ${Math.floor(i / batchSize) + 1}:`, error);
-      } else {
-        console.log(`Successfully inserted batch ${Math.floor(i / batchSize) + 1} (${batch.length} cities)`);
-      }
-
-      // Add a small delay between batches
-      if (i + batchSize < uniqueCities.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-
-    console.log('✅ Successfully populated UK cities in territories table!');
+      // Get existing territories count
+      const existingCount = await dbOps.getTerritoryCount();
+      console.log(`Current territories in database: ${existingCount}`);
+      
+      // Insert all UK cities
+      await dbOps.insertTerritories(ukCities);
+      
+      // Get new count
+      const newCount = await dbOps.getTerritoryCount();
+      console.log(`New territories count: ${newCount}`);
+      console.log(`Added ${newCount - existingCount} new territories`);
+      
+      console.log('✅ Successfully populated UK cities in territories table!');
+    });
     
-    // Verify the data was inserted
-    const { data: count, error: countError } = await (supabaseAdmin as any)
-      .from('territories')
-      .select('*', { count: 'exact', head: true });
-
-    if (countError) {
-      console.error('Error counting territories:', countError);
-    } else {
-      console.log(`Total territories in database: ${count}`);
-    }
-
   } catch (error) {
-    console.error('Error populating UK cities:', error);
+    console.error('Error in populateUKCities:', error);
   }
 }
 

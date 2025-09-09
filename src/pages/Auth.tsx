@@ -28,14 +28,22 @@ export default function Auth() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const { checkConnectionHealth } = await import('@/integrations/supabase/client');
-        const health = await checkConnectionHealth();
-        setConnectionStatus(health.healthy ? 'healthy' : 'unhealthy');
+        const { getConnectionManager } = await import('@/integrations/supabase/connectionManager');
+        const manager = getConnectionManager();
+        await manager.forceHealthCheck();
         
-        // If there are diagnostics, log them for debugging
-        if (health.diagnostic) {
-          console.log('Connection diagnostic results:', health.diagnostic);
-        }
+        const healthStatus = manager.getHealthStatus();
+        const currentStrategy = manager.getCurrentStrategy();
+        
+        // Check if any strategy is healthy
+        const isHealthy = Array.from(healthStatus.values()).some(status => status.healthy);
+        setConnectionStatus(isHealthy ? 'healthy' : 'unhealthy');
+        
+        console.log('Connection status:', {
+          currentStrategy,
+          healthStatus: Object.fromEntries(healthStatus),
+          isHealthy
+        });
       } catch (error) {
         console.error('Connection health check failed:', error);
         setConnectionStatus('unhealthy');
@@ -181,10 +189,10 @@ export default function Auth() {
             {connectionStatus === 'unhealthy' && (
               <div className="mt-2 text-center">
                 <p className="text-xs text-muted-foreground mb-1">
-                  Having trouble connecting? This might be a regional access issue.
+                  Having trouble connecting? The system is trying multiple connection methods.
                 </p>
                 <p className="text-xs text-blue-600">
-                  💡 Try using a VPN with UK/US servers, or check your DNS settings.
+                  💡 Please check your internet connection and try again.
                 </p>
               </div>
             )}

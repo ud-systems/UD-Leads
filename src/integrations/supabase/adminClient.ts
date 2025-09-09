@@ -33,7 +33,7 @@ export const supabaseAdmin = (() => {
         headers: {
           'X-Client-Info': 'retail-lead-compass-admin-unique'
         },
-        // Add fetch configuration with timeout and DNS fallback for admin operations
+        // Enhanced fetch configuration with better error handling
         fetch: (url, options = {}) => {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout for admin operations
@@ -42,10 +42,13 @@ export const supabaseAdmin = (() => {
             ...options,
             signal: controller.signal,
           }).catch((error) => {
-            // Handle DNS resolution errors
+            // Handle different types of connection errors
             if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-              console.error('DNS resolution failed for Supabase admin URL:', url);
-              throw new Error('Unable to connect to the admin server. Please check your internet connection or try using a VPN if you\'re in a restricted region.');
+              console.error('Network error for Supabase admin URL:', url);
+              throw new Error('Unable to connect to the admin server. This may be due to regional restrictions. Please try using a VPN or check your internet connection.');
+            } else if (error.name === 'AbortError') {
+              console.error('Request timeout for Supabase admin URL:', url);
+              throw new Error('Admin server connection timeout. The server is taking too long to respond. Please try again or use a VPN.');
             }
             throw error;
           }).finally(() => {
