@@ -26,8 +26,12 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1000,
+    // Ensure proper MIME types for built assets
+    assetsInlineLimit: 0,
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'lucide-react'],
   },
+  // Ensure proper base path for deployment
+  base: '/',
 })

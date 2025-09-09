@@ -176,25 +176,42 @@ export const useCreateVisit = () => {
         throw error;
       }
 
-      // If visit has notes, create a separate lead note
+      // If visit has notes, append them to the lead's notes field
       if (visit.notes && visit.notes.trim() && visit.lead_id) {
         try {
-          const { error: noteError } = await supabase
-            .from('lead_notes')
-            .insert({
-              lead_id: visit.lead_id,
-              note_text: visit.notes.trim(),
-              note_type: 'visit',
-              visit_id: data.id,
-              salesperson_name: visit.salesperson || 'Unknown',
-              created_by: user?.id || null,
-              created_by_name: user?.email || 'Unknown',
-            });
+          // Get current lead notes
+          const { data: currentLead, error: leadError } = await supabase
+            .from('leads')
+            .select('notes')
+            .eq('id', visit.lead_id)
+            .single();
 
-          if (noteError) {
-            console.error('Error creating lead note from visit:', noteError);
+          if (leadError) {
+            console.error('Error fetching lead notes:', leadError);
           } else {
-            console.log('Successfully created lead note from visit');
+            // Create timestamp for the visit note
+            const visitTimestamp = new Date().toLocaleString();
+            const salesperson = visit.salesperson || 'Unknown';
+            
+            // Format the visit note
+            const visitNote = `\n\n[${visitTimestamp}] Visit by ${salesperson}:\n${visit.notes.trim()}`;
+            
+            // Append to existing notes or create new notes
+            const updatedNotes = currentLead?.notes 
+              ? currentLead.notes + visitNote
+              : visitNote.trim();
+
+            // Update the lead's notes field
+            const { error: updateError } = await supabase
+              .from('leads')
+              .update({ notes: updatedNotes })
+              .eq('id', visit.lead_id);
+
+            if (updateError) {
+              console.error('Error updating lead notes:', updateError);
+            } else {
+              console.log('Successfully added visit notes to lead');
+            }
           }
         } catch (error) {
           console.error('Error processing visit notes:', error);

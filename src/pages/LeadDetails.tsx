@@ -17,7 +17,7 @@ import { useLeads, useUpdateLead, useLeadVisitCount } from "@/hooks/useLeads";
 import { useStoreTypeOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
-import { useLeadNotes, useCreateLeadNote } from "@/hooks/useLeadNotes";
+// import { useLeadNotes, useCreateLeadNote } from "@/hooks/useLeadNotes";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/useTheme";
 import { LeadPhotoDisplay } from "@/components/leads/LeadPhotoDisplay";
@@ -42,9 +42,7 @@ export default function LeadDetails() {
   // Get visit count for the current lead
   const { data: visitCount = 0 } = useLeadVisitCount(id || '');
   
-  // Get lead notes
-  const { data: leadNotes = [], isLoading: notesLoading } = useLeadNotes(id || '');
-  const { mutate: createNote, isPending: isCreatingNote } = useCreateLeadNote();
+  // Note: Using existing leads.notes field instead of separate lead_notes table
   
   // Filter users with salesperson role
   const salespeople = users.filter(user => (user as any).role === 'salesperson');
@@ -102,21 +100,25 @@ export default function LeadDetails() {
 
   // Comments functions
   const addComment = () => {
-    if (newComment.trim() && id) {
-      createNote({
-        lead_id: id,
-        note_text: newComment.trim(),
-        note_type: 'general'
+    if (newComment.trim() && id && lead) {
+      const timestamp = new Date().toLocaleString();
+      const updatedNotes = lead.notes 
+        ? `${lead.notes}\n\n[${timestamp}] General Note:\n${newComment.trim()}`
+        : `[${timestamp}] General Note:\n${newComment.trim()}`;
+      
+      updateLeadMutation({
+        id: id,
+        notes: updatedNotes
       }, {
         onSuccess: () => {
           setNewComment("");
           toast({
             title: "Note added",
-            description: "Your note has been added successfully.",
+            description: "Your note has been added to the lead.",
           });
         },
-        onError: (error) => {
-          console.error('Error adding note:', error);
+        onError: (updateError) => {
+          console.error('Error updating lead notes:', updateError);
           toast({
             title: "Error",
             description: "Failed to add note. Please try again.",
@@ -827,58 +829,41 @@ export default function LeadDetails() {
             />
             <Button 
               onClick={addComment} 
-              disabled={!newComment.trim() || isCreatingNote}
+              disabled={!newComment.trim() || isPending}
               className="self-end h-10 px-4"
             >
-              {isCreatingNote ? (
+              {isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />
               )}
-              {isCreatingNote ? 'Adding...' : 'Send'}
+              {isPending ? 'Adding...' : 'Send'}
             </Button>
           </div>
 
           {/* Display comments */}
           <div className="space-y-4">
-            {notesLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-                <p className="text-muted-foreground">Loading notes...</p>
+            {lead?.notes ? (
+              <div className="border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary">S</span>
+                    </div>
+                    <span className="font-semibold text-sm">System</span>
+                    <Badge variant="secondary" className="text-xs">Notes</Badge>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(lead.created_at || '').toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{lead.notes}</p>
               </div>
-            ) : leadNotes.length === 0 ? (
+            ) : (
               <div className="text-center py-8">
                 <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No comments yet. Be the first to add one!</p>
               </div>
-            ) : (
-              leadNotes.map((note) => (
-                <div key={note.id} className="border rounded-lg p-4 bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
-                          {note.created_by_name?.charAt(0).toUpperCase() || 'U'}
-                        </span>
-                      </div>
-                      <span className="font-semibold text-sm">{note.created_by_name || 'Unknown'}</span>
-                      {note.note_type === 'visit' && (
-                        <Badge variant="secondary" className="text-xs">Visit Note</Badge>
-                      )}
-                      {note.note_type === 'followup' && (
-                        <Badge variant="outline" className="text-xs">Follow-up</Badge>
-                      )}
-                      {note.note_type === 'system' && (
-                        <Badge variant="secondary" className="text-xs">System</Badge>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(note.created_at || '').toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed">{note.note_text}</p>
-                </div>
-              ))
             )}
           </div>
         </CardContent>

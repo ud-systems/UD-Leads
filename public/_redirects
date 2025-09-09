@@ -1,13 +1,2 @@
-# Handle SPA routing
-/*    /index.html   200
-
-# Handle specific routes
-/auth    /index.html   200
-/leads   /index.html   200
-/visits  /index.html   200
-/analytics /index.html   200
-/performance /index.html   200
-/territory /index.html   200
-/scheduled-followups /index.html   200
-/profile /index.html   200
-/settings /index.html   200 
+# Handle SPA routing - exclude assets
+/*    /index.html   200 
