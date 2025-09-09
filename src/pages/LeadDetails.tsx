@@ -25,6 +25,143 @@ import { DeleteLeadDialog } from "@/components/leads/DeleteLeadDialog";
 import { PhotoPreviewDialog } from "@/components/leads/PhotoPreviewDialog";
 import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
+import React, { useCallback, useMemo } from "react";
+
+// Inline edit component moved outside to prevent recreation on every render
+interface InlineEditProps {
+  field: string;
+  value: string;
+  type?: "text" | "select" | "textarea" | "date";
+  options?: { value: string; label: string }[];
+  isEditing: boolean;
+  editValue: string;
+  onEditValueChange: (value: string) => void;
+  onSave: (field: string) => void;
+  onCancel: () => void;
+  onStartEdit: (field: string, value: string) => void;
+  isPending: boolean;
+  inputRef: React.RefObject<HTMLInputElement>;
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  isDark: boolean;
+  territories: any[];
+}
+
+const InlineEdit = React.memo(({ 
+  field, 
+  value, 
+  type = "text", 
+  options = [],
+  isEditing,
+  editValue,
+  onEditValueChange,
+  onSave,
+  onCancel,
+  onStartEdit,
+  isPending,
+  inputRef,
+  textareaRef,
+  isDark,
+  territories
+}: InlineEditProps) => {
+  // Helper function to get territory name
+  const getTerritoryName = useCallback((territoryId: string) => {
+    const territory = territories.find(t => t.id === territoryId);
+    return territory?.city || 'Unknown Territory';
+  }, [territories]);
+  
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-2 w-full">
+        <div className="flex-1">
+          {type === "select" ? (
+            <Select value={editValue} onValueChange={onEditValueChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : type === "textarea" ? (
+            <Textarea
+              ref={textareaRef}
+              value={editValue}
+              onChange={(e) => onEditValueChange(e.target.value)}
+              className="w-full"
+              rows={3}
+            />
+          ) : type === "date" ? (
+            <Input
+              ref={inputRef}
+              type="date"
+              value={editValue}
+              onChange={(e) => onEditValueChange(e.target.value)}
+              className="w-full"
+            />
+          ) : (
+            <Input
+              ref={inputRef}
+              value={editValue}
+              onChange={(e) => onEditValueChange(e.target.value)}
+              className="w-full"
+            />
+          )}
+        </div>
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            onClick={() => onSave(field)}
+            disabled={isPending}
+          >
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isPending}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center justify-between w-full">
+      <div className="flex-1">
+        {field === 'status' ? (
+          <Badge variant="lead-status" status={value} isDark={isDark}>
+            {value || "Not set"}
+          </Badge>
+        ) : field === 'store_type' ? (
+          <Badge variant="store-type" storeType={value} isDark={isDark}>
+            {value || "Not set"}
+          </Badge>
+        ) : field === 'territory_id' ? (
+          <span>{value ? getTerritoryName(value) : "Not set"}</span>
+        ) : field === 'last_visit' || field === 'next_visit' ? (
+          <span>{value ? new Date(value).toLocaleDateString() : "Not set"}</span>
+        ) : (
+          <span>{value || "Not set"}</span>
+        )}
+      </div>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => onStartEdit(field, value || "")}
+        className="h-6 w-6 p-0 ml-2"
+      >
+        <Edit className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+});
 
 export default function LeadDetails() {
   const { id } = useParams<{ id: string }>();
@@ -60,6 +197,74 @@ export default function LeadDetails() {
   const [photoPreviewPhotos, setPhotoPreviewPhotos] = useState<string[]>([]);
   const [photoPreviewTitle, setPhotoPreviewTitle] = useState("");
   const [photoPreviewInitialIndex, setPhotoPreviewInitialIndex] = useState(0);
+
+  // Optimized inline editing functions with useCallback
+  const startEditing = useCallback((field: string, value: string) => {
+    setEditingField(field);
+    setEditValue(value);
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingField(null);
+    setEditValue("");
+  }, []);
+
+  const saveField = useCallback(async (field: string) => {
+    if (!lead || editValue === lead[field as keyof typeof lead]) {
+      cancelEditing();
+      return;
+    }
+
+    let valueToSave: any = editValue;
+    
+    // Handle array fields
+    if (field === 'products_currently_sold' || field === 'tags') {
+      valueToSave = editValue.split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0);
+    }
+
+    updateLeadMutation(
+      { id: lead.id, updates: { [field]: valueToSave } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Success",
+            description: "Lead updated successfully.",
+          });
+          cancelEditing();
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: "Failed to update lead. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    );
+  }, [lead, editValue, updateLeadMutation, toast, cancelEditing]);
+
+  const handleEditValueChange = useCallback((value: string) => {
+    setEditValue(value);
+  }, []);
+
+  // Helper function to create InlineEdit props
+  const createInlineEditProps = useCallback((field: string, value: string, type: "text" | "select" | "textarea" | "date" = "text", options: { value: string; label: string }[] = []) => ({
+    field,
+    value,
+    type,
+    options,
+    isEditing: editingField === field,
+    editValue,
+    onEditValueChange: handleEditValueChange,
+    onSave: saveField,
+    onCancel: cancelEditing,
+    onStartEdit: startEditing,
+    isPending,
+    inputRef,
+    textareaRef,
+    isDark,
+    territories
+  }), [editingField, editValue, handleEditValueChange, saveField, cancelEditing, startEditing, isPending, inputRef, textareaRef, isDark, territories]);
 
   // Function to format duration in milliseconds to human readable format
   const formatDuration = (durationMs: number) => {
@@ -171,50 +376,6 @@ export default function LeadDetails() {
     }
   };
 
-  // Inline editing functions
-  const startEditing = (field: string, value: string) => {
-    setEditingField(field);
-    setEditValue(value);
-  };
-
-  const cancelEditing = () => {
-    setEditingField(null);
-    setEditValue("");
-  };
-
-  const saveField = async (field: string) => {
-    if (!lead || editValue === lead[field as keyof typeof lead]) {
-      cancelEditing();
-      return;
-    }
-
-    let valueToSave: any = editValue;
-    
-    // Handle array fields
-    if (field === 'products_currently_sold' || field === 'tags') {
-      valueToSave = editValue.split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0);
-    }
-
-    updateLeadMutation(
-      { id: lead.id, updates: { [field]: valueToSave } },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Success",
-            description: "Lead updated successfully.",
-          });
-          cancelEditing();
-        },
-        onError: (error) => {
-          toast({
-            title: "Error",
-            description: "Failed to update lead. Please try again.",
-            variant: "destructive",
-          });
-        },
-      }
-    );
-  };
 
   const getCurrentLocation = async () => {
     setIsLoadingLocation(true);
@@ -272,115 +433,6 @@ export default function LeadDetails() {
     setPhotoPreviewTitle(title);
     setPhotoPreviewInitialIndex(initialIndex);
     setPhotoPreviewOpen(true);
-  };
-
-  // Inline edit component
-  const InlineEdit = ({ field, value, type = "text", options = [] }: { 
-    field: string; 
-    value: string; 
-    type?: "text" | "select" | "textarea" | "date";
-    options?: { value: string; label: string }[];
-  }) => {
-    const isEditing = editingField === field;
-    
-    if (isEditing) {
-      return (
-        <div className="flex items-center gap-2 w-full">
-          <div className="flex-1">
-            {type === "select" ? (
-              <Select value={editValue} onValueChange={setEditValue}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : type === "textarea" ? (
-              <Textarea
-                ref={textareaRef}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="w-full"
-                rows={3}
-              />
-            ) : type === "date" ? (
-              <Input
-                ref={inputRef}
-                type="date"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="w-full"
-              />
-            ) : (
-              <Input
-                ref={inputRef}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="w-full"
-              />
-            )}
-          </div>
-          <div className="flex gap-1">
-            <Button
-              size="sm"
-              onClick={() => saveField(field)}
-              disabled={isPending}
-            >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={cancelEditing}
-              disabled={isPending}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      );
-    }
-    
-    // Helper function to get territory name
-    const getTerritoryName = (territoryId: string) => {
-      const territory = territories.find(t => t.id === territoryId);
-      return territory?.city || 'Unknown Territory';
-    };
-    
-    return (
-      <div className="flex items-center justify-between w-full">
-        <div className="flex-1">
-          {field === 'status' ? (
-            <Badge variant="lead-status" status={value} isDark={isDark}>
-              {value || "Not set"}
-            </Badge>
-          ) : field === 'store_type' ? (
-            <Badge variant="store-type" storeType={value} isDark={isDark}>
-              {value || "Not set"}
-            </Badge>
-          ) : field === 'territory_id' ? (
-            <span>{value ? getTerritoryName(value) : "Not set"}</span>
-          ) : field === 'last_visit' || field === 'next_visit' ? (
-            <span>{value ? new Date(value).toLocaleDateString() : "Not set"}</span>
-          ) : (
-            <span>{value || "Not set"}</span>
-          )}
-        </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => startEditing(field, value || "")}
-          className="h-6 w-6 p-0 ml-2"
-        >
-          <Edit className="h-3 w-3" />
-        </Button>
-      </div>
-    );
   };
 
   return (
@@ -546,7 +598,7 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Store:</span>
                 <div className="flex-1">
-                  <InlineEdit field="store_name" value={lead.store_name} />
+                  <InlineEdit {...createInlineEditProps("store_name", lead.store_name)} />
                 </div>
               </div>
               
@@ -555,7 +607,7 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Company:</span>
                 <div className="flex-1">
-                  <InlineEdit field="company_name" value={lead.company_name || ""} />
+                  <InlineEdit {...createInlineEditProps("company_name", lead.company_name || "")} />
                 </div>
               </div>
               
@@ -564,7 +616,7 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Contact:</span>
                 <div className="flex-1">
-                  <InlineEdit field="contact_person" value={lead.contact_person || ""} />
+                  <InlineEdit {...createInlineEditProps("contact_person", lead.contact_person || "")} />
                 </div>
               </div>
               
@@ -573,7 +625,7 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Phone:</span>
                 <div className="flex-1">
-                  <InlineEdit field="phone_number" value={lead.phone_number || ""} />
+                  <InlineEdit {...createInlineEditProps("phone_number", lead.phone_number || "")} />
                 </div>
               </div>
               
@@ -582,7 +634,7 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Email:</span>
                 <div className="flex-1">
-                  <InlineEdit field="email" value={lead.email || ""} />
+                  <InlineEdit {...createInlineEditProps("email", lead.email || "")} />
                 </div>
               </div>
             </div>
@@ -601,10 +653,12 @@ export default function LeadDetails() {
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Territory:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    field="territory_id" 
-                    value={lead.territory_id || ""} 
-                    type="select"
-                    options={territories.map(territory => ({ value: territory.id, label: territory.city || 'Unknown' }))}
+                    {...createInlineEditProps(
+                      "territory_id", 
+                      lead.territory_id || "", 
+                      "select",
+                      territories.map(territory => ({ value: territory.id, label: territory.city || 'Unknown' }))
+                    )}
                   />
                 </div>
               </div>
@@ -615,14 +669,16 @@ export default function LeadDetails() {
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Store Type:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    field="store_type" 
-                    value={lead.store_type || ""} 
-                    type="select"
-                    options={[
-                      { value: "Vape Shop", label: "Vape Shop" },
-                      { value: "Convenience Store", label: "Convenience Store" },
-                      { value: "Supermarket", label: "Supermarket" }
-                    ]}
+                    {...createInlineEditProps(
+                      "store_type", 
+                      lead.store_type || "", 
+                      "select",
+                      [
+                        { value: "Vape Shop", label: "Vape Shop" },
+                        { value: "Convenience Store", label: "Convenience Store" },
+                        { value: "Supermarket", label: "Supermarket" }
+                      ]
+                    )}
                   />
                 </div>
               </div>
@@ -633,9 +689,7 @@ export default function LeadDetails() {
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Weekly Spend:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    field="weekly_spend" 
-                    value={lead.weekly_spend?.toString() || ""} 
-                    type="text"
+                    {...createInlineEditProps("weekly_spend", lead.weekly_spend?.toString() || "")}
                   />
                 </div>
               </div>
@@ -679,9 +733,7 @@ export default function LeadDetails() {
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Products:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    field="products_currently_sold" 
-                    value={lead.products_currently_sold?.join(', ') || ""} 
-                    type="textarea"
+                    {...createInlineEditProps("products_currently_sold", lead.products_currently_sold?.join(', ') || "", "textarea")}
                   />
                 </div>
               </div>
@@ -701,13 +753,15 @@ export default function LeadDetails() {
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Status:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    field="status" 
-                    value={lead.status || ""} 
-                    type="select"
-                    options={leadStatusOptions.map(status => ({ 
-                      value: status, 
-                      label: status 
-                    }))}
+                    {...createInlineEditProps(
+                      "status", 
+                      lead.status || "", 
+                      "select",
+                      leadStatusOptions.map(status => ({ 
+                        value: status, 
+                        label: status 
+                      }))
+                    )}
                   />
                 </div>
               </div>
@@ -718,13 +772,15 @@ export default function LeadDetails() {
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Salesperson:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    field="salesperson" 
-                    value={lead.salesperson || ""} 
-                    type="select"
-                    options={salespeople.map(salesperson => ({ 
-                      value: (salesperson as any).name || (salesperson as any).email || "", 
-                      label: (salesperson as any).name || (salesperson as any).email || "" 
-                    }))}
+                    {...createInlineEditProps(
+                      "salesperson", 
+                      lead.salesperson || "", 
+                      "select",
+                      salespeople.map(salesperson => ({ 
+                        value: (salesperson as any).name || (salesperson as any).email || "", 
+                        label: (salesperson as any).name || (salesperson as any).email || "" 
+                      }))
+                    )}
                   />
                 </div>
               </div>
@@ -734,7 +790,7 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Last Visit:</span>
                 <div className="flex-1">
-                  <InlineEdit field="last_visit" value={lead.last_visit || ""} type="date" />
+                  <InlineEdit {...createInlineEditProps("last_visit", lead.last_visit || "", "date")} />
                 </div>
               </div>
               
@@ -743,7 +799,7 @@ export default function LeadDetails() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Next Visit:</span>
                 <div className="flex-1">
-                  <InlineEdit field="next_visit" value={lead.next_visit || ""} type="date" />
+                  <InlineEdit {...createInlineEditProps("next_visit", lead.next_visit || "", "date")} />
                 </div>
               </div>
               
