@@ -15,7 +15,9 @@ export const supabase = (() => {
         storage: localStorage,
         persistSession: true,
         autoRefreshToken: true,
-        storageKey: 'retail-lead-compass-auth-unique'
+        storageKey: 'retail-lead-compass-auth-unique',
+        // Add timeout for auth operations
+        flowType: 'pkce'
       },
       db: {
         schema: 'public'
@@ -23,12 +25,92 @@ export const supabase = (() => {
       global: {
         headers: {
           'X-Client-Info': 'retail-lead-compass-client-unique'
+        },
+        // Add fetch configuration with timeout
+        fetch: (url, options = {}) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+          
+          return fetch(url, {
+            ...options,
+            signal: controller.signal,
+          }).finally(() => {
+            clearTimeout(timeoutId);
+          });
+        }
+      },
+      // Add realtime configuration
+      realtime: {
+        params: {
+          eventsPerSecond: 10
         }
       }
     });
   }
   return clientInstance;
 })();
+
+// Connection health check utility
+export const checkConnectionHealth = async (): Promise<{ healthy: boolean; latency?: number; error?: string }> => {
+  const startTime = Date.now();
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1)
+      .abortSignal(AbortSignal.timeout(10000)); // 10 second timeout for health check
+    
+    const latency = Date.now() - startTime;
+    
+    if (error) {
+      return { healthy: false, latency, error: error.message };
+    }
+    
+    return { healthy: true, latency };
+  } catch (error) {
+    const latency = Date.now() - startTime;
+    return { 
+      healthy: false, 
+      latency, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+};
+
+// Retry wrapper for database operations
+export const withRetry = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      
+      // Don't retry on auth errors or validation errors
+      if (lastError.message.includes('Invalid login credentials') || 
+          lastError.message.includes('validation') ||
+          lastError.message.includes('duplicate key')) {
+        throw lastError;
+      }
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // Exponential backoff
+      const waitTime = delay * Math.pow(2, attempt - 1);
+      console.warn(`Database operation failed (attempt ${attempt}/${maxRetries}), retrying in ${waitTime}ms:`, lastError.message);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+  
+  throw lastError!;
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

@@ -24,6 +24,18 @@ export const supabaseAdmin = (() => {
       global: {
         headers: {
           'X-Client-Info': 'retail-lead-compass-admin-unique'
+        },
+        // Add fetch configuration with timeout for admin operations
+        fetch: (url, options = {}) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout for admin operations
+          
+          return fetch(url, {
+            ...options,
+            signal: controller.signal,
+          }).finally(() => {
+            clearTimeout(timeoutId);
+          });
         }
       },
       db: {

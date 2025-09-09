@@ -12,16 +12,33 @@ import { applyCustomColors } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 export default function Auth() {
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, loading, connectionHealthy } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { primaryColor, secondaryColor, accentColor, activeColor, inactiveColor, systemTheme } = useSystemThemeColors();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'healthy' | 'unhealthy'>('checking');
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  // Check connection health on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const { checkConnectionHealth } = await import('@/integrations/supabase/client');
+        const health = await checkConnectionHealth();
+        setConnectionStatus(health.healthy ? 'healthy' : 'unhealthy');
+      } catch (error) {
+        console.error('Connection health check failed:', error);
+        setConnectionStatus('unhealthy');
+      }
+    };
+
+    checkConnection();
+  }, []);
 
   // Apply system theme colors with fallback
   useEffect(() => {
@@ -65,11 +82,22 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
+      // Check connection health before attempting login
+      if (connectionStatus === 'unhealthy') {
+        toast({
+          title: "Connection Error",
+          description: "Unable to connect to the server. Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
         toast({
-          title: "Error",
+          title: "Login Failed",
           description: error.message,
           variant: "destructive",
         });
@@ -81,9 +109,10 @@ export default function Auth() {
         navigate("/");
       }
     } catch (error) {
+      console.error('Sign in error:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Connection Error",
+        description: "Unable to connect to the server. Please check your internet connection and try again.",
         variant: "destructive",
       });
     } finally {
@@ -123,6 +152,25 @@ export default function Auth() {
             <CardDescription className="text-base">
               Sign in to your account
             </CardDescription>
+            {/* Connection Status Indicator */}
+            <div className="flex items-center justify-center mt-2">
+              <div className={`flex items-center space-x-2 text-sm ${
+                connectionStatus === 'healthy' ? 'text-green-600' : 
+                connectionStatus === 'unhealthy' ? 'text-red-600' : 
+                'text-yellow-600'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'healthy' ? 'bg-green-500' : 
+                  connectionStatus === 'unhealthy' ? 'bg-red-500' : 
+                  'bg-yellow-500 animate-pulse'
+                }`} />
+                <span>
+                  {connectionStatus === 'healthy' ? 'Connected' : 
+                   connectionStatus === 'unhealthy' ? 'Connection Issues' : 
+                   'Checking Connection...'}
+                </span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-6">
             <form onSubmit={handleSignIn} className="space-y-4">
@@ -152,8 +200,18 @@ export default function Auth() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading || connectionStatus === 'unhealthy'}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : connectionStatus === 'unhealthy' ? (
+                  "Connection Issues"
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
           </CardContent>
