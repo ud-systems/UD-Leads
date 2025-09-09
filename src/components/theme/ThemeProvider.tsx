@@ -53,7 +53,7 @@ export function ThemeProvider({
   // Initialize with stored theme or system theme
   const [theme, setTheme] = useState<Theme>(() => {
     const storedTheme = getStoredTheme()
-    return storedTheme !== 'system' ? storedTheme : systemTheme
+    return storedTheme !== 'system' ? storedTheme : 'light' // Default to light instead of system to prevent hanging
   })
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -66,6 +66,18 @@ export function ThemeProvider({
       setIsInitialized(true)
     }
   }, [systemTheme, systemSettingsLoading, systemSettings])
+
+  // Add timeout fallback to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isInitialized) {
+        console.warn('Theme: System settings timeout, using fallback theme')
+        setIsInitialized(true)
+      }
+    }, 3000) // 3 second timeout
+
+    return () => clearTimeout(timeout)
+  }, [isInitialized])
 
   // Force refresh system settings when theme changes locally
   useEffect(() => {

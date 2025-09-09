@@ -2,6 +2,22 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+// Validate critical environment variables
+const validateEnvironment = () => {
+  const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']
+  const missing = requiredVars.filter(varName => !import.meta.env[varName])
+  
+  if (missing.length > 0) {
+    console.error('Missing environment variables:', missing)
+    // Show error in console but don't block the app - use fallback values
+    console.warn('Using fallback environment values')
+  }
+  return true
+}
+
+// Run validation
+validateEnvironment()
+
 // Register service worker for offline functionality
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
