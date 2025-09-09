@@ -14,6 +14,8 @@
   NPM_CONFIG_PRODUCTION = "false"
   # Disable Husky in CI to avoid prepare hook errors
   HUSKY = "0"
+  # Allow expected Supabase environment variables in build output
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_SUPABASE_SERVICE_ROLE_KEY"
 
 [[headers]]
   for = "/*"
