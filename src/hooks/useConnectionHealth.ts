@@ -11,7 +11,7 @@ interface ConnectionHealth {
   databaseReachable: boolean;
 }
 
-export function useConnectionHealth(intervalMs: number = 30000) {
+export function useConnectionHealth(intervalMs: number = 300000) { // 5 minutes instead of 30 seconds
   const [health, setHealth] = useState<ConnectionHealth>({
     healthy: true,
     lastChecked: new Date(),
@@ -64,17 +64,7 @@ export function useConnectionHealth(intervalMs: number = 30000) {
     return () => clearInterval(interval);
   }, [checkHealth, intervalMs]);
 
-  // Check health on window focus (user returns to tab)
-  useEffect(() => {
-    const handleFocus = () => {
-      checkHealth();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [checkHealth]);
-
-  // Check health when network comes back online
+  // Check health when network comes back online (but not on focus to reduce noise)
   useEffect(() => {
     const handleOnline = () => {
       checkHealth();
