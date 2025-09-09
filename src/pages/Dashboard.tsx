@@ -14,12 +14,12 @@ import { useVisits } from "@/hooks/useVisits";
 import { useTerritories } from "@/hooks/useTerritories";
 import { useUsers } from "@/hooks/useUsers";
 import { useTargetAchievements } from "@/hooks/useTargets";
+import { EnhancedLineChart, EnhancedBarChart, EnhancedPieChart } from "@/components/charts/EnhancedCharts";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { LazyEnhancedLineChart, LazyEnhancedBarChart, LazyEnhancedPieChart, LazyLeadsGrowthChart } from "@/components/lazy/LazyCharts";
+import { LeadsGrowthChart } from "@/components/charts/LeadsGrowthChart";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount, useConversionRules, calculateConversionRateWithRules, getConvertedLeadsCountWithRules } from "@/hooks/useConversionRules";
-import { DashboardSkeleton } from "@/components/ui/loading-skeletons";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -370,9 +370,30 @@ export default function Dashboard() {
       .slice(0, 10);
   }, [filteredLeads, filteredVisits, territories, conversionHistory, conversionRules, navigate, visits]);
 
-  // Show loading state with skeleton
+  // Show loading state
   if (leadsLoading || territoriesLoading || visitsLoading || usersLoading || targetsLoading) {
-    return <DashboardSkeleton />;
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Loading your sales performance data...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mb-2" />
+                <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -411,7 +432,7 @@ export default function Dashboard() {
       {!filters.dateRange || 
        (filters.dateRange.from && filters.dateRange.to && 
         filters.dateRange.from.toDateString() !== filters.dateRange.to.toDateString()) ? (
-        <LazyLeadsGrowthChart
+        <LeadsGrowthChart
           selectedSalesperson={
             filters.selectedSalesperson !== 'all' 
               ? salespeople.find(p => p.id === filters.selectedSalesperson)?.name 

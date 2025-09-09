@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 import { useStoreTypeOptions } from "@/hooks/useSystemSettings";
-import { LazyCreateLeadDialog, LazyDeleteLeadDialog } from "@/components/lazy/LazyForms";
+import { CreateLeadDialog } from "@/components/leads/CreateLeadDialog";
+import { DeleteLeadDialog } from "@/components/leads/DeleteLeadDialog";
 import { LeadPhotoDisplay } from "@/components/leads/LeadPhotoDisplay";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +28,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { LeadsPageSkeleton } from "@/components/ui/loading-skeletons";
 import { LeadsSkeleton } from "@/components/ui/leads-skeleton";
 import { useUsers } from "@/hooks/useUsers";
 import { useBuyingPowerOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
@@ -207,7 +207,15 @@ export default function Leads() {
 
   // Show skeleton while loading
   if (isLoading) {
-    return <LeadsPageSkeleton />;
+    return (
+      <div className="space-y-6 p-4 md:p-6">
+        <div>
+          <h1 className="text-3xl font-bold">Leads</h1>
+          <p className="text-muted-foreground">Manage and track your retail leads</p>
+        </div>
+        <LeadsSkeleton />
+      </div>
+    );
   }
 
   const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
@@ -346,7 +354,7 @@ export default function Leads() {
               </Button>
             </div>
           )}
-          <LazyCreateLeadDialog />
+          <CreateLeadDialog />
         </div>
       </div>
 
