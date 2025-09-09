@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, UNSAFE_future } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { RouteErrorBoundary } from "@/components/ui/route-error-boundary";
 import { useAuth } from "@/hooks/useAuth";
 import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
@@ -47,7 +48,7 @@ function AppContent() {
   }
 
   return (
-          <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+          <Router>
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
         <Route
@@ -61,19 +62,66 @@ function AppContent() {
                   </div>
                 }>
                   <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/leads" element={<Leads />} />
-                    <Route path="/leads/:id" element={<LeadDetails />} />
-                    <Route path="/visits" element={<Visits />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/performance" element={<Performance />} />
-                    <Route path="/salesperson/:salespersonId" element={<SalespersonDetail />} />
-                    <Route path="/territory" element={<Territory />} />
-                    <Route path="/scheduled-followups" element={<ScheduledFollowups />} />
-
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="*" element={<NotFound />} />
+                    <Route path="/" element={
+                      <RouteErrorBoundary route="Dashboard">
+                        <Dashboard />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/leads" element={
+                      <RouteErrorBoundary route="Leads">
+                        <Leads />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/leads/:id" element={
+                      <RouteErrorBoundary route="Lead Details">
+                        <LeadDetails />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/visits" element={
+                      <RouteErrorBoundary route="Visits">
+                        <Visits />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/analytics" element={
+                      <RouteErrorBoundary route="Analytics">
+                        <Analytics />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/performance" element={
+                      <RouteErrorBoundary route="Performance">
+                        <Performance />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/salesperson/:salespersonId" element={
+                      <RouteErrorBoundary route="Salesperson Detail">
+                        <SalespersonDetail />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/territory" element={
+                      <RouteErrorBoundary route="Territory">
+                        <Territory />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/scheduled-followups" element={
+                      <RouteErrorBoundary route="Scheduled Followups">
+                        <ScheduledFollowups />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/profile" element={
+                      <RouteErrorBoundary route="Profile">
+                        <Profile />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="/settings" element={
+                      <RouteErrorBoundary route="Settings">
+                        <Settings />
+                      </RouteErrorBoundary>
+                    } />
+                    <Route path="*" element={
+                      <RouteErrorBoundary route="Not Found">
+                        <NotFound />
+                      </RouteErrorBoundary>
+                    } />
                   </Routes>
                 </Suspense>
               </Layout>
