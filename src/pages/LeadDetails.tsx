@@ -313,7 +313,7 @@ export default function LeadDetails() {
       
       updateLeadMutation({
         id: id,
-        notes: updatedNotes
+        updates: { notes: updatedNotes }
       }, {
         onSuccess: () => {
           setNewComment("");
