@@ -5,11 +5,19 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://uiprdzdskaqakfwhzssc.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NTMyMzIsImV4cCI6MjA2ODIyOTIzMn0.FCQX8C1q0QpFl_jKXYNN94rO67QIqmXkY1L4FnrniG8";
 
+// Global flag to prevent multiple GoTrueClient instances
+let isClientInitialized = false;
+
 // Create a singleton client to prevent multiple GoTrueClient instances
 let clientInstance: ReturnType<typeof createClient<Database>> | null = null;
 
 export const supabase = (() => {
   if (!clientInstance) {
+    // Prevent multiple GoTrueClient instances
+    if (isClientInitialized) {
+      console.warn('Supabase client already initialized, returning existing instance');
+    }
+    
     clientInstance = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
         storage: localStorage,
@@ -26,7 +34,7 @@ export const supabase = (() => {
         headers: {
           'X-Client-Info': 'retail-lead-compass-client-unique'
         },
-        // Add fetch configuration with timeout
+        // Add fetch configuration with timeout and DNS fallback
         fetch: (url, options = {}) => {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
@@ -34,6 +42,13 @@ export const supabase = (() => {
           return fetch(url, {
             ...options,
             signal: controller.signal,
+          }).catch((error) => {
+            // Handle DNS resolution errors
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+              console.error('DNS resolution failed for Supabase URL:', url);
+              throw new Error('Unable to connect to the server. Please check your internet connection or try using a VPN if you\'re in a restricted region.');
+            }
+            throw error;
           }).finally(() => {
             clearTimeout(timeoutId);
           });
@@ -46,12 +61,14 @@ export const supabase = (() => {
         }
       }
     });
+    
+    isClientInitialized = true;
   }
   return clientInstance;
 })();
 
 // Connection health check utility
-export const checkConnectionHealth = async (): Promise<{ healthy: boolean; latency?: number; error?: string }> => {
+export const checkConnectionHealth = async (): Promise<{ healthy: boolean; latency?: number; error?: string; diagnostic?: any }> => {
   const startTime = Date.now();
   try {
     const { error } = await supabase
@@ -69,6 +86,27 @@ export const checkConnectionHealth = async (): Promise<{ healthy: boolean; laten
     return { healthy: true, latency };
   } catch (error) {
     const latency = Date.now() - startTime;
+    
+    // If it's a DNS/network error, run diagnostics
+    if (error instanceof Error && 
+        (error.message.includes('Failed to fetch') || 
+         error.message.includes('ERR_NAME_NOT_RESOLVED'))) {
+      
+      try {
+        const { runConnectionDiagnostics } = await import('@/utils/connectionDiagnostics');
+        const diagnostic = await runConnectionDiagnostics();
+        
+        return { 
+          healthy: false, 
+          latency, 
+          error: 'DNS resolution failed. Please check your internet connection or try using a VPN.',
+          diagnostic
+        };
+      } catch (diagError) {
+        console.warn('Failed to run connection diagnostics:', diagError);
+      }
+    }
+    
     return { 
       healthy: false, 
       latency, 
