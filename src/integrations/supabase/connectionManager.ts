@@ -13,20 +13,25 @@ interface ConnectionConfig {
   retries: number;
 }
 
+// Get configuration from environment variables or fallback to hardcoded values
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://uiprdzdskaqakfwhzssc.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NTMyMzIsImV4cCI6MjA2ODIyOTIzMn0.FCQX8C1q0QpFl_jKXYNN94rO67QIqmXkY1L4FnrniG8';
+const DATABASE_URL = import.meta.env.DATABASE_URL || 'postgresql://postgres.uiprdzdskaqakfwhzssc:ud-leads-971@aws-0-eu-west-2.pooler.supabase.com:5432/postgres';
+
 // Multiple connection configurations
 const CONNECTION_CONFIGS: ConnectionConfig[] = [
   // Primary: REST API (standard Supabase)
   {
     strategy: 'rest-api',
-    url: 'https://uiprdzdskaqakfwhzssc.supabase.co',
-    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NTMyMzIsImV4cCI6MjA2ODIyOTIzMn0.FCQX8C1q0QpFl_jKXYNN94rO67QIqmXkY1L4FnrniG8',
+    url: SUPABASE_URL,
+    key: SUPABASE_ANON_KEY,
     timeout: 30000,
     retries: 3
   },
   // Fallback: Direct database connection (for scripts)
   {
     strategy: 'direct-db',
-    url: 'postgresql://postgres.uiprdzdskaqakfwhzssc:ud-leads-971@aws-0-eu-west-2.pooler.supabase.com:5432/postgres',
+    url: DATABASE_URL,
     key: 'direct-connection',
     timeout: 45000,
     retries: 2

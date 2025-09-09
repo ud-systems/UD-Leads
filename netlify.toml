@@ -1,14 +1,12 @@
 [build]
   publish = "dist"
-  command = "npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
 
 # Handle SPA routing - exclude assets, API routes, and static files
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  conditions = {Role = ["admin"], Country = ["US"]}
-  force = false
 
 [build.environment]
   NODE_VERSION = "18"

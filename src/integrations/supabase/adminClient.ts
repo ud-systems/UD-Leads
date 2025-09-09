@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './types';
 
-const supabaseUrl = "https://uiprdzdskaqakfwhzssc.supabase.co";
-const supabaseServiceKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjY1MzIzMiwiZXhwIjoyMDY4MjI5MjMyfQ.bzQCRiKu7eayFZNVsCZn8vb4ngUt9prl5jDxUPJHQaE";
+// Get configuration from environment variables or fallback to hardcoded values
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://uiprdzdskaqakfwhzssc.supabase.co";
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHJkemRza2FxYWtmd2h6c3NjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjY1MzIzMiwiZXhwIjoyMDY4MjI5MjMyfQ.bzQCRiKu7eayFZNVsCZn8vb4ngUt9prl5jDxUPJHQaE";
 
 // Global flag to prevent multiple admin client instances
 let isAdminClientInitialized = false;
