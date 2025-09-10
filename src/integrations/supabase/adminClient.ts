@@ -28,6 +28,7 @@ export const supabaseAdmin = (() => {
           setItem: () => {},
           removeItem: () => {}
         },
+        flowType: 'pkce',
         storageKey: 'supabase-admin-storage-unique'
       },
       global: {

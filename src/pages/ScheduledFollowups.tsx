@@ -33,6 +33,7 @@ import { useUsers } from "@/hooks/useUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useToast } from "@/hooks/use-toast";
 import { DatePicker } from "@/components/ui/date-picker";
 import { LeadsSkeleton } from "@/components/ui/leads-skeleton";
@@ -59,6 +60,7 @@ export default function ScheduledFollowups() {
   
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedStoreType, setSelectedStoreType] = useState("All");
   const [selectedBuyingPower, setSelectedBuyingPower] = useState("All");
   const [selectedTerritory, setSelectedTerritory] = useState("All");
@@ -113,12 +115,15 @@ export default function ScheduledFollowups() {
   const filteredLeads = useMemo(() => {
     const filtered = roleFilteredLeads.filter(lead => {
       // Search filter
-      const matchesSearch = !searchTerm || 
-        lead.store_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.phone_number?.includes(searchTerm) ||
-        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.address?.toLowerCase().includes(searchTerm.toLowerCase());
+      const leadTerritory = territories?.find(t => t.id === lead.territory_id)?.city;
+      const matchesSearch = !debouncedSearchTerm || 
+        lead.store_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.contact_person?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.phone_number?.includes(debouncedSearchTerm) ||
+        lead.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.address?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.postal_code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        leadTerritory?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       // Status filter
       const matchesStatus = true; // Removed status filtering
@@ -130,7 +135,6 @@ export default function ScheduledFollowups() {
       const matchesBuyingPower = selectedBuyingPower === "All" || lead.weekly_spend === selectedBuyingPower;
       
       // Territory filter
-      const leadTerritory = territories?.find(t => t.id === lead.territory_id)?.city;
       const matchesTerritory = selectedTerritory === "All" || leadTerritory === selectedTerritory;
       
       // Salesperson filter
@@ -172,7 +176,7 @@ export default function ScheduledFollowups() {
     });
 
     return filtered;
-  }, [roleFilteredLeads, searchTerm, selectedStoreType, selectedBuyingPower, 
+  }, [roleFilteredLeads, debouncedSearchTerm, selectedStoreType, selectedBuyingPower, 
       selectedTerritory, selectedSalesperson, dateRange, territories, isSalesperson]);
 
   // Pagination
@@ -260,7 +264,7 @@ export default function ScheduledFollowups() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search leads..."
+              placeholder="Search leads, postal codes, territories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"

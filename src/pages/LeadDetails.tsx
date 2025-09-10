@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLeads, useUpdateLead, useLeadVisitCount } from "@/hooks/useLeads";
-import { useStoreTypeOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
+import { useStoreTypeOptions, useLeadStatusOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions } from "@/hooks/useSystemSettings";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
 // import { useLeadNotes, useCreateLeadNote } from "@/hooks/useLeadNotes";
@@ -173,6 +173,8 @@ export default function LeadDetails() {
   const { data: territories = [] } = useTerritories();
   const { data: storeTypeOptions = [] } = useStoreTypeOptions();
   const { data: leadStatusOptions = [] } = useLeadStatusOptions();
+  const { data: ownsShopOrWebsiteOptions = [] } = useOwnsShopOrWebsiteOptions();
+  const { data: numberOfStoresOptions = [] } = useNumberOfStoresOptions();
   const { toast } = useToast();
   const [lead, setLead] = useState<any>(null);
   
@@ -724,6 +726,56 @@ export default function LeadDetails() {
                   >
                     {isLoadingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : <Navigation className="h-3 w-3" />}
                   </Button>
+                </div>
+              </div>
+              
+              <div className="border-t border-border pt-3"></div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Postal Code:</span>
+                <div className="flex-1">
+                  <InlineEdit {...createInlineEditProps("postal_code", lead.postal_code || "")} />
+                </div>
+              </div>
+              
+              <div className="border-t border-border pt-3"></div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Number of Stores:</span>
+                <div className="flex-1">
+                  <InlineEdit 
+                    {...createInlineEditProps(
+                      "number_of_stores", 
+                      lead.number_of_stores || "", 
+                      "select",
+                      numberOfStoresOptions.map(option => ({ value: option, label: option }))
+                    )}
+                  />
+                </div>
+              </div>
+              
+              <div className="border-t border-border pt-3"></div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Current Supplier:</span>
+                <div className="flex-1">
+                  <InlineEdit {...createInlineEditProps("current_supplier", lead.current_supplier || "")} />
+                </div>
+              </div>
+              
+              <div className="border-t border-border pt-3"></div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Owns Shop/Website:</span>
+                <div className="flex-1">
+                  <InlineEdit 
+                    {...createInlineEditProps(
+                      "owns_shop_or_website", 
+                      lead.owns_shop_or_website || "", 
+                      "select",
+                      ownsShopOrWebsiteOptions.map(option => ({ value: option, label: option }))
+                    )}
+                  />
                 </div>
               </div>
               

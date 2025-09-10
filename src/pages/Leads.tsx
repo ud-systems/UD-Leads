@@ -36,6 +36,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useDebounce } from "@/hooks/useDebounce";
 import { DatePicker } from "@/components/ui/date-picker";
 
 export default function Leads() {
@@ -43,6 +44,7 @@ export default function Leads() {
   const { isMobile, isSmallDesktop } = useIsMobile();
   const { isDark } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedStoreType, setSelectedStoreType] = useState("All");
   const [selectedWeeklySpend, setSelectedWeeklySpend] = useState("All");
@@ -101,13 +103,16 @@ export default function Leads() {
   const filteredLeads = useMemo(() => {
     return roleFilteredLeads.filter(lead => {
       // Search filter
-      const matchesSearch = lead.store_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.salesperson?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+      const leadTerritory = territories.find(t => t.id === lead.territory_id)?.city;
+      const matchesSearch = lead.store_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.company_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.contact_person?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.phone_number?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.salesperson?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.notes?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.postal_code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        leadTerritory?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       // Status filter
       const matchesStatus = selectedStatus === "All" || lead.status === selectedStatus;
@@ -119,7 +124,6 @@ export default function Leads() {
       const matchesBuyingPower = selectedWeeklySpend === "All" || lead.weekly_spend === selectedWeeklySpend;
       
       // Territory filter
-      const leadTerritory = territories.find(t => t.id === lead.territory_id)?.city;
       const matchesTerritory = selectedTerritory === "All" || leadTerritory === selectedTerritory;
       
       // Salesperson filter
@@ -159,7 +163,7 @@ export default function Leads() {
       return matchesSearch && matchesStatus && matchesStoreType && matchesBuyingPower && 
              matchesTerritory && matchesSalesperson && matchesDateRange;
     });
-  }, [roleFilteredLeads, searchTerm, selectedStatus, selectedStoreType, selectedWeeklySpend, 
+  }, [roleFilteredLeads, debouncedSearchTerm, selectedStatus, selectedStoreType, selectedWeeklySpend, 
       selectedTerritory, selectedSalesperson, dateRange, territories, userRole, currentUser]);
 
   // Calculate if all leads are selected
@@ -366,7 +370,7 @@ export default function Leads() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search leads..."
+              placeholder="Search leads, postal codes, territories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"

@@ -21,12 +21,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useDebounce } from "@/hooks/useDebounce";
 import { DatePicker } from "@/components/ui/date-picker";
 
 export default function Visits() {
   const navigate = useNavigate();
   const { isMobile } = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedSalesperson, setSelectedSalesperson] = useState("All");
   const [selectedTerritory, setSelectedTerritory] = useState("All");
@@ -86,18 +88,20 @@ export default function Visits() {
 
   const filteredVisits = useMemo(() => {
     return roleFilteredVisits.filter(groupedVisit => {
+      const leadTerritory = territories.find(t => t.id === groupedVisit.lead.territory_id)?.city;
       const matchesSearch = 
-        groupedVisit.lead.store_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        groupedVisit.lead.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        groupedVisit.lead.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        groupedVisit.lead.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        groupedVisit.lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        groupedVisit.lead.salesperson?.toLowerCase().includes(searchTerm.toLowerCase());
+        groupedVisit.lead.store_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        groupedVisit.lead.company_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        groupedVisit.lead.contact_person?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        groupedVisit.lead.phone_number?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        groupedVisit.lead.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        groupedVisit.lead.salesperson?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        groupedVisit.lead.postal_code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        leadTerritory?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       const matchesStatus = selectedStatus === "All" || groupedVisit.lastVisit.status === selectedStatus;
       const matchesSalesperson = selectedSalesperson === "All" || groupedVisit.lastVisit.salesperson === selectedSalesperson;
       
-      const leadTerritory = territories.find(t => t.id === groupedVisit.lead.territory_id)?.city;
       const matchesTerritory = selectedTerritory === "All" || leadTerritory === selectedTerritory;
 
       // Date range filtering
@@ -131,7 +135,7 @@ export default function Visits() {
 
       return matchesSearch && matchesStatus && matchesSalesperson && matchesTerritory && matchesDateRange;
     });
-  }, [roleFilteredVisits, searchTerm, selectedStatus, selectedSalesperson, selectedTerritory, territories, dateRange]);
+  }, [roleFilteredVisits, debouncedSearchTerm, selectedStatus, selectedSalesperson, selectedTerritory, territories, dateRange]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredVisits.length / visitsPerPage);
@@ -221,7 +225,7 @@ export default function Visits() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search visits..."
+              placeholder="Search visits, postal codes, territories..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
