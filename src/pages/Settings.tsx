@@ -12,6 +12,7 @@ import { ConversionRulesManager } from "@/components/admin/ConversionRulesManage
 import { DataManagement } from "@/components/data/DataManagement";
 import { DataExportImport } from "@/components/data/DataExportImport";
 import { PushNotificationSettings } from "@/components/notifications/PushNotificationSettings";
+import { CacheManager } from "@/components/debug/CacheManager";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function Settings() {
@@ -38,6 +39,7 @@ export default function Settings() {
             <TabsTrigger value="data" className="flex-shrink-0">Data</TabsTrigger>
             {isAdmin && <TabsTrigger value="dataManagement" className="flex-shrink-0">Data Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="conversionRules" className="flex-shrink-0">Conversion Rules</TabsTrigger>}
+            <TabsTrigger value="debug" className="flex-shrink-0">Debug</TabsTrigger>
 
             {(isAdmin || isManager) && <TabsTrigger value="users" className="flex-shrink-0">Users</TabsTrigger>}
           </TabsList>
@@ -79,6 +81,14 @@ export default function Settings() {
             <ConversionRulesManager />
           </TabsContent>
         )}
+
+        <TabsContent value="debug" className="space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold">Debug Tools</h2>
+            <p className="text-muted-foreground">Tools for troubleshooting and cache management</p>
+          </div>
+          <CacheManager />
+        </TabsContent>
 
         {(isAdmin || isManager) && (
           <TabsContent value="users">

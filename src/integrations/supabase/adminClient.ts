@@ -37,7 +37,7 @@ export const supabaseAdmin = (() => {
         // Enhanced fetch configuration with better error handling
         fetch: (url, options = {}) => {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout for admin operations
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for faster response
           
           return fetch(url, {
             ...options,

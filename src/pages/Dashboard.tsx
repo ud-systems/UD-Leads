@@ -46,13 +46,17 @@ export default function Dashboard() {
   // Refresh function to manually update dashboard data
   const handleRefresh = async () => {
     console.log('Refreshing dashboard data...');
-    await Promise.all([
-      refetchLeads(),
-      refetchVisits(),
-      refetchUsers(),
-      refetchTerritories()
-    ]);
-    console.log('Dashboard data refreshed');
+    try {
+      await Promise.all([
+        refetchLeads(),
+        refetchVisits(),
+        refetchUsers(),
+        refetchTerritories()
+      ]);
+      console.log('Dashboard data refreshed');
+    } catch (error) {
+      console.error('Error refreshing dashboard data:', error);
+    }
   };
 
   // Get salespeople for filter dropdown

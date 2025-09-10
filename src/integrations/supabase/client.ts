@@ -21,7 +21,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     },
     fetch: (url, options = {}) => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduced to 10 seconds
       
       return fetch(url, {
         ...options,
@@ -47,15 +47,17 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
   }
 });
 
-// Connection test function
+// Connection test function - optimized for speed
 export const testConnection = async () => {
   try {
+    // Use a simple health check instead of querying profiles
     const { data, error } = await supabase
       .from('profiles')
-      .select('count')
-      .limit(1);
+      .select('id')
+      .limit(1)
+      .single();
     
-    if (error) {
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is fine
       console.error('Connection test failed:', error);
       return false;
     }

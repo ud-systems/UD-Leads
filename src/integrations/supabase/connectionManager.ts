@@ -25,7 +25,7 @@ const CONNECTION_CONFIGS: ConnectionConfig[] = [
     strategy: 'rest-api',
     url: SUPABASE_URL,
     key: SUPABASE_ANON_KEY,
-    timeout: 30000,
+    timeout: 10000, // Reduced to 10 seconds for faster response
     retries: 3
   },
   // Fallback: Direct database connection (for scripts)
@@ -33,7 +33,7 @@ const CONNECTION_CONFIGS: ConnectionConfig[] = [
     strategy: 'direct-db',
     url: DATABASE_URL,
     key: 'direct-connection',
-    timeout: 45000,
+    timeout: 15000, // Reduced to 15 seconds for faster response
     retries: 2
   }
 ];

@@ -81,6 +81,9 @@ export const useLeads = () => {
       return filteredData;
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes - leads change frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 };
 

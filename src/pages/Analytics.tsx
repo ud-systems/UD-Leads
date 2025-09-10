@@ -19,6 +19,7 @@ import { StoreTypeAreaChart } from "@/components/charts/StoreTypeAreaChart";
 import { StatCardsCarousel } from "@/components/ui/stat-cards-carousel";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { DatePicker } from "@/components/ui/date-picker";
 
 export default function Analytics() {
@@ -35,6 +36,21 @@ export default function Analytics() {
   const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useUsers();
   const { userRole, isSalesperson, isManager, isAdmin } = useRoleAccess();
   const { user: currentUser } = useAuth();
+  const { data: profile } = useProfile(currentUser?.id);
+  
+  // Debug visits data for salesperson
+  useMemo(() => {
+    if (userRole === 'salesperson' && visits.length > 0) {
+      console.log('Analytics - Visits data for salesperson:', {
+        totalVisits: visits.length,
+        sampleVisits: visits.slice(0, 3).map(v => ({
+          id: v.id,
+          salesperson: v.lastVisit?.salesperson,
+          lead_name: v.lastVisit?.leads?.store_name
+        }))
+      });
+    }
+  }, [visits, userRole]);
 
   // Determine page title based on user role
   const pageTitle = isSalesperson ? "My Analytics" : "Lead Analytics";
@@ -62,9 +78,33 @@ export default function Analytics() {
     
     let filteredLeads = leads;
     
-    // Apply role-based filtering
+    // Apply role-based filtering - use exact same logic as useLeads hook
     if (userRole === 'salesperson') {
-      filteredLeads = leads.filter(lead => lead.salesperson === currentUser.email);
+      const salespersonName = profile?.name || currentUser.email || 'Unknown';
+      const salespersonEmail = currentUser.email;
+      
+      console.log('Analytics - Salesperson filtering:', {
+        userRole,
+        salespersonName,
+        salespersonEmail,
+        currentUserEmail: currentUser.email,
+        totalLeads: leads.length,
+        profileName: profile?.name
+      });
+      
+      filteredLeads = leads.filter(lead => 
+        lead.salesperson === salespersonName || 
+        lead.salesperson === salespersonEmail
+      );
+      
+      console.log('Analytics - Filtered leads for salesperson:', {
+        filteredCount: filteredLeads.length,
+        sampleLeads: filteredLeads.slice(0, 3).map(l => ({
+          id: l.id,
+          store_name: l.store_name,
+          salesperson: l.salesperson
+        }))
+      });
     } else if (userRole === 'manager') {
       filteredLeads = leads.filter(lead => lead.manager_id === currentUser.id);
     }

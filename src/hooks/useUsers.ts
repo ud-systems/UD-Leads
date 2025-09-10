@@ -53,33 +53,28 @@ export const useUsers = () => {
 
         console.log('Users fetched successfully:', users?.length || 0);
 
-        // Then get user preferences for each user
-        const usersWithPreferences = await Promise.all(
-          users.map(async (user) => {
-            try {
-              const { data: preferences, error: prefError } = await client
-                .from('user_preferences')
-                .select('daily_visit_target')
-                .eq('user_id', user.id)
-                .maybeSingle();
+        // Get all user preferences in a single query for better performance
+        const userIds = users.map(user => user.id);
+        const { data: allPreferences, error: prefError } = await client
+          .from('user_preferences')
+          .select('user_id, daily_visit_target')
+          .in('user_id', userIds);
 
-              if (prefError) {
-                console.warn(`Error fetching preferences for user ${user.id}:`, prefError);
-              }
+        if (prefError) {
+          console.warn('Error fetching user preferences:', prefError);
+        }
 
-              return {
-                ...user,
-                user_preferences: preferences
-              };
-            } catch (error) {
-              console.warn(`Error processing user ${user.id}:`, error);
-              return {
-                ...user,
-                user_preferences: null
-              };
-            }
-          })
-        );
+        // Create a map for quick lookup
+        const preferencesMap = new Map();
+        allPreferences?.forEach(pref => {
+          preferencesMap.set(pref.user_id, { daily_visit_target: pref.daily_visit_target });
+        });
+
+        // Combine users with their preferences
+        const usersWithPreferences = users.map(user => ({
+          ...user,
+          user_preferences: preferencesMap.get(user.id) || null
+        }));
         
         console.log('Users with preferences processed:', usersWithPreferences.length);
         return usersWithPreferences as UserWithPreferences[];
@@ -89,6 +84,8 @@ export const useUsers = () => {
       }
     },
     enabled: !!user, // Only run when user is authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes - users don't change often
+    gcTime: 10 * 60 * 1000, // 10 minutes
     retry: (failureCount, error) => {
       console.log('useUsers retry attempt:', failureCount, error);
       return failureCount < 2; // Only retry once

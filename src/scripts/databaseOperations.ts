@@ -12,8 +12,8 @@ const DB_CONFIG = {
   ssl: {
     rejectUnauthorized: false
   },
-  connectionTimeoutMillis: 30000,
-  query_timeout: 30000
+  connectionTimeoutMillis: 10000, // Reduced to 10 seconds for faster connection
+  query_timeout: 10000 // Reduced to 10 seconds for faster response
 };
 
 class DatabaseOperations {

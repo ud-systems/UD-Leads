@@ -1,5 +1,5 @@
 // Service Worker for Offline-First Lead Management
-const CACHE_NAME = 'ud-leads-cache-v1';
+const CACHE_NAME = 'ud-leads-cache-v2';
 const OFFLINE_URLS = [
   '/',
   '/offline.html'
@@ -7,6 +7,7 @@ const OFFLINE_URLS = [
 
 // Install event - cache essential resources
 self.addEventListener('install', (event) => {
+  console.log('Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -14,6 +15,8 @@ self.addEventListener('install', (event) => {
         return cache.addAll(OFFLINE_URLS);
       })
   );
+  // Skip waiting to activate immediately
+  self.skipWaiting();
 });
 
 // Fetch event - serve from cache when offline
@@ -27,23 +30,44 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip service worker for API calls and dynamic content
+  if (event.request.url.includes('/api/') ||
+      event.request.url.includes('supabase.co') ||
+      event.request.url.includes('supabase.io') ||
+      event.request.method !== 'GET') {
+    return;
+  }
+
   // Only handle navigation requests and specific resources
   if (event.request.mode === 'navigate' || 
       event.request.destination === 'document' ||
       event.request.url.includes('/offline.html')) {
     
     event.respondWith(
-      caches.match(event.request)
+      fetch(event.request)
         .then((response) => {
-          // Return cached version or fetch from network
-          return response || fetch(event.request);
+          // Only cache successful responses
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
         })
         .catch(() => {
-          // Return offline page if both cache and network fail
-          if (event.request.mode === 'navigate') {
-            return caches.match('/offline.html');
-          }
-          return new Response('Offline', { status: 503 });
+          // Return cached version if network fails
+          return caches.match(event.request)
+            .then((cachedResponse) => {
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              // Return offline page if both cache and network fail
+              if (event.request.mode === 'navigate') {
+                return caches.match('/offline.html');
+              }
+              return new Response('Offline', { status: 503 });
+            });
         })
     );
   }

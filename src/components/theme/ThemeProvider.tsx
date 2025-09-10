@@ -67,17 +67,25 @@ export function ThemeProvider({
     }
   }, [systemTheme, systemSettingsLoading, systemSettings])
 
-  // Add timeout fallback to prevent infinite loading
+  // Add timeout fallback to prevent infinite loading - reduced to 1 second
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!isInitialized) {
         console.warn('Theme: System settings timeout, using fallback theme')
         setIsInitialized(true)
       }
-    }, 3000) // 3 second timeout
+    }, 1000) // 1 second timeout for faster initialization
 
     return () => clearTimeout(timeout)
   }, [isInitialized])
+
+  // Initialize immediately if no system settings are needed
+  useEffect(() => {
+    if (!systemSettingsLoading && !systemSettings) {
+      console.log('Theme: No system settings, using stored theme')
+      setIsInitialized(true)
+    }
+  }, [systemSettingsLoading, systemSettings])
 
   // Force refresh system settings when theme changes locally
   useEffect(() => {

@@ -61,6 +61,10 @@ export const useSystemSettings = () => {
       
       return data;
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes - settings don't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 

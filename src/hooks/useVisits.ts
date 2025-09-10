@@ -133,6 +133,9 @@ export const useVisits = () => {
       return result;
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes - visits change frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 };
 
