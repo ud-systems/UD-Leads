@@ -67,7 +67,7 @@ class ConnectionManager {
           storage: localStorage,
           persistSession: true,
           autoRefreshToken: true,
-          storageKey: 'retail-lead-compass-auth-unique',
+          storageKey: 'retail-lead-compass-connection-manager',
           flowType: 'pkce'
         },
         global: {

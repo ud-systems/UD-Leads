@@ -644,10 +644,10 @@ export default function Leads() {
                       <span className="truncate">{lead.phone_number}</span>
                     </div>
                   )}
-                  {lead.email && (
+                  {lead.postal_code && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{lead.email}</span>
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{lead.postal_code}</span>
                     </div>
                   )}
                 </div>

@@ -69,6 +69,20 @@ export function DataManagement() {
       console.log('Saving with dialogType:', dialogType, 'editingItem:', editingItem);
       console.log('Form data:', formData);
       
+      // Validate required fields based on dialog type
+      if (dialogType === "status" && (!formData.name || formData.name.trim() === '')) {
+        throw new Error('Status name is required');
+      }
+      if (dialogType === "storeType" && (!formData.name || formData.name.trim() === '')) {
+        throw new Error('Store type name is required');
+      }
+      if (dialogType === "weeklySpend" && (!formData.name || formData.name.trim() === '')) {
+        throw new Error('Buying power level name is required');
+      }
+      if (dialogType === "territory" && (!formData.city || formData.city.trim() === '')) {
+        throw new Error('City name is required');
+      }
+      
       switch (dialogType) {
         case "status":
           if (editingItem) {
@@ -129,31 +143,85 @@ export function DataManagement() {
           }
           break;
         case "weeklySpend": {
-          // Update system settings for weekly spend levels
-          const newWeeklySpend = [...buyingPowerLevels, formData.name];
-          await updateSystemSetting.mutateAsync({
-            key: 'weekly_spend_options',
-            value: JSON.stringify(newWeeklySpend),
-            description: 'Available weekly spend levels'
-          });
+          if (editingItem) {
+            // Update existing weekly spend level
+            const newWeeklySpend = buyingPowerLevels.map((level, index) => 
+              index === editingItem.index ? formData.name : level
+            );
+            await updateSystemSetting.mutateAsync({
+              key: 'weekly_spend_options',
+              value: JSON.stringify(newWeeklySpend),
+              description: 'Available weekly spend levels'
+            });
+          } else {
+            // Create new weekly spend level
+            const newWeeklySpend = [...buyingPowerLevels, formData.name];
+            await updateSystemSetting.mutateAsync({
+              key: 'weekly_spend_options',
+              value: JSON.stringify(newWeeklySpend),
+              description: 'Available weekly spend levels'
+            });
+          }
           break;
         }
         case "storeType": {
-          // Update system settings for store types
-          const newStoreTypes = [...storeTypeOptions, formData.name];
-          await updateSystemSetting.mutateAsync({
-            key: 'store_type_options',
-            value: JSON.stringify(newStoreTypes),
-            description: 'Available store type options'
-          });
+          if (editingItem) {
+            // Update existing store type
+            const newStoreTypes = storeTypeOptions.map((type, index) => 
+              index === editingItem.index ? formData.name : type
+            );
+            await updateSystemSetting.mutateAsync({
+              key: 'store_type_options',
+              value: JSON.stringify(newStoreTypes),
+              description: 'Available store type options'
+            });
+          } else {
+            // Create new store type
+            const newStoreTypes = [...storeTypeOptions, formData.name];
+            await updateSystemSetting.mutateAsync({
+              key: 'store_type_options',
+              value: JSON.stringify(newStoreTypes),
+              description: 'Available store type options'
+            });
+          }
           break;
         }
         case "territory": {
-          await createTerritory.mutateAsync({
-            city: formData.city,
-            country: formData.country,
-            status: formData.status
-          });
+          if (!formData.city || formData.city.trim() === '') {
+            throw new Error('City name is required');
+          }
+          
+          if (editingItem) {
+            // Update existing territory
+            console.log('Updating territory with data:', {
+              id: editingItem.id,
+              city: formData.city,
+              country: formData.country,
+              status: formData.status
+            });
+            
+            await updateTerritory.mutateAsync({
+              id: editingItem.id,
+              updates: {
+                city: formData.city.trim(),
+                country: formData.country || "United Kingdom",
+                status: formData.status || "active"
+              }
+            });
+          } else {
+            // Create new territory
+            console.log('Creating territory with data:', {
+              city: formData.city,
+              country: formData.country,
+              status: formData.status
+            });
+            
+            await createTerritory.mutateAsync({
+              city: formData.city.trim(),
+              country: formData.country || "United Kingdom",
+              status: formData.status || "active"
+            });
+          }
           break;
         }
       }
@@ -177,17 +245,21 @@ export function DataManagement() {
         text_color: "#1E40AF",
       });
     } catch (error) {
+      console.error('Error saving item:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save item";
       toast({
         title: "Error",
-        description: "Failed to save item",
+        description: errorMessage,
         variant: "destructive",
       });
     }
   };
 
   const handleEdit = (item: any, type: string) => {
+    console.log('Editing item:', item, 'type:', type);
     setEditingItem(item);
     setDialogType(type);
+    
     if (type === "territory") {
       setFormData({
         name: "",
@@ -202,9 +274,10 @@ export function DataManagement() {
       });
     } else if (type === "status") {
       // Find existing status color for this status
-      const existingColor = statusColors.find(sc => sc.status_name === item.name);
+      const statusName = item.name || item;
+      const existingColor = statusColors.find(sc => sc.status_name === statusName);
       setFormData({
-        name: item.name || item,
+        name: statusName,
         description: item.description || "",
         color: item.color || "default",
         city: "",
@@ -215,6 +288,7 @@ export function DataManagement() {
         text_color: existingColor?.text_color || "#1E40AF",
       });
     } else {
+      // For weeklySpend and storeType
       setFormData({
         name: item.name || item,
         description: item.description || "",
@@ -334,16 +408,50 @@ export function DataManagement() {
           </div>
           <Dialog open={openDialog} onOpenChange={setOpenDialog}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => {
+                // Map activeTab to correct dialogType
+                const tabToDialogType: { [key: string]: string } = {
+                  "statuses": "status",
+                  "storeTypes": "storeType", 
+                  "buyingPower": "weeklySpend",
+                  "territories": "territory"
+                };
+                
+                const dialogType = tabToDialogType[activeTab] || activeTab;
+                console.log('Add button clicked - activeTab:', activeTab, 'dialogType:', dialogType);
+                
+                setDialogType(dialogType);
+                setEditingItem(null);
+                setFormData({
+                  name: "",
+                  description: "",
+                  color: "default",
+                  city: "",
+                  country: "United Kingdom",
+                  status: "Active",
+                  color_code: "#3B82F6",
+                  background_color: "#DBEAFE",
+                  text_color: "#1E40AF",
+                });
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add {activeTab.slice(0, -1)}
+                Add {activeTab === "statuses" ? "Status" : 
+                     activeTab === "storeTypes" ? "Store Type" :
+                     activeTab === "buyingPower" ? "Buying Power" :
+                     activeTab === "territories" ? "Territory" : "Item"}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add {activeTab.slice(0, -1)}</DialogTitle>
+                <DialogTitle>Add {dialogType === "status" ? "Status" : 
+                              dialogType === "storeType" ? "Store Type" :
+                              dialogType === "weeklySpend" ? "Buying Power Level" :
+                              dialogType === "territory" ? "Territory" : "Item"}</DialogTitle>
                 <DialogDescription>
-                  Add a new {activeTab.slice(0, -1)} to the system
+                  Add a new {dialogType === "status" ? "status" : 
+                            dialogType === "storeType" ? "store type" :
+                            dialogType === "weeklySpend" ? "buying power level" :
+                            dialogType === "territory" ? "territory" : "item"} to the system
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -670,7 +778,7 @@ export function DataManagement() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit({ name: level, index }, "buyingPower")}
+                        onClick={() => handleEdit({ name: level, index }, "weeklySpend")}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -689,7 +797,7 @@ export function DataManagement() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete({ name: level, index }, "buyingPower")}>
+                            <AlertDialogAction onClick={() => handleDelete({ name: level, index }, "weeklySpend")}>
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>

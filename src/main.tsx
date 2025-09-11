@@ -2,6 +2,17 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+// Suppress browser extension errors that don't affect our application
+window.addEventListener('unhandledrejection', (event) => {
+  // Check if the error is from a browser extension
+  if (event.reason?.message?.includes('message channel closed') || 
+      event.reason?.stack?.includes('videoStreamBlocker') ||
+      event.reason?.stack?.includes('extension')) {
+    console.warn('Suppressed browser extension error:', event.reason);
+    event.preventDefault(); // Prevent the error from showing in console
+  }
+});
+
 // Validate critical environment variables
 const validateEnvironment = () => {
   const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']

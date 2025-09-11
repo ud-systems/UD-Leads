@@ -28,21 +28,14 @@ export default function Auth() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const { getConnectionManager } = await import('@/integrations/supabase/connectionManager');
-        const manager = getConnectionManager();
-        await manager.forceHealthCheck();
-        
-        const healthStatus = manager.getHealthStatus();
-        const currentStrategy = manager.getCurrentStrategy();
-        
-        // Check if any strategy is healthy
-        const isHealthy = Array.from(healthStatus.values()).some(status => status.healthy);
+        // Use simple connection test instead of connection manager to avoid multiple GoTrueClient instances
+        const { testConnection } = await import('@/integrations/supabase/client');
+        const isHealthy = await testConnection();
         setConnectionStatus(isHealthy ? 'healthy' : 'unhealthy');
         
         console.log('Connection status:', {
-          currentStrategy,
-          healthStatus: Object.fromEntries(healthStatus),
-          isHealthy
+          isHealthy,
+          strategy: 'direct-client-test'
         });
       } catch (error) {
         console.error('Connection health check failed:', error);

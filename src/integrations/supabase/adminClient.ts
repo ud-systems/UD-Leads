@@ -29,7 +29,7 @@ export const supabaseAdmin = (() => {
           removeItem: () => {}
         },
         flowType: 'pkce',
-        storageKey: 'supabase-admin-storage-unique'
+        storageKey: 'supabase-admin-no-session'
       },
       global: {
         headers: {

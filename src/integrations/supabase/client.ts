@@ -12,7 +12,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-    storageKey: 'retail-lead-compass-auth',
+    storageKey: 'retail-lead-compass-auth-main',
     flowType: 'pkce'
   },
   global: {
@@ -104,6 +104,26 @@ export const withRetry = async <T>(
   
   throw lastError!;
 };
+
+// Handle auth errors and clear invalid tokens
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+    console.log('Auth state changed:', event);
+  }
+});
+
+// Handle auth errors
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    // Clear any invalid tokens from localStorage
+    try {
+      localStorage.removeItem('retail-lead-compass-auth-main');
+      console.log('Cleared invalid auth tokens');
+    } catch (error) {
+      console.warn('Failed to clear auth tokens:', error);
+    }
+  }
+});
 
 // Test connection on import (but don't block the app)
 testConnection().then(success => {
