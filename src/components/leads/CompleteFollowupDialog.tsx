@@ -14,6 +14,7 @@ import {
 import { useUpdateLead } from "@/hooks/useLeads";
 import { useCreateVisit } from "@/hooks/useVisits";
 import { useToast } from "@/hooks/use-toast";
+import { getUKDateTime } from "@/utils/timeUtils";
 import { Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { Lead } from "@/hooks/useLeads";
 import { format } from "date-fns";
@@ -43,17 +44,18 @@ export function CompleteFollowupDialog({ lead, open, onOpenChange }: CompleteFol
     setIsLoading(true);
     
     try {
-      const now = new Date().toISOString();
+      // Use UK timezone for follow-up completion
+      const ukDateTime = getUKDateTime();
       
       // Update lead with follow-up completion
       await updateLead({
         id: lead.id,
         updates: {
           followup_status: 'completed',
-          followup_completed_date: now,
-          followup_completed_time: now,
+          followup_completed_date: ukDateTime.iso,
+          followup_completed_time: ukDateTime.iso,
           followup_notes: formData.followup_notes,
-          last_visit: now.split('T')[0], // Set today as last visit
+          last_visit: ukDateTime.date, // Set today as last visit
           next_visit: null // Clear next visit since it's completed
         }
       });
@@ -61,8 +63,8 @@ export function CompleteFollowupDialog({ lead, open, onOpenChange }: CompleteFol
       // Create a visit record from the completed follow-up
       await createVisit({
         lead_id: lead.id,
-        date: now.split('T')[0],
-        time: now.split('T')[1].split('.')[0],
+        date: ukDateTime.date,
+        time: ukDateTime.time,
         status: 'completed',
         notes: `Follow-up completed: ${formData.visit_notes || formData.followup_notes || 'No additional notes'}`,
         salesperson: lead.salesperson || 'Unknown'

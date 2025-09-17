@@ -17,12 +17,14 @@ import { useLeads, useUpdateLead, useLeadVisitCount } from "@/hooks/useLeads";
 import { useStoreTypeOptions, useLeadStatusOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions } from "@/hooks/useSystemSettings";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
+import { formatUKDate, formatUKTime } from "@/utils/timeUtils";
 // import { useLeadNotes, useCreateLeadNote } from "@/hooks/useLeadNotes";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/hooks/useTheme";
 import { LeadPhotoDisplay } from "@/components/leads/LeadPhotoDisplay";
 import { DeleteLeadDialog } from "@/components/leads/DeleteLeadDialog";
 import { PhotoPreviewDialog } from "@/components/leads/PhotoPreviewDialog";
+import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-validation";
 import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import React, { useCallback, useMemo } from "react";
@@ -191,6 +193,11 @@ export default function LeadDetails() {
   const [editValue, setEditValue] = useState<string>("");
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [newComment, setNewComment] = useState("");
+  
+  // State for photo editing
+  const [editingPhotos, setEditingPhotos] = useState<string | null>(null); // 'exterior' or 'interior'
+  const [tempExteriorPhotos, setTempExteriorPhotos] = useState<string[]>([]);
+  const [tempInteriorPhotos, setTempInteriorPhotos] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -248,6 +255,51 @@ export default function LeadDetails() {
   const handleEditValueChange = useCallback((value: string) => {
     setEditValue(value);
   }, []);
+
+  // Photo editing handlers
+  const startPhotoEditing = useCallback((photoType: 'exterior' | 'interior') => {
+    setEditingPhotos(photoType);
+    if (photoType === 'exterior') {
+      setTempExteriorPhotos(lead?.exterior_photos || []);
+    } else {
+      setTempInteriorPhotos(lead?.interior_photos || []);
+    }
+  }, [lead]);
+
+  const cancelPhotoEditing = useCallback(() => {
+    setEditingPhotos(null);
+    setTempExteriorPhotos([]);
+    setTempInteriorPhotos([]);
+  }, []);
+
+  const savePhotoChanges = useCallback(async (photoType: 'exterior' | 'interior') => {
+    if (!lead) return;
+
+    try {
+      const photos = photoType === 'exterior' ? tempExteriorPhotos : tempInteriorPhotos;
+      const fieldName = photoType === 'exterior' ? 'exterior_photos' : 'interior_photos';
+      
+      await updateLeadMutation({
+        id: lead.id,
+        updates: { [fieldName]: photos }
+      });
+      
+      setEditingPhotos(null);
+      setTempExteriorPhotos([]);
+      setTempInteriorPhotos([]);
+      
+      toast({
+        title: "Success",
+        description: `${photoType === 'exterior' ? 'Exterior' : 'Interior'} photos updated successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to update ${photoType === 'exterior' ? 'exterior' : 'interior'} photos`,
+        variant: "destructive",
+      });
+    }
+  }, [lead, tempExteriorPhotos, tempInteriorPhotos, updateLeadMutation, toast]);
 
   // Helper function to create InlineEdit props
   const createInlineEditProps = useCallback((field: string, value: string, type: "text" | "select" | "textarea" | "date" = "text", options: { value: string; label: string }[] = []) => ({
@@ -474,9 +526,22 @@ export default function LeadDetails() {
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h4 className="font-semibold text-lg">Exterior Photos</h4>
-                <Badge variant="secondary" className="text-xs">
-                  {lead.exterior_photos?.length || 0} photos
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    {lead.exterior_photos?.length || 0} photos
+                  </Badge>
+                  {editingPhotos !== 'exterior' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startPhotoEditing('exterior')}
+                      className="h-6 px-2"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </div>
               
               {lead.exterior_photos && lead.exterior_photos.length > 0 ? (
@@ -524,15 +589,60 @@ export default function LeadDetails() {
                   </div>
                 </div>
               )}
+              
+              {/* Photo Upload Component when editing */}
+              {editingPhotos === 'exterior' && (
+                <div className="space-y-4">
+                  <PhotoUploadWithValidation
+                    photos={tempExteriorPhotos}
+                    onPhotosChange={setTempExteriorPhotos}
+                    bucket="lead-photos"
+                    maxPhotos={10}
+                    className="w-full"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => savePhotoChanges('exterior')}
+                      disabled={isPending}
+                    >
+                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      Save Changes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={cancelPhotoEditing}
+                      disabled={isPending}
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Interior Photos */}
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h4 className="font-semibold text-lg">Interior Photos</h4>
-                <Badge variant="secondary" className="text-xs">
-                  {lead.interior_photos?.length || 0} photos
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    {lead.interior_photos?.length || 0} photos
+                  </Badge>
+                  {editingPhotos !== 'interior' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => startPhotoEditing('interior')}
+                      className="h-6 px-2"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
               </div>
               
               {lead.interior_photos && lead.interior_photos.length > 0 ? (
@@ -577,6 +687,38 @@ export default function LeadDetails() {
                       <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-3" />
                       <p className="text-sm text-muted-foreground">No interior photos uploaded</p>
                     </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Photo Upload Component when editing */}
+              {editingPhotos === 'interior' && (
+                <div className="space-y-4">
+                  <PhotoUploadWithValidation
+                    photos={tempInteriorPhotos}
+                    onPhotosChange={setTempInteriorPhotos}
+                    bucket="lead-photos"
+                    maxPhotos={10}
+                    className="w-full"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => savePhotoChanges('interior')}
+                      disabled={isPending}
+                    >
+                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      Save Changes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={cancelPhotoEditing}
+                      disabled={isPending}
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel
+                    </Button>
                   </div>
                 </div>
               )}
@@ -868,7 +1010,7 @@ export default function LeadDetails() {
                   <div className="border-t border-border pt-3"></div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Coordinates Filled:</span>
-                    <span className="text-sm">{new Date(lead.form_start_time).toLocaleString()}</span>
+                    <span className="text-sm">{formatUKDate(lead.form_start_time)} {lead.form_start_time.includes('T') ? lead.form_start_time.split('T')[1].split('+')[0] : new Date(lead.form_start_time).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                   </div>
                 </>
               )}
@@ -878,7 +1020,7 @@ export default function LeadDetails() {
                   <div className="border-t border-border pt-3"></div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Form Submitted:</span>
-                    <span className="text-sm">{new Date(lead.form_submit_time).toLocaleString()}</span>
+                    <span className="text-sm">{formatUKDate(lead.form_submit_time)} {lead.form_submit_time.includes('T') ? lead.form_submit_time.split('T')[1].split('+')[0] : new Date(lead.form_submit_time).toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                   </div>
                 </>
               )}
@@ -962,7 +1104,7 @@ export default function LeadDetails() {
                     <Badge variant="secondary" className="text-xs">Notes</Badge>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(lead.created_at || '').toLocaleString()}
+                    {formatUKDate(lead.created_at || '')} {lead.created_at && lead.created_at.includes('T') ? lead.created_at.split('T')[1].split('.')[0] : new Date(lead.created_at || '').toLocaleTimeString("en-GB", { timeZone: "Europe/London", hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </span>
                 </div>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{lead.notes}</p>

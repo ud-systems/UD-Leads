@@ -4,6 +4,7 @@ import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/type
 import { useAuth } from './useAuth';
 import { useProfile } from './useProfile';
 import { useRoleAccess } from './useRoleAccess';
+import { toUKDateTime, getUKDateTime } from '@/utils/timeUtils';
 
 export type Lead = Tables<'leads'>;
 export type LeadInsert = TablesInsert<'leads'>;
@@ -132,9 +133,25 @@ export const useCreateLead = () => {
         throw leadError;
       }
 
-      // Auto-create initial visit
-      const currentDate = new Date().toISOString().split('T')[0];
-      const currentTime = new Date().toTimeString().split(' ')[0];
+      // Auto-create initial visit using the form submission time in UK timezone
+      // Use form_submit_time if available, otherwise fall back to current UK time
+      const formSubmitTime = lead.form_submit_time || getUKDateTime().iso;
+      
+      // If form_submit_time is already in UK timezone format, use it directly
+      // Otherwise, convert to UK timezone
+      let currentDate: string;
+      let currentTime: string;
+      
+      if (formSubmitTime && formSubmitTime.includes('+00:00')) {
+        // Already in UK timezone format, extract date and time directly
+        currentDate = formSubmitTime.split('T')[0];
+        currentTime = formSubmitTime.split('T')[1].split('+')[0];
+      } else {
+        // Convert to UK timezone
+        const ukDateTime = toUKDateTime(formSubmitTime);
+        currentDate = ukDateTime.date;
+        currentTime = ukDateTime.time;
+      }
       
       // Check if a visit already exists for this lead today to prevent duplicates
       const { data: existingVisit, error: checkError } = await supabase

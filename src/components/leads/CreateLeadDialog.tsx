@@ -36,6 +36,7 @@ import { useLeadDraft } from "@/hooks/useLeadDraft";
 import { DraftRecoveryDialog } from "./DraftRecoveryDialog";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { OfflineStatusIndicator } from "@/components/ui/offline-status-indicator";
+import { getUKDateTime } from "@/utils/timeUtils";
 
 export function CreateLeadDialog() {
   const [open, setOpen] = useState(false);
@@ -160,9 +161,9 @@ export function CreateLeadDialog() {
         longitude: position.coords.longitude.toFixed(6)
       }));
       
-      // Record start time when coordinates are first filled
+      // Record start time when coordinates are first filled (in UK timezone)
       if (!formStartTime) {
-        const startTime = new Date().toISOString();
+        const startTime = getUKDateTime().iso;
         setFormStartTime(startTime);
         setDraftFormStartTime(startTime);
       }
@@ -218,8 +219,7 @@ export function CreateLeadDialog() {
       postal_code: true,
       status: true,
       notes: true,
-      exterior_photos: true,
-      interior_photos: true
+      exterior_photos: true
     }));
     
     // Check for validation errors on all required fields
@@ -227,7 +227,7 @@ export function CreateLeadDialog() {
       'store_name', 'contact_person', 'company_name', 'email', 'phone_number',
       'number_of_stores', 'current_supplier', 'weekly_spend', 'products_currently_sold',
       'owns_shop_or_website', 'territory_id', 'store_type', 'latitude', 'longitude',
-      'postal_code', 'status', 'notes', 'exterior_photos', 'interior_photos'
+      'postal_code', 'status', 'notes', 'exterior_photos'
     ];
 
     // Check if any required field has an error
@@ -242,7 +242,9 @@ export function CreateLeadDialog() {
       return; // Stop submission if status or notes are empty
     }
 
-    const formSubmitTime = new Date().toISOString();
+    // Use UK timezone for form submission time
+    const ukDateTime = getUKDateTime();
+    const formSubmitTime = ukDateTime.iso;
     const formDurationMs = formStartTime ? 
       new Date(formSubmitTime).getTime() - new Date(formStartTime).getTime() : 
       null;
@@ -421,8 +423,6 @@ export function CreateLeadDialog() {
         return !formData.notes.trim() ? 'Notes are required' : undefined;
       case 'exterior_photos':
         return formData.exterior_photos.length === 0 ? 'At least one exterior photo is required' : undefined;
-      case 'interior_photos':
-        return formData.interior_photos.length === 0 ? 'At least one interior photo is required' : undefined;
       default:
         return undefined;
     }
@@ -480,8 +480,7 @@ export function CreateLeadDialog() {
         current_supplier: true,
         weekly_spend: true,
         products_currently_sold: true,
-        owns_shop_or_website: true,
-        interior_photos: true
+        owns_shop_or_website: true
       }));
       
       // Check validation errors for step 2
@@ -493,8 +492,7 @@ export function CreateLeadDialog() {
           !formData.current_supplier.trim() ||
           !formData.weekly_spend.trim() ||
           !formData.products_currently_sold.trim() ||
-          !formData.owns_shop_or_website.trim() ||
-          formData.interior_photos.length === 0) {
+          !formData.owns_shop_or_website.trim()) {
         return;
       }
     }

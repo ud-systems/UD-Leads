@@ -17,6 +17,8 @@
     "test:coverage": "vitest --coverage",
     "preview": "vite preview",
     "populate-uk-cities": "tsx src/scripts/populateUKCities.ts",
+    "export-database": "node scripts/export-database.js",
+    "import-database": "node scripts/import-database.js",
     "prepare": "husky install"
   },
   "dependencies": {

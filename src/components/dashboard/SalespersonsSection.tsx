@@ -98,27 +98,34 @@ export function SalespersonsSection({ dateRange }: SalespersonsSectionProps) {
     return filteredUsers
       .map((user: any) => {
         // Count visits for this salesperson within the date range
-        const periodVisits = visits.filter(visit => {
-          const visitDate = new Date(visit.lastVisit.date);
-          const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
-          const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-          const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        const periodVisits = visits.reduce((total, visitGroup) => {
+          // Count all visits in this group that match the salesperson and date range
+          const matchingVisits = visitGroup.allVisits.filter(visit => {
+            const visitDate = new Date(visit.date);
+            const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
+            const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            
+            const salespersonMatch = visit.salesperson === user.name || 
+                                    visit.salesperson === user.email ||
+                                    visitGroup.lead?.salesperson === user.name ||
+                                    visitGroup.lead?.salesperson === user.email;
+            
+            return salespersonMatch && 
+                   visitDateOnly >= startDateOnly && 
+                   visitDateOnly <= endDateOnly;
+          });
           
-          const salespersonMatch = visit.lastVisit.salesperson === user.name || 
-                                  visit.lastVisit.salesperson === user.email ||
-                                  visit.lead?.salesperson === user.name ||
-                                  visit.lead?.salesperson === user.email;
-          
-          return salespersonMatch && 
-                 visitDateOnly >= startDateOnly && 
-                 visitDateOnly <= endDateOnly;
-        }).length;
+          return total + matchingVisits.length;
+        }, 0);
 
         // Get the most recent visit for this salesperson
         const lastVisit = visits
-          .filter(visit => {
-            const salespersonMatch = visit.lastVisit.salesperson === user.name || 
-                                   visit.lastVisit.salesperson === user.email;
+          .filter(visitGroup => {
+            const salespersonMatch = visitGroup.lastVisit.salesperson === user.name || 
+                                   visitGroup.lastVisit.salesperson === user.email ||
+                                   visitGroup.lead?.salesperson === user.name ||
+                                   visitGroup.lead?.salesperson === user.email;
             return salespersonMatch;
           })
           .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())[0];

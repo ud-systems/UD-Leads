@@ -11,6 +11,7 @@ import { useLeads } from "@/hooks/useLeads";
 import { useCreateVisit } from "@/hooks/useVisits";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { getUKDate, getUKTime } from "@/utils/timeUtils";
 
 export function ScheduleVisitDialog() {
   const [open, setOpen] = useState(false);
@@ -22,9 +23,8 @@ export function ScheduleVisitDialog() {
   
   // Get current date and time
   const getCurrentDateTime = () => {
-    const now = new Date();
-    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD format
-    const time = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+    const date = getUKDate(); // YYYY-MM-DD format in UK timezone
+    const time = getUKTime(); // HH:MM format in UK timezone
     return { date, time };
   };
   

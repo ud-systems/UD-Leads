@@ -1,0 +1,14 @@
+Database Export Summary
+========================
+
+Export Date: 2025-09-11T08:57:03.568Z
+Supabase URL: https://uiprdzdskaqakfwhzssc.supabase.co
+
+Tables Exported:
+
+System Settings: 0 settings
+
+Files Generated:
+- database-export-2025-09-11.json (Complete data export)
+- database-export-2025-09-11.sql (SQL statements)
+- export-summary-2025-09-11.txt (This summary)

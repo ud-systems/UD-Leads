@@ -230,6 +230,13 @@ export const useCreateVisit = () => {
       queryClient.invalidateQueries({ queryKey: ['leads', 'visitCount'] });
       // Invalidate leads to refresh notes
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      // Invalidate dashboard and analytics data
+      queryClient.invalidateQueries({ queryKey: ['targets'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['territories'] });
+      // Force refetch to ensure immediate updates
+      queryClient.refetchQueries({ queryKey: ['visits'] });
+      queryClient.refetchQueries({ queryKey: ['leads'] });
     },
   });
 };
@@ -257,6 +264,15 @@ export const useUpdateVisit = () => {
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       // Invalidate visit count queries for leads
       queryClient.invalidateQueries({ queryKey: ['leads', 'visitCount'] });
+      // Invalidate leads to refresh notes
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      // Invalidate dashboard and analytics data
+      queryClient.invalidateQueries({ queryKey: ['targets'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['territories'] });
+      // Force refetch to ensure immediate updates
+      queryClient.refetchQueries({ queryKey: ['visits'] });
+      queryClient.refetchQueries({ queryKey: ['leads'] });
     },
   });
 };
@@ -280,6 +296,15 @@ export const useDeleteVisit = () => {
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       // Invalidate visit count queries for leads
       queryClient.invalidateQueries({ queryKey: ['leads', 'visitCount'] });
+      // Invalidate leads to refresh notes
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      // Invalidate dashboard and analytics data
+      queryClient.invalidateQueries({ queryKey: ['targets'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['territories'] });
+      // Force refetch to ensure immediate updates
+      queryClient.refetchQueries({ queryKey: ['visits'] });
+      queryClient.refetchQueries({ queryKey: ['leads'] });
     },
   });
 };

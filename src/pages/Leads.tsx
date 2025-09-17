@@ -39,6 +39,21 @@ import { useProfile } from "@/hooks/useProfile";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DatePicker } from "@/components/ui/date-picker";
 
+// Component to display visit count for a lead
+function LeadVisitCount({ leadId }: { leadId: string }) {
+  const { data: visitCount = 0, isLoading } = useLeadVisitCount(leadId);
+  
+  if (isLoading) {
+    return <span className="text-xs">Loading...</span>;
+  }
+  
+  return (
+    <span className="text-xs">
+      {visitCount} visit{visitCount !== 1 ? 's' : ''}
+    </span>
+  );
+}
+
 export default function Leads() {
   const navigate = useNavigate();
   const { isMobile, isSmallDesktop } = useIsMobile();
@@ -526,6 +541,7 @@ export default function Leads() {
                 <TableHead className="small-desktop-text min-w-[100px]">Status</TableHead>
                 <TableHead className="small-desktop-text min-w-[100px]">Store Type</TableHead>
                 <TableHead className="small-desktop-text min-w-[100px]">Territory</TableHead>
+                <TableHead className="small-desktop-text min-w-[100px]">Visits</TableHead>
                 <TableHead className="small-desktop-text min-w-[120px]">Salesperson</TableHead>
                 <TableHead className="small-desktop-text min-w-[100px]">Created</TableHead>
                 <TableHead className="text-right small-desktop-text w-12">Actions</TableHead>
@@ -571,6 +587,9 @@ export default function Leads() {
                   </TableCell>
                   <TableCell className="small-desktop-text truncate">
                     {territories.find(t => t.id === lead.territory_id)?.city || 'Unknown'}
+                  </TableCell>
+                  <TableCell className="small-desktop-text">
+                    <LeadVisitCount leadId={lead.id} />
                   </TableCell>
                   <TableCell className="small-desktop-text truncate">{lead.salesperson}</TableCell>
                   <TableCell className="small-desktop-text">
@@ -650,6 +669,14 @@ export default function Leads() {
                       <span className="truncate">{lead.postal_code}</span>
                     </div>
                   )}
+                </div>
+                
+                {/* Visit Count */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4 flex-shrink-0" />
+                  <span>
+                    <LeadVisitCount leadId={lead.id} />
+                  </span>
                 </div>
                 
                 {/* Tags */}

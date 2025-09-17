@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { getUKTime, getUKDate } from "@/utils/timeUtils";
 
 export function DataExportImport() {
   const [exportType, setExportType] = useState<string>("");
@@ -557,12 +558,12 @@ export function DataExportImport() {
         territory_id: lead.territory_id
       })));
 
-      // Auto-create initial visits for each imported lead
-      const currentTime = new Date().toTimeString().split(' ')[0];
+      // Auto-create initial visits for each imported lead using UK timezone
+      const currentTime = getUKTime();
 
       const visitPromises = insertedLeads.map(lead => {
-        // Use lead's last_visit date if available, otherwise use next_visit, fallback to current date
-        const visitDate = lead.last_visit || lead.next_visit || new Date().toISOString().split('T')[0];
+        // Use lead's last_visit date if available, otherwise use next_visit, fallback to current UK date
+        const visitDate = lead.last_visit || lead.next_visit || getUKDate();
         
         return supabase
           .from('visits')
