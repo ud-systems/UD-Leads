@@ -28,7 +28,7 @@ export interface Database {
           contact_person: string | null
           latitude: number | null
           longitude: number | null
-          products_currently_sold: string[] | null
+          top_3_selling_products: string[] | null
           last_visit: string | null
           next_visit: string | null
           exterior_photo_url: string | null
@@ -67,7 +67,7 @@ export interface Database {
           contact_person?: string | null
           latitude?: number | null
           longitude?: number | null
-          products_currently_sold?: string[] | null
+          top_3_selling_products?: string[] | null
           last_visit?: string | null
           next_visit?: string | null
           exterior_photo_url?: string | null
@@ -98,7 +98,7 @@ export interface Database {
           contact_person?: string | null
           latitude?: number | null
           longitude?: number | null
-          products_currently_sold?: string[] | null
+          top_3_selling_products?: string[] | null
           last_visit?: string | null
           next_visit?: string | null
           exterior_photo_url?: string | null

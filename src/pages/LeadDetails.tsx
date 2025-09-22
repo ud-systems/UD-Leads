@@ -227,7 +227,7 @@ export default function LeadDetails() {
     let valueToSave: any = editValue;
     
     // Handle array fields
-    if (field === 'products_currently_sold' || field === 'tags') {
+    if (field === 'top_3_selling_products' || field === 'tags') {
       valueToSave = editValue.split(',').map((item: string) => item.trim()).filter((item: string) => item.length > 0);
     }
 
@@ -927,7 +927,7 @@ export default function LeadDetails() {
                 <span className="font-bold text-base w-full sm:w-32 flex-shrink-0">Products:</span>
                 <div className="flex-1">
                   <InlineEdit 
-                    {...createInlineEditProps("products_currently_sold", lead.products_currently_sold?.join(', ') || "", "textarea")}
+                    {...createInlineEditProps("top_3_selling_products", lead.top_3_selling_products?.join(', ') || "", "textarea")}
                   />
                 </div>
               </div>

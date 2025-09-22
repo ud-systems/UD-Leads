@@ -123,6 +123,7 @@ export default function ScheduledFollowups() {
         lead.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         lead.address?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         lead.postal_code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.top_3_selling_products?.some(product => product.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
         leadTerritory?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       // Status filter

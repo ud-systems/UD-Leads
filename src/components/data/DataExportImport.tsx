@@ -276,7 +276,7 @@ export function DataExportImport() {
           territory_id: randomTerritory.id,
           latitude: (cityCoords.lat + latVariation).toFixed(6),
           longitude: (cityCoords.lng + lngVariation).toFixed(6),
-          products_currently_sold: selectedProducts,
+          top_3_selling_products: selectedProducts,
           status: statuses[Math.floor(Math.random() * statuses.length)],
           salesperson: randomSalesperson,
           last_visit: lastVisitDate.toISOString().split('T')[0],
@@ -502,8 +502,8 @@ export function DataExportImport() {
             territory_id: row.territory_id && row.territory_id.trim() !== '' ? row.territory_id : null,
             latitude: row.latitude ? parseFloat(row.latitude) : null,
             longitude: row.longitude ? parseFloat(row.longitude) : null,
-            products_currently_sold: row.products_currently_sold ? 
-              row.products_currently_sold.split(',').map(p => p.trim()).filter(p => p) : 
+            top_3_selling_products: row.top_3_selling_products ? 
+              row.top_3_selling_products.split(',').map(p => p.trim()).filter(p => p) : 
               [],
             status: row.status || 'New Prospect',
             salesperson: row.salesperson || '',

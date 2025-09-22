@@ -200,17 +200,22 @@ export const useCreateLead = () => {
       return newLead;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['visits'] });
-      // Invalidate all visit count queries to ensure they refresh
-      queryClient.invalidateQueries({ queryKey: ['leads', 'visitCount'] });
-      // Invalidate performance-related queries
-      queryClient.invalidateQueries({ queryKey: ['targets'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['territories'] });
-      // Force refetch all related data
-      queryClient.refetchQueries({ queryKey: ['leads'] });
-      queryClient.refetchQueries({ queryKey: ['visits'] });
+      // Use safe invalidation to prevent race conditions
+      const queryKeys = [
+        ['leads'],
+        ['visits'],
+        ['leads', 'visitCount'],
+        ['targets'],
+        ['users'],
+        ['territories']
+      ];
+      
+      // Debounce invalidation to prevent overwhelming the system
+      setTimeout(() => {
+        queryKeys.forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }, 100);
     },
   });
 };

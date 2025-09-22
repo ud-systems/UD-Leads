@@ -357,7 +357,7 @@ export default function Visits() {
                 <TableHead>Time</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Salesperson</TableHead>
-                <TableHead>Territory</TableHead>
+                <TableHead>Postal Code</TableHead>
                 <TableHead>Total Visits</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -395,7 +395,7 @@ export default function Visits() {
                   </TableCell>
                   <TableCell>{groupedVisit.lastVisit.salesperson}</TableCell>
                   <TableCell>
-                    {territories.find(t => t.id === groupedVisit.lead.territory_id)?.city || 'Unknown'}
+                    {groupedVisit.lead.postal_code || 'N/A'}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{groupedVisit.allVisits.length}</Badge>
@@ -463,7 +463,7 @@ export default function Visits() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4 flex-shrink-0" />
                     <span className="truncate">
-                      {territories?.find(t => t.id === groupedVisit.lead.territory_id)?.city || 'No territory'}
+                      {groupedVisit.lead.postal_code || 'N/A'}
                     </span>
                   </div>
                 </div>

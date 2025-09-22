@@ -73,6 +73,15 @@ export function EnhancedSearch({
         hasMatch = true;
       }
 
+      // Search by top 3 selling products
+      if (lead.top_3_selling_products?.some(product => product.toLowerCase().includes(term))) {
+        const matchingProducts = lead.top_3_selling_products.filter(product => 
+          product.toLowerCase().includes(term)
+        );
+        matches.push(`Top Products: ${matchingProducts.join(', ')}`);
+        hasMatch = true;
+      }
+
       // Search by contact person
       if (lead.contact_person?.toLowerCase().includes(term)) {
         matches.push(`Contact: ${lead.contact_person}`);

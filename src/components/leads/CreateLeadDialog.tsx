@@ -100,7 +100,7 @@ export function CreateLeadDialog() {
     latitude: "",
     longitude: "",
     postal_code: "",
-    products_currently_sold: "",
+    top_3_selling_products: "",
     
     // Status & Visits
     status: "New Prospect",
@@ -210,7 +210,7 @@ export function CreateLeadDialog() {
       number_of_stores: true,
       current_supplier: true,
       weekly_spend: true,
-      products_currently_sold: true,
+      top_3_selling_products: true,
       owns_shop_or_website: true,
       territory_id: true,
       store_type: true,
@@ -225,7 +225,7 @@ export function CreateLeadDialog() {
     // Check for validation errors on all required fields
     const requiredFields = [
       'store_name', 'contact_person', 'company_name', 'email', 'phone_number',
-      'number_of_stores', 'current_supplier', 'weekly_spend', 'products_currently_sold',
+      'number_of_stores', 'current_supplier', 'weekly_spend', 'top_3_selling_products',
       'owns_shop_or_website', 'territory_id', 'store_type', 'latitude', 'longitude',
       'postal_code', 'status', 'notes', 'exterior_photos'
     ];
@@ -261,7 +261,7 @@ export function CreateLeadDialog() {
       latitude: formData.latitude ? parseFloat(formData.latitude) : null,
       longitude: formData.longitude ? parseFloat(formData.longitude) : null,
       postal_code: formData.postal_code || undefined,
-      products_currently_sold: formData.products_currently_sold ? formData.products_currently_sold.split(',').map(p => p.trim()) : [],
+      top_3_selling_products: formData.top_3_selling_products ? formData.top_3_selling_products.split(',').map(p => p.trim()) : [],
       last_visit: formData.last_visit || null,
       next_visit: formData.next_visit || null,
       exterior_photo_url: formData.exterior_photos[0] || undefined, // Keep first photo as primary
@@ -303,7 +303,7 @@ export function CreateLeadDialog() {
             latitude: "",
             longitude: "",
             postal_code: "",
-            products_currently_sold: "",
+            top_3_selling_products: "",
             status: "New Prospect",
             salesperson: "",
             last_visit: "",
@@ -369,7 +369,7 @@ export function CreateLeadDialog() {
         latitude: "",
         longitude: "",
         postal_code: "",
-        products_currently_sold: "",
+        top_3_selling_products: "",
         status: "New Prospect",
         salesperson: "",
         last_visit: "",
@@ -403,8 +403,8 @@ export function CreateLeadDialog() {
         return !formData.current_supplier.trim() ? 'Current supplier is required' : undefined;
       case 'weekly_spend':
         return !formData.weekly_spend.trim() ? 'Weekly spend is required' : undefined;
-      case 'products_currently_sold':
-        return !formData.products_currently_sold.trim() ? 'Products currently sold is required' : undefined;
+      case 'top_3_selling_products':
+        return !formData.top_3_selling_products.trim() ? 'Products currently sold is required' : undefined;
       case 'owns_shop_or_website':
         return !formData.owns_shop_or_website.trim() ? 'Shop/Website ownership is required' : undefined;
       case 'territory_id':
@@ -479,7 +479,7 @@ export function CreateLeadDialog() {
         number_of_stores: true,
         current_supplier: true,
         weekly_spend: true,
-        products_currently_sold: true,
+        top_3_selling_products: true,
         owns_shop_or_website: true
       }));
       
@@ -491,7 +491,7 @@ export function CreateLeadDialog() {
           !formData.number_of_stores.trim() ||
           !formData.current_supplier.trim() ||
           !formData.weekly_spend.trim() ||
-          !formData.products_currently_sold.trim() ||
+          !formData.top_3_selling_products.trim() ||
           !formData.owns_shop_or_website.trim()) {
         return;
       }
@@ -818,18 +818,18 @@ export function CreateLeadDialog() {
       {/* Products Currently Sold - Full width */}
       <div className="space-y-1">
         <label className="text-sm font-medium text-foreground">
-          Products Currently Sold *
+          Top 3 Selling Products *
         </label>
         <Textarea
-          value={formData.products_currently_sold}
-          onChange={(e) => handleInputChange("products_currently_sold", e.target.value)}
-          placeholder="Products Currently Sold (comma-separated)"
+          value={formData.top_3_selling_products}
+          onChange={(e) => handleInputChange("top_3_selling_products", e.target.value)}
+          placeholder="Top 3 Selling Products (comma-separated)"
           rows={3}
-          className={`h-12 min-h-[3rem] ${getFieldError('products_currently_sold') ? 'border-red-500' : ''}`}
+          className={`h-12 min-h-[3rem] ${getFieldError('top_3_selling_products') ? 'border-red-500' : ''}`}
         />
-        {getFieldError('products_currently_sold') && (
+        {getFieldError('top_3_selling_products') && (
           <div className="flex items-center gap-1.5 text-xs px-1 text-red-600 dark:text-red-400">
-            <span className="leading-tight">{getFieldError('products_currently_sold')}</span>
+            <span className="leading-tight">{getFieldError('top_3_selling_products')}</span>
           </div>
         )}
       </div>

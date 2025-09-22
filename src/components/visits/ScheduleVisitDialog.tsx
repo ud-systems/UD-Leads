@@ -65,7 +65,8 @@ export function ScheduleVisitDialog() {
       lead.store_name.toLowerCase().includes(searchTerm) ||
       lead.contact_person.toLowerCase().includes(searchTerm) ||
       lead.company_name.toLowerCase().includes(searchTerm) ||
-      lead.postal_code?.toLowerCase().includes(searchTerm)
+      lead.postal_code?.toLowerCase().includes(searchTerm) ||
+      lead.top_3_selling_products?.some(product => product.toLowerCase().includes(searchTerm))
     );
   }, [leads, leadSearch]);
 
@@ -209,6 +210,7 @@ export function ScheduleVisitDialog() {
                       <div className="text-xs text-muted-foreground">
                         {lead.contact_person} • {lead.company_name}
                         {lead.postal_code && ` • ${lead.postal_code}`}
+                        {lead.top_3_selling_products && lead.top_3_selling_products.length > 0 && ` • ${lead.top_3_selling_products.slice(0, 2).join(', ')}`}
                       </div>
                     </div>
                   ))}
@@ -237,6 +239,7 @@ export function ScheduleVisitDialog() {
                 <div className="text-xs text-green-600 dark:text-green-300">
                   {selectedLead.contact_person} • {selectedLead.company_name}
                   {selectedLead.postal_code && ` • ${selectedLead.postal_code}`}
+                  {selectedLead.top_3_selling_products && selectedLead.top_3_selling_products.length > 0 && ` • ${selectedLead.top_3_selling_products.slice(0, 2).join(', ')}`}
                 </div>
               </div>
             )}

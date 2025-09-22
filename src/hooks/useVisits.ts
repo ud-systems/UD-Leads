@@ -52,7 +52,8 @@ export const useVisits = () => {
             phone_number,
             email,
             salesperson,
-            territory_id
+            territory_id,
+            postal_code
           )
         `)
         .order('created_at', { ascending: false });

@@ -127,6 +127,7 @@ export default function Leads() {
         lead.salesperson?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         lead.notes?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         lead.postal_code?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        lead.top_3_selling_products?.some(product => product.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
         leadTerritory?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       // Status filter
@@ -667,6 +668,12 @@ export default function Leads() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="h-4 w-4 flex-shrink-0" />
                       <span className="truncate">{lead.postal_code}</span>
+                    </div>
+                  )}
+                  {lead.top_3_selling_products && lead.top_3_selling_products.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <ShoppingCart className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{lead.top_3_selling_products.slice(0, 2).join(', ')}{lead.top_3_selling_products.length > 2 ? '...' : ''}</span>
                     </div>
                   )}
                 </div>

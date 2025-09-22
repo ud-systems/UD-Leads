@@ -310,30 +310,26 @@ export default function Analytics() {
     return cards;
   }, [keyMetrics, leadStatusOptions, dateRange, selectedSalesperson, roleFilteredLeads, conversionRules]);
 
-  // Products Analysis
-  const productsData = useMemo(() => {
+  // Top 3 Selling Products Analysis
+  const topProductsData = useMemo(() => {
     const productStats = roleFilteredLeads.reduce((acc, lead) => {
-      if (lead.products_currently_sold && Array.isArray(lead.products_currently_sold)) {
-        lead.products_currently_sold.forEach(product => {
+      if (lead.top_3_selling_products && Array.isArray(lead.top_3_selling_products)) {
+        lead.top_3_selling_products.forEach(product => {
           if (!acc[product]) {
-            acc[product] = { total: 0, active: 0 };
+            acc[product] = 0;
           }
-          acc[product].total++;
-          if (lead.status === 'Active') acc[product].active++;
+          acc[product]++;
         });
       }
       return acc;
-    }, {} as Record<string, { total: number; active: number }>);
+    }, {} as Record<string, number>);
 
     return Object.entries(productStats)
-      .map(([product, stats]: [string, { total: number; active: number }]) => ({
+      .map(([product, count]: [string, number]) => ({
         name: product,
-        total: stats.total,
-        active: stats.active,
-        conversionRate: stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : '0'
+        count: count
       }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10); // Top 10 products
+      .sort((a, b) => b.count - a.count); // Sort by count, show all products
   }, [roleFilteredLeads]);
 
   return (
@@ -461,25 +457,28 @@ export default function Analytics() {
         </TabsContent>
       </Tabs>
 
-      {/* Products Analysis */}
+      {/* Top 3 Selling Products */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Top Products Analysis
+            Top 3 Selling Products
           </CardTitle>
-          <CardDescription>Most common products and their conversion rates</CardDescription>
+          <CardDescription>Most popular products listed as top selling by stores</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {productsData.map((product, index) => (
-              <div key={index} className="p-4 border rounded-lg">
-                <div className="font-medium">{product.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {product.active}/{product.total} active
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {topProductsData.map((product, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">{product.name}</span>
+                  <span className="text-sm text-muted-foreground">{product.count} stores</span>
                 </div>
-                <div className="text-lg font-bold text-primary">
-                  {product.conversionRate}%
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min((product.count / Math.max(...topProductsData.map(p => p.count))) * 100, 100)}%` }}
+                  />
                 </div>
               </div>
             ))}
