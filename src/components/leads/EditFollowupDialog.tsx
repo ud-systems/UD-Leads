@@ -134,6 +134,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
                 value={formData.store_name}
                 onChange={(e) => handleInputChange("store_name", e.target.value)}
                 required
+                className="border border-input"
               />
             </div>
             
@@ -143,6 +144,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
                 id="contact_person"
                 value={formData.contact_person}
                 onChange={(e) => handleInputChange("contact_person", e.target.value)}
+                className="border border-input"
               />
             </div>
           </div>
@@ -154,6 +156,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
                 id="phone_number"
                 value={formData.phone_number}
                 onChange={(e) => handleInputChange("phone_number", e.target.value)}
+                className="border border-input"
               />
             </div>
             
@@ -164,6 +167,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
+                className="border border-input"
               />
             </div>
           </div>
@@ -172,7 +176,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
-                <SelectTrigger>
+                <SelectTrigger className="border border-input">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -186,7 +190,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
             <div className="space-y-2">
               <Label htmlFor="territory">Territory</Label>
               <Select value={formData.territory_id} onValueChange={(value) => handleInputChange("territory_id", value)}>
-                <SelectTrigger>
+                <SelectTrigger className="border border-input">
                   <SelectValue placeholder="Select territory" />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,7 +206,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
             <div className="space-y-2">
               <Label htmlFor="salesperson">Salesperson</Label>
               <Select value={formData.salesperson} onValueChange={(value) => handleInputChange("salesperson", value)}>
-                <SelectTrigger>
+                <SelectTrigger className="border border-input">
                   <SelectValue placeholder="Select salesperson" />
                 </SelectTrigger>
                 <SelectContent>
@@ -223,6 +227,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
                 type="date"
                 value={formData.next_visit}
                 onChange={(e) => handleInputChange("next_visit", e.target.value)}
+                className="border border-input"
               />
             </div>
           </div>
@@ -235,6 +240,7 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
               onChange={(e) => handleInputChange("notes", e.target.value)}
               rows={3}
               placeholder="Add any additional notes about this followup..."
+              className="border border-input"
             />
           </div>
 

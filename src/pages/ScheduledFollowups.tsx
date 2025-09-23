@@ -25,7 +25,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Target
+  Target,
+  ArrowUpRight
 } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -263,12 +264,12 @@ export default function ScheduledFollowups() {
         <div className="flex flex-col lg:flex-row gap-3 w-full">
           {/* Search Bar */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 hidden sm:block" />
             <Input
               placeholder="Search leads, postal codes, territories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-3 sm:pl-10 pr-4 border border-input"
             />
           </div>
 
@@ -393,7 +394,7 @@ export default function ScheduledFollowups() {
               <th className="text-left p-2 text-sm font-semibold">Store Name</th>
               <th className="text-left p-2 text-sm font-semibold">Contact</th>
               <th className="text-left p-2 text-sm font-semibold">Followup Date</th>
-              <th className="text-left p-2 text-sm font-semibold">Territory</th>
+              <th className="text-left p-2 text-sm font-semibold">Postal Code</th>
               <th className="text-left p-2 text-sm font-semibold">Salesperson</th>
               <th className="text-left p-2 text-sm font-semibold">Actions</th>
             </tr>
@@ -470,7 +471,7 @@ export default function ScheduledFollowups() {
                   <td className="p-2">
                     <div className="flex items-center gap-1 text-sm">
                       <MapPin className="h-3 w-3" />
-                      {territories?.find(t => t.id === lead.territory_id)?.city || 'Unknown'}
+                      {lead.postal_code || 'N/A'}
                     </div>
                   </td>
                   <td className="p-2">
@@ -529,46 +530,42 @@ export default function ScheduledFollowups() {
         ) : (
           <div className="space-y-3">
             {paginatedLeads.map((lead) => (
-              <div key={lead.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/leads/${lead.id}`)}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-sm mb-1">{lead.store_name}</h3>
-                    <p className="text-xs text-muted-foreground">{lead.contact_person}</p>
-                  </div>
-                  <Checkbox
-                    checked={selectedLeads.includes(lead.id)}
-                    onCheckedChange={(checked) => handleLeadSelection(lead.id, checked as boolean)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+              <div key={lead.id} className="border rounded-lg p-4 bg-card hover:bg-muted/50 transition-colors cursor-pointer relative" onClick={() => navigate(`/leads/${lead.id}`)}>
+                {/* Navigation Arrow */}
+                <ArrowUpRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground" />
+                
+                <div className="mb-4 pr-6">
+                  <h3 className="font-semibold text-base mb-1">{lead.store_name}</h3>
+                  <p className="text-sm text-muted-foreground">{lead.contact_person}</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-blue-500" />
-                    <span className="font-medium">
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    <span className="text-sm font-medium">
                       {lead.next_visit ? format(new Date(lead.next_visit), 'MMM dd, yyyy') : 'Not set'}
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-3 w-3" />
-                    <span>{territories?.find(t => t.id === lead.territory_id)?.city || 'Unknown'}</span>
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm">{lead.postal_code || 'N/A'}</span>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Users className="h-3 w-3" />
-                    <span>{lead.salesperson}</span>
+                  <div className="flex items-center gap-3">
+                    <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm">{lead.salesperson}</span>
                   </div>
                 </div>
                 
-                <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(lead)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(lead)} className="h-9 px-3 hover:bg-blue-50 hover:text-blue-600">
+                    <Edit className="h-4 w-4 mr-1" />
+                    <span className="text-sm">Edit</span>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleDelete(lead)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(lead)} className="h-9 px-3 hover:bg-red-50 hover:text-red-600">
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    <span className="text-sm">Delete</span>
                   </Button>
                 </div>
               </div>
