@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, uploadWithRetry } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -26,12 +26,13 @@ export function FileUpload({
   bucket, 
   folder = "", 
   accept = "image/*",
-  maxSize = 5,
+  maxSize = 10,
   maxWidth = 1920,
   maxHeight = 1080,
   quality = 0.8
 }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [preview, setPreview] = useState<string | null>(value ? `https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/${bucket}/${value}` : null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -137,17 +138,17 @@ export function FileUpload({
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload compressed file
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, compressedFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Upload compressed file with retry logic
+      const { data, error } = await uploadWithRetry(bucket, fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: false,
+        onProgress: (progress) => setUploadProgress(progress),
+        maxRetries: 3
+      });
 
       if (error) {
         console.error('Supabase upload error:', error);
-        throw new Error(error.message || 'Upload failed');
+        throw new Error(error.message || 'Upload failed after retries');
       }
 
       // Update form value
@@ -161,6 +162,9 @@ export function FileUpload({
         title: "Upload successful",
         description: `File uploaded successfully! Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
       });
+      
+      // Reset progress
+      setUploadProgress(0);
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -255,9 +259,17 @@ export function FileUpload({
           />
           
           {isUploading ? (
-            <div className="flex flex-col items-center space-y-2">
+            <div className="flex flex-col items-center space-y-2 w-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               <p className="text-sm text-muted-foreground">Compressing and uploading...</p>
+              {uploadProgress > 0 && (
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center space-y-2">

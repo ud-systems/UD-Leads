@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, uploadWithRetry } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -28,7 +28,7 @@ export function MultiPhotoUpload({
   bucket, 
   folder = "", 
   accept = "image/*",
-  maxSize = 5,
+  maxSize = 10,
   maxPhotos = 10,
   maxWidth = 1920,
   maxHeight = 1080,
@@ -36,6 +36,7 @@ export function MultiPhotoUpload({
   forceLivePhoto = false
 }: MultiPhotoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -150,17 +151,17 @@ export function MultiPhotoUpload({
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload compressed file
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, compressedFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Upload compressed file with retry logic
+      const { data, error } = await uploadWithRetry(bucket, fileName, compressedFile, {
+        cacheControl: '3600',
+        upsert: false,
+        onProgress: (progress) => setUploadProgress(progress),
+        maxRetries: 3
+      });
 
       if (error) {
         console.error('Supabase upload error:', error);
-        throw new Error(error.message || 'Upload failed');
+        throw new Error(error.message || 'Upload failed after retries');
       }
 
       // Add new photo to the array
@@ -171,6 +172,9 @@ export function MultiPhotoUpload({
         title: "Upload successful",
         description: `Photo uploaded successfully! Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
       });
+      
+      // Reset progress
+      setUploadProgress(0);
 
     } catch (error) {
       console.error('Upload error:', error);

@@ -21,7 +21,20 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     },
     fetch: (url, options = {}) => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduced to 10 seconds
+      
+      // Dynamic timeout based on request type
+      let timeout = 10000; // Default 10 seconds for API calls
+      
+      // Check if this is a storage upload (longer timeout needed)
+      if (url.includes('/storage/v1/object/') && options.method === 'POST') {
+        timeout = 120000; // 2 minutes for file uploads
+      }
+      // Check if this is a large data operation
+      else if (options.body && options.body instanceof FormData) {
+        timeout = 60000; // 1 minute for form data
+      }
+      
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       
       return fetch(url, {
         ...options,
@@ -31,8 +44,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
           console.warn(`Connection failed for URL: ${url}`);
           throw new Error(`Connection failed. This may be due to regional restrictions.`);
         } else if (error.name === 'AbortError') {
-          console.warn(`Connection timeout for URL: ${url}`);
-          throw new Error(`Connection timeout. The server is taking too long to respond.`);
+          console.warn(`Connection timeout for URL: ${url} (${timeout/1000}s timeout)`);
+          throw new Error(`Connection timeout. The server is taking too long to respond (${timeout/1000}s limit).`);
         }
         throw error;
       }).finally(() => {
@@ -103,6 +116,83 @@ export const withRetry = async <T>(
   }
   
   throw lastError!;
+};
+
+// Specialized upload function with retry logic and progress tracking
+export const uploadWithRetry = async (
+  bucket: string,
+  fileName: string,
+  file: File,
+  options: {
+    cacheControl?: string;
+    upsert?: boolean;
+    onProgress?: (progress: number) => void;
+    maxRetries?: number;
+  } = {}
+): Promise<{ data: any; error: any }> => {
+  const { onProgress, maxRetries = 3, ...uploadOptions } = options;
+  
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Upload attempt ${attempt}/${maxRetries} for ${fileName}`);
+      
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+          ...uploadOptions
+        });
+      
+      if (error) {
+        // Don't retry on certain errors
+        if (error.message.includes('already exists') || 
+            error.message.includes('invalid') ||
+            error.message.includes('unauthorized')) {
+          return { data, error };
+        }
+        
+        lastError = new Error(error.message);
+        
+        if (attempt === maxRetries) {
+          return { data, error };
+        }
+        
+        // Exponential backoff for retry
+        const waitTime = 2000 * Math.pow(2, attempt - 1);
+        console.warn(`Upload failed (attempt ${attempt}/${maxRetries}), retrying in ${waitTime}ms:`, error.message);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      
+      // Success
+      if (onProgress) onProgress(100);
+      return { data, error: null };
+      
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown upload error');
+      
+      // Don't retry on certain errors
+      if (lastError.message.includes('Invalid login credentials') || 
+          lastError.message.includes('File too large') ||
+          lastError.message.includes('Invalid file type')) {
+        return { data: null, error: lastError };
+      }
+      
+      if (attempt === maxRetries) {
+        return { data: null, error: lastError };
+      }
+      
+      // Exponential backoff for retry
+      const waitTime = 2000 * Math.pow(2, attempt - 1);
+      console.warn(`Upload failed (attempt ${attempt}/${maxRetries}), retrying in ${waitTime}ms:`, lastError.message);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+  
+  return { data: null, error: lastError! };
 };
 
 // Handle auth errors and clear invalid tokens
