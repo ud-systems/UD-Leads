@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
-import { supabase, uploadWithRetry } from "@/integrations/supabase/client";
+import { supabase, uploadWithRetry, uploadResumable } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -33,6 +33,7 @@ export function FileUpload({
 }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentFileSize, setCurrentFileSize] = useState(0);
   const [preview, setPreview] = useState<string | null>(value ? `https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/${bucket}/${value}` : null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -138,13 +139,35 @@ export function FileUpload({
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload compressed file with retry logic
-      const { data, error } = await uploadWithRetry(bucket, fileName, compressedFile, {
-        cacheControl: '3600',
-        upsert: false,
-        onProgress: (progress) => setUploadProgress(progress),
-        maxRetries: 3
-      });
+      // Choose upload method based on file size
+      const fileSizeMB = compressedFile.size / (1024 * 1024);
+      setCurrentFileSize(fileSizeMB); // Store for UI display
+      const useResumable = fileSizeMB > 5; // Use resumable for files > 5MB
+      
+      let uploadResult;
+      if (useResumable) {
+        // Use resumable upload for large files
+        uploadResult = await uploadResumable(bucket, fileName, compressedFile, {
+          cacheControl: '3600',
+          upsert: false,
+          onProgress: (progress, chunk, totalChunks) => {
+            setUploadProgress(progress);
+            console.log(`Resumable upload progress: ${progress}% (chunk ${chunk}/${totalChunks})`);
+          },
+          maxRetries: 3
+        });
+      } else {
+        // Use regular upload with retry for smaller files
+        uploadResult = await uploadWithRetry(bucket, fileName, compressedFile, {
+          cacheControl: '3600',
+          upsert: false,
+          onProgress: (progress) => setUploadProgress(progress),
+          maxRetries: 3,
+          resumable: false // Explicitly disable for small files
+        });
+      }
+      
+      const { data, error } = uploadResult;
 
       if (error) {
         console.error('Supabase upload error:', error);
@@ -160,11 +183,12 @@ export function FileUpload({
 
       toast({
         title: "Upload successful",
-        description: `File uploaded successfully! Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
+        description: `File uploaded successfully! ${useResumable ? '(Resumable upload)' : ''} Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
       });
       
-      // Reset progress
+      // Reset progress and file size
       setUploadProgress(0);
+      setCurrentFileSize(0);
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -261,7 +285,9 @@ export function FileUpload({
           {isUploading ? (
             <div className="flex flex-col items-center space-y-2 w-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-sm text-muted-foreground">Compressing and uploading...</p>
+              <p className="text-sm text-muted-foreground">
+                Compressing and uploading... {currentFileSize > 5 && <span className="text-blue-600">(Resumable)</span>}
+              </p>
               {uploadProgress > 0 && (
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 

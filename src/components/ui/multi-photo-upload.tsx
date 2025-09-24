@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
-import { supabase, uploadWithRetry } from "@/integrations/supabase/client";
+import { supabase, uploadWithRetry, uploadResumable } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -151,13 +151,34 @@ export function MultiPhotoUpload({
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload compressed file with retry logic
-      const { data, error } = await uploadWithRetry(bucket, fileName, compressedFile, {
-        cacheControl: '3600',
-        upsert: false,
-        onProgress: (progress) => setUploadProgress(progress),
-        maxRetries: 3
-      });
+      // Choose upload method based on file size
+      const fileSizeMB = compressedFile.size / (1024 * 1024);
+      const useResumable = fileSizeMB > 5; // Use resumable for files > 5MB
+      
+      let uploadResult;
+      if (useResumable) {
+        // Use resumable upload for large files
+        uploadResult = await uploadResumable(bucket, fileName, compressedFile, {
+          cacheControl: '3600',
+          upsert: false,
+          onProgress: (progress, chunk, totalChunks) => {
+            setUploadProgress(progress);
+            console.log(`Resumable upload progress: ${progress}% (chunk ${chunk}/${totalChunks})`);
+          },
+          maxRetries: 3
+        });
+      } else {
+        // Use regular upload with retry for smaller files
+        uploadResult = await uploadWithRetry(bucket, fileName, compressedFile, {
+          cacheControl: '3600',
+          upsert: false,
+          onProgress: (progress) => setUploadProgress(progress),
+          maxRetries: 3,
+          resumable: false // Explicitly disable for small files
+        });
+      }
+      
+      const { data, error } = uploadResult;
 
       if (error) {
         console.error('Supabase upload error:', error);
@@ -170,7 +191,7 @@ export function MultiPhotoUpload({
 
       toast({
         title: "Upload successful",
-        description: `Photo uploaded successfully! Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
+        description: `Photo uploaded successfully! ${useResumable ? '(Resumable upload)' : ''} Compressed from ${originalSize}MB to ${compressedSize}MB (${compressionRatio}% reduction)`,
       });
       
       // Reset progress

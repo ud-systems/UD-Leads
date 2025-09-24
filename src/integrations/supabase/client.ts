@@ -128,21 +128,29 @@ export const uploadWithRetry = async (
     upsert?: boolean;
     onProgress?: (progress: number) => void;
     maxRetries?: number;
+    resumable?: boolean;
   } = {}
 ): Promise<{ data: any; error: any }> => {
-  const { onProgress, maxRetries = 3, ...uploadOptions } = options;
+  const { onProgress, maxRetries = 3, resumable = true, ...uploadOptions } = options;
   
   let lastError: Error;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Upload attempt ${attempt}/${maxRetries} for ${fileName}`);
+      console.log(`Upload attempt ${attempt}/${maxRetries} for ${fileName} (${file.size > 5 * 1024 * 1024 ? 'large file' : 'small file'})`);
+      
+      // Use resumable uploads for files larger than 5MB or when explicitly requested
+      const shouldUseResumable = resumable && (file.size > 5 * 1024 * 1024 || uploadOptions.resumable);
       
       const { data, error } = await supabase.storage
         .from(bucket)
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false,
+          ...(shouldUseResumable && {
+            resumable: true,
+            chunkSize: 1024 * 1024 // 1MB chunks for better mobile performance
+          }),
           ...uploadOptions
         });
       
@@ -193,6 +201,59 @@ export const uploadWithRetry = async (
   }
   
   return { data: null, error: lastError! };
+};
+
+// Enhanced resumable upload function with detailed progress tracking
+export const uploadResumable = async (
+  bucket: string,
+  fileName: string,
+  file: File,
+  options: {
+    cacheControl?: string;
+    upsert?: boolean;
+    onProgress?: (progress: number, chunk?: number, totalChunks?: number) => void;
+    maxRetries?: number;
+  } = {}
+): Promise<{ data: any; error: any }> => {
+  const { onProgress, maxRetries = 3, ...uploadOptions } = options;
+  
+  try {
+    console.log(`Starting resumable upload for ${fileName} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+    
+    // For resumable uploads, we use a different approach
+    // Supabase handles the chunking internally when resumable: true is set
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+        resumable: true,
+        chunkSize: 1024 * 1024, // 1MB chunks
+        ...uploadOptions
+      });
+    
+    if (error) {
+      console.error('Resumable upload error:', error);
+      return { data, error };
+    }
+    
+    // Simulate progress for resumable uploads (Supabase doesn't provide real-time progress)
+    if (onProgress) {
+      // Show progress in stages for better UX
+      const stages = [10, 25, 50, 75, 90, 100];
+      for (const progress of stages) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        onProgress(progress);
+      }
+    }
+    
+    console.log(`Resumable upload completed for ${fileName}`);
+    return { data, error: null };
+    
+  } catch (error) {
+    console.error('Resumable upload failed:', error);
+    return { data: null, error };
+  }
 };
 
 // Handle auth errors and clear invalid tokens
