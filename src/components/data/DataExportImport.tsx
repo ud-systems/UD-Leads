@@ -292,19 +292,37 @@ export function DataExportImport() {
         dummyLeads.push(lead);
       }
 
-      // Convert to CSV
-      const headers = Object.keys(dummyLeads[0]).join(",");
+      // Convert to CSV with proper escaping (same as export function)
+      const headers = Object.keys(dummyLeads[0]);
+      
+      // Helper function to properly escape CSV values
+      const escapeCsvValue = (value: any): string => {
+        if (value === null || value === undefined) {
+          return '';
+        }
+        
+        // Convert arrays to comma-separated strings
+        if (Array.isArray(value)) {
+          value = value.join(', ');
+        }
+        
+        // Convert to string and handle special characters
+        const stringValue = String(value);
+        
+        // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n') || stringValue.includes('\r')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        
+        return stringValue;
+      };
+      
       const csvContent = [
-        headers,
+        headers.map(h => escapeCsvValue(h)).join(','),
         ...dummyLeads.map(row => 
-          Object.values(row).map(value => {
-            if (Array.isArray(value)) {
-              return `"${value.join(', ')}"`;
-            }
-            return typeof value === 'string' ? `"${value}"` : value;
-          }).join(",")
+          headers.map(header => escapeCsvValue(row[header])).join(',')
         )
-      ].join("\n");
+      ].join('\n');
 
       // Download file
       const blob = new Blob([csvContent], { type: "text/csv" });
@@ -357,17 +375,38 @@ export function DataExportImport() {
           break;
       }
 
-      // Convert to CSV
+      // Convert to CSV with proper escaping
       if (data.length > 0) {
-        const headers = Object.keys(data[0]).join(",");
+        const headers = Object.keys(data[0]);
+        
+        // Helper function to properly escape CSV values
+        const escapeCsvValue = (value: any): string => {
+          if (value === null || value === undefined) {
+            return '';
+          }
+          
+          // Convert arrays to comma-separated strings
+          if (Array.isArray(value)) {
+            value = value.join(', ');
+          }
+          
+          // Convert to string and handle special characters
+          const stringValue = String(value);
+          
+          // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n') || stringValue.includes('\r')) {
+            return `"${stringValue.replace(/"/g, '""')}"`;
+          }
+          
+          return stringValue;
+        };
+        
         const csvContent = [
-          headers,
+          headers.map(h => escapeCsvValue(h)).join(','),
           ...data.map(row => 
-            Object.values(row).map(value => 
-              typeof value === 'string' ? `"${value}"` : value
-            ).join(",")
+            headers.map(header => escapeCsvValue(row[header])).join(',')
           )
-        ].join("\n");
+        ].join('\n');
 
         // Download file
         const blob = new Blob([csvContent], { type: "text/csv" });
@@ -400,12 +439,50 @@ export function DataExportImport() {
     setIsImporting(true);
     try {
       const text = await importFile.text();
-      const lines = text.split('\n');
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      const lines = text.split('\n').filter(line => line.trim()); // Remove empty lines
       
-      // Parse CSV data
+      // Helper function to properly parse CSV line respecting quotes
+      const parseCsvLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        let i = 0;
+        
+        while (i < line.length) {
+          const char = line[i];
+          const nextChar = line[i + 1];
+          
+          if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+              // Escaped quote
+              current += '"';
+              i += 2;
+            } else {
+              // Toggle quote state
+              inQuotes = !inQuotes;
+              i++;
+            }
+          } else if (char === ',' && !inQuotes) {
+            // Field separator
+            result.push(current.trim());
+            current = '';
+            i++;
+          } else {
+            current += char;
+            i++;
+          }
+        }
+        
+        // Add the last field
+        result.push(current.trim());
+        return result;
+      };
+      
+      const headers = parseCsvLine(lines[0]).map(h => h.replace(/^"|"$/g, ''));
+      
+      // Parse CSV data with proper quote handling
       const rawData = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+        const values = parseCsvLine(line).map(v => v.replace(/^"|"$/g, ''));
         const obj: any = {};
         headers.forEach((header, index) => {
           // Convert empty strings to null for UUID fields
@@ -758,7 +835,7 @@ export function DataExportImport() {
             <p>• Salesperson names must exist in the system</p>
             <p>• Territory IDs must be valid</p>
             <p>• Store types and buying power must match system options</p>
-            <p>• Products currently sold: comma-separated values (e.g., "Tobacco, Vapes")</p>
+            <p>• Top 3 Selling Products: comma-separated values (e.g., "Tobacco, Vapes")</p>
             <p>• Data will be validated before import</p>
             <p>• Imported leads will appear immediately in the leads table</p>
             <p>• Initial visits will be automatically created for each imported lead</p>
