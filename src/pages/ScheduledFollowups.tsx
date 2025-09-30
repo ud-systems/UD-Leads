@@ -329,11 +329,45 @@ export default function ScheduledFollowups() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Salespeople</SelectItem>
-                  {users?.filter(u => (u as any).role === 'salesperson').map((user) => (
-                    <SelectItem key={user.id} value={(user as any).name}>
-                      {(user as any).name}
-                    </SelectItem>
-                  ))}
+                  {(() => {
+                    // Filter users based on role and team assignment
+                    let filteredUsers = users;
+                    
+                    if (isAdmin) {
+                      // Admins can see all salespeople and managers
+                      filteredUsers = users?.filter(u => {
+                        const role = (u as any).role;
+                        return role === 'salesperson' || role === 'manager';
+                      });
+                    } else if (isManager && currentUser) {
+                      // Managers can see themselves and their team members
+                      filteredUsers = users?.filter(u => {
+                        const userRole = (u as any).role;
+                        const userId = u.id;
+                        
+                        // Include themselves (manager)
+                        if (userId === currentUser.id && userRole === 'manager') {
+                          return true;
+                        }
+                        
+                        // Include their team members (salespeople assigned to them)
+                        if (userRole === 'salesperson' && (u as any).manager_id === currentUser.id) {
+                          return true;
+                        }
+                        
+                        return false;
+                      });
+                    } else if (isSalesperson) {
+                      // Salespeople can only see themselves
+                      filteredUsers = users?.filter(u => u.id === currentUser?.id);
+                    }
+                    
+                    return filteredUsers?.map((user) => (
+                      <SelectItem key={user.id} value={(user as any).name}>
+                        {(user as any).name}
+                      </SelectItem>
+                    ));
+                  })()}
                 </SelectContent>
               </Select>
             )}

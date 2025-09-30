@@ -54,13 +54,52 @@ export default function Territory() {
 
   // Get salespeople for filter dropdown
   const salespeople = useMemo(() => {
-    return users
-      .filter((user: any) => user.role === 'salesperson')
-      .map((user: any) => ({ 
-        id: user.id, 
-        name: user.name || user.email 
-      }));
-  }, [users]);
+    if (isAdmin) {
+      // Admins can see all salespeople and managers
+      return users
+        .filter((user: any) => {
+          const role = user.role;
+          return role === 'salesperson' || role === 'manager';
+        })
+        .map((user: any) => ({ 
+          id: user.id, 
+          name: user.name || user.email 
+        }));
+    } else if (isManager && user) {
+      // Managers can see themselves and their team members
+      return users
+        .filter((u: any) => {
+          const userRole = u.role;
+          const userId = u.id;
+          
+          // Include themselves (manager)
+          if (userId === user.id && userRole === 'manager') {
+            return true;
+          }
+          
+          // Include their team members (salespeople assigned to them)
+          if (userRole === 'salesperson' && u.manager_id === user.id) {
+            return true;
+          }
+          
+          return false;
+        })
+        .map((u: any) => ({ 
+          id: u.id, 
+          name: u.name || u.email 
+        }));
+    } else if (isSalesperson) {
+      // Salespeople can only see themselves
+      return users
+        .filter((u: any) => u.id === user?.id)
+        .map((u: any) => ({ 
+          id: u.id, 
+          name: u.name || u.email 
+        }));
+    }
+    
+    return [];
+  }, [users, isAdmin, isManager, isSalesperson, user]);
 
   // Auto-select current user if they're a salesperson
   useEffect(() => {

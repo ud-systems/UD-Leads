@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ import { useLeads, useUpdateLead, useLeadVisitCount } from "@/hooks/useLeads";
 import { useStoreTypeOptions, useLeadStatusOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions } from "@/hooks/useSystemSettings";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
+import { useAuth } from "@/hooks/useAuth";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { formatUKDate, formatUKTime } from "@/utils/timeUtils";
 // import { useLeadNotes, useCreateLeadNote } from "@/hooks/useLeadNotes";
 import { useToast } from "@/hooks/use-toast";
@@ -173,6 +175,8 @@ export default function LeadDetails() {
   const { mutate: updateLeadMutation, isPending } = useUpdateLead();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
+  const { user } = useAuth();
+  const { isAdmin, isManager, isSalesperson } = useRoleAccess();
   const { data: storeTypeOptions = [] } = useStoreTypeOptions();
   const { data: leadStatusOptions = [] } = useLeadStatusOptions();
   const { data: ownsShopOrWebsiteOptions = [] } = useOwnsShopOrWebsiteOptions();
@@ -185,8 +189,39 @@ export default function LeadDetails() {
   
   // Note: Using existing leads.notes field instead of separate lead_notes table
   
-  // Filter users with salesperson role
-  const salespeople = users.filter(user => (user as any).role === 'salesperson');
+  // Filter users based on role and team assignment
+  const salespeople = useMemo(() => {
+    if (isAdmin) {
+      // Admins can see all salespeople and managers
+      return users.filter(user => {
+        const role = (user as any).role;
+        return role === 'salesperson' || role === 'manager';
+      });
+    } else if (isManager && user) {
+      // Managers can see themselves and their team members
+      return users.filter(u => {
+        const userRole = (u as any).role;
+        const userId = u.id;
+        
+        // Include themselves (manager)
+        if (userId === user.id && userRole === 'manager') {
+          return true;
+        }
+        
+        // Include their team members (salespeople assigned to them)
+        if (userRole === 'salesperson' && (u as any).manager_id === user.id) {
+          return true;
+        }
+        
+        return false;
+      });
+    } else if (isSalesperson) {
+      // Salespeople can only see themselves
+      return users.filter(u => u.id === user?.id);
+    }
+    
+    return [];
+  }, [users, isAdmin, isManager, isSalesperson, user]);
   
   // State for inline editing
   const [editingField, setEditingField] = useState<string | null>(null);

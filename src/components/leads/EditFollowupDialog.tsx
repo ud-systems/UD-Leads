@@ -23,6 +23,7 @@ import { useLeadStatusOptions } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useTerritories } from "@/hooks/useTerritories";
 import { useUsers } from "@/hooks/useUsers";
+import { useAuth } from "@/hooks/useAuth";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { Calendar, Loader2 } from "lucide-react";
 import { Lead } from "@/hooks/useLeads";
@@ -40,7 +41,8 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
   const { data: territories = [] } = useTerritories();
   const { data: users = [] } = useUsers();
   const { toast } = useToast();
-  const { userRole } = useRoleAccess();
+  const { user } = useAuth();
+  const { userRole, isAdmin, isManager, isSalesperson } = useRoleAccess();
 
   const [formData, setFormData] = useState({
     store_name: "",
@@ -210,9 +212,43 @@ export function EditFollowupDialog({ lead, open, onOpenChange }: EditFollowupDia
                   <SelectValue placeholder="Select salesperson" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.filter(user => (user as any).role === 'salesperson').map(user => (
-                    <SelectItem key={user.id} value={(user as any).name}>{(user as any).name}</SelectItem>
-                  ))}
+                  {(() => {
+                    // Filter users based on role and team assignment
+                    let filteredUsers = users;
+                    
+                    if (isAdmin) {
+                      // Admins can see all salespeople and managers
+                      filteredUsers = users.filter(user => {
+                        const role = (user as any).role;
+                        return role === 'salesperson' || role === 'manager';
+                      });
+                    } else if (isManager && user) {
+                      // Managers can see themselves and their team members
+                      filteredUsers = users.filter(u => {
+                        const userRole = (u as any).role;
+                        const userId = u.id;
+                        
+                        // Include themselves (manager)
+                        if (userId === user.id && userRole === 'manager') {
+                          return true;
+                        }
+                        
+                        // Include their team members (salespeople assigned to them)
+                        if (userRole === 'salesperson' && (u as any).manager_id === user.id) {
+                          return true;
+                        }
+                        
+                        return false;
+                      });
+                    } else if (isSalesperson) {
+                      // Salespeople can only see themselves
+                      filteredUsers = users.filter(u => u.id === user?.id);
+                    }
+                    
+                    return filteredUsers.map(user => (
+                      <SelectItem key={user.id} value={(user as any).name}>{(user as any).name}</SelectItem>
+                    ));
+                  })()}
                 </SelectContent>
               </Select>
             </div>

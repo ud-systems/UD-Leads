@@ -123,9 +123,9 @@ export default function SalespersonDetail() {
       } else {
         // For salespeople, show only their own visits
         return (groupedVisit.lastVisit.salesperson === userName || 
-                groupedVisit.lastVisit.salesperson === salesperson.email) ||
+              groupedVisit.lastVisit.salesperson === salesperson.email) ||
                (groupedVisit.lead.salesperson === userName || 
-                groupedVisit.lead.salesperson === salesperson.email);
+              groupedVisit.lead.salesperson === salesperson.email);
       }
     });
 

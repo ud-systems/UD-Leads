@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Download, Upload, FileText, Database, Users, Building, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,8 +38,39 @@ export function DataExportImport() {
   const { data: statusOptions = [] } = useLeadStatusOptions();
   const { isAdmin, isManager, isSalesperson } = useRoleAccess();
 
-  // Filter salespeople from users
-  const salespeople = users.filter(user => (user as any).role === 'salesperson').map(user => (user as any).name);
+  // Filter users based on role and team assignment
+  const salespeople = useMemo(() => {
+    if (isAdmin) {
+      // Admins can see all salespeople and managers
+      return users.filter(user => {
+        const role = (user as any).role;
+        return role === 'salesperson' || role === 'manager';
+      }).map(user => (user as any).name);
+    } else if (isManager && user) {
+      // Managers can see themselves and their team members
+      return users.filter(u => {
+        const userRole = (u as any).role;
+        const userId = u.id;
+        
+        // Include themselves (manager)
+        if (userId === user.id && userRole === 'manager') {
+          return true;
+        }
+        
+        // Include their team members (salespeople assigned to them)
+        if (userRole === 'salesperson' && (u as any).manager_id === user.id) {
+          return true;
+        }
+        
+        return false;
+      }).map(u => (u as any).name);
+    } else if (isSalesperson) {
+      // Salespeople can only see themselves
+      return users.filter(u => u.id === user?.id).map(u => (u as any).name);
+    }
+    
+    return [];
+  }, [users, isAdmin, isManager, isSalesperson, user]);
 
   const exportOptions = [
     { value: "leads", label: "Leads", icon: Building, count: leads?.length || 0 },
