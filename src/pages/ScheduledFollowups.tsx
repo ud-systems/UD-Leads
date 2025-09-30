@@ -104,7 +104,11 @@ export default function ScheduledFollowups() {
         lead.salesperson === salespersonName || lead.salesperson === salespersonEmail
       );
     } else if (isManager) {
-      return leadsWithFollowups.filter(lead => lead.manager_id === currentUser.id);
+      // Managers can see BOTH their historical followups AND team followups
+      const managerName = profile?.name || currentUser.email;
+      return leadsWithFollowups.filter(lead => 
+        lead.manager_id === currentUser.id || lead.salesperson === managerName
+      );
     } else if (isAdmin) {
       return leadsWithFollowups;
     }

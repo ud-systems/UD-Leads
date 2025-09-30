@@ -100,17 +100,35 @@ export const withRetry = async <T>(
       // Don't retry on auth errors or validation errors
       if (lastError.message.includes('Invalid login credentials') || 
           lastError.message.includes('validation') ||
-          lastError.message.includes('duplicate key')) {
+          lastError.message.includes('duplicate key') ||
+          lastError.message.includes('unauthorized')) {
+        throw lastError;
+      }
+      
+      // Check for connection-related errors that should be retried
+      const isConnectionError = lastError.message.includes('Connection failed') ||
+                               lastError.message.includes('ERR_CONNECTION_CLOSED') ||
+                               lastError.message.includes('fetch') ||
+                               lastError.message.includes('timeout');
+      
+      if (!isConnectionError && attempt === maxRetries) {
         throw lastError;
       }
       
       if (attempt === maxRetries) {
+        // For connection errors on final attempt, provide a more helpful error
+        if (isConnectionError) {
+          throw new Error(`Connection failed after ${maxRetries} attempts. Please check your internet connection and try again.`);
+        }
         throw lastError;
       }
       
-      // Exponential backoff
-      const waitTime = delay * Math.pow(2, attempt - 1);
-      console.warn(`Database operation failed (attempt ${attempt}/${maxRetries}), retrying in ${waitTime}ms:`, lastError.message);
+      // Exponential backoff with jitter for connection errors
+      const baseWaitTime = delay * Math.pow(2, attempt - 1);
+      const jitter = Math.random() * 1000; // Add up to 1 second of jitter
+      const waitTime = baseWaitTime + jitter;
+      
+      console.warn(`Database operation failed (attempt ${attempt}/${maxRetries}), retrying in ${Math.round(waitTime)}ms:`, lastError.message);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }

@@ -32,9 +32,10 @@ export const useLeads = () => {
       
       // Apply role-based filtering
       if (isManager) {
-        // Managers can only see leads from their team members
-        console.log('Manager accessing team leads');
-        query = query.eq('manager_id', user?.id);
+        // Managers can see BOTH their historical leads AND team leads
+        console.log('Manager accessing hybrid leads (historical + team)');
+        const managerName = profile?.name || user?.email || 'Unknown';
+        query = query.or(`manager_id.eq.${user?.id},salesperson.eq.${managerName}`);
       } else if (isAdmin) {
         // Admins can see all leads
         console.log('Admin accessing all leads');

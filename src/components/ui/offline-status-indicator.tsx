@@ -13,6 +13,7 @@ import {
   Clock
 } from "lucide-react";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
+import { useConnectionStatus } from "@/hooks/useConnectionStatus";
 import { cn } from "@/lib/utils";
 
 interface OfflineStatusIndicatorProps {
@@ -34,6 +35,12 @@ export function OfflineStatusIndicator({
     exportOfflineData 
   } = useOfflineStorage();
   
+  const { 
+    status: connectionStatus, 
+    isConnected: isSupabaseConnected,
+    checkConnection 
+  } = useConnectionStatus();
+  
   const [isManualSyncing, setIsManualSyncing] = useState(false);
   const pendingCount = getPendingCount();
 
@@ -51,6 +58,10 @@ export function OfflineStatusIndicator({
   const getStatusIcon = () => {
     if (!isOnline) {
       return <WifiOff className="h-4 w-4 text-red-500" />;
+    }
+    
+    if (!isSupabaseConnected) {
+      return <AlertCircle className="h-4 w-4 text-red-500" />;
     }
     
     if (syncMetadata.syncStatus === 'syncing') {
@@ -73,6 +84,10 @@ export function OfflineStatusIndicator({
       return "Offline";
     }
     
+    if (!isSupabaseConnected) {
+      return "Server Error";
+    }
+    
     if (syncMetadata.syncStatus === 'syncing') {
       return "Syncing...";
     }
@@ -90,6 +105,10 @@ export function OfflineStatusIndicator({
 
   const getStatusColor = () => {
     if (!isOnline) {
+      return "bg-red-100 text-red-800 border-red-200";
+    }
+    
+    if (!isSupabaseConnected) {
       return "bg-red-100 text-red-800 border-red-200";
     }
     
@@ -111,6 +130,10 @@ export function OfflineStatusIndicator({
   const getTooltipContent = () => {
     if (!isOnline) {
       return "You're offline. Data will be saved locally and synced when connection is restored.";
+    }
+    
+    if (!isSupabaseConnected) {
+      return "Unable to connect to server. Data will be saved locally and synced when connection is restored.";
     }
     
     if (syncMetadata.syncStatus === 'syncing') {
@@ -146,8 +169,27 @@ export function OfflineStatusIndicator({
           </TooltipContent>
         </Tooltip>
 
+        {/* Manual Connection Check Button */}
+        {!isSupabaseConnected && isOnline && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={checkConnection}
+                className="h-7 px-2"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Check server connection</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
         {/* Manual Sync Button */}
-        {showSyncButton && isOnline && pendingCount > 0 && (
+        {showSyncButton && isOnline && isSupabaseConnected && pendingCount > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+ import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +39,8 @@ export function EnhancedSearch({
   const navigate = useNavigate();
 
   // Fetch data
-  const { data: leads = [] } = useLeads();
-  const { data: visits = [] } = useVisits();
+  const { data: leads = [] } = useLeads() as { data: any[] };
+  const { data: visits = [] } = useVisits() as { data: any[] };
 
   // Search results
   const searchResults = useMemo(() => {

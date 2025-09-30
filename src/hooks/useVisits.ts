@@ -21,6 +21,9 @@ export interface GroupedVisit {
     email: string | null;
     salesperson: string | null;
     territory_id: string | null;
+    postal_code: string | null;
+    top_3_selling_products: string[] | null;
+    next_visit: string | null;
   };
   visitCount: number;
   lastVisit: Visit;

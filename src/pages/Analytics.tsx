@@ -106,7 +106,11 @@ export default function Analytics() {
         }))
       });
     } else if (userRole === 'manager') {
-      filteredLeads = leads.filter(lead => lead.manager_id === currentUser.id);
+      // Managers can see BOTH their historical leads AND team leads
+      const managerName = profile?.name || currentUser.email;
+      filteredLeads = leads.filter(lead => 
+        lead.manager_id === currentUser.id || lead.salesperson === managerName
+      );
     }
     
     // Apply selected salesperson filtering (for admins/managers)
@@ -362,10 +366,17 @@ export default function Analytics() {
                 <SelectValue placeholder="All Salespeople" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Salespeople</SelectItem>
-                {users.filter((u: any) => u.role === 'salesperson').map((user: any) => (
+                <SelectItem value="all">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
+                {users.filter((u: any) => isAdmin ? ['salesperson', 'manager'].includes(u.role) : u.role === 'salesperson').map((user: any) => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.name || user.email}
+                    <div className="flex items-center gap-2">
+                      {user.role === 'manager' && (
+                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                          Manager
+                        </Badge>
+                      )}
+                      {user.name || user.email}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, withRetry } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useProfile } from './useProfile';
 import { useRoleAccess } from './useRoleAccess';
@@ -79,7 +79,9 @@ export const useLeadsGrowth = ({
           }
         }
 
-        const { data: leads, error } = await query;
+        const { data: leads, error } = await withRetry(async () => {
+          return await query;
+        });
 
         if (error) {
           console.error('Error fetching leads for growth chart:', error);

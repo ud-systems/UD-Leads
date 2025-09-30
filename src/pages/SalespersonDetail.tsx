@@ -56,13 +56,24 @@ export default function SalespersonDetail() {
     return users.find(user => user.id === salespersonId);
   }, [users, salespersonId]);
 
-  // Filter leads for this specific salesperson
+  // Determine if the viewed user is a manager or salesperson
+  const isViewedUserManager = (salesperson as any)?.role === 'manager';
+  const isViewedUserSalesperson = (salesperson as any)?.role === 'salesperson';
+
+  // Filter leads for this specific user (manager or salesperson)
   const salespersonLeads = useMemo(() => {
     if (!leads || !salesperson) return [];
     
     let filtered = leads.filter(lead => {
-      const salespersonName = (salesperson as any).name || salesperson.email;
-      return lead.salesperson === salespersonName || lead.salesperson === salesperson.email;
+      const userName = (salesperson as any).name || salesperson.email;
+      
+      if (isViewedUserManager) {
+        // For managers, show BOTH their historical leads AND team leads
+        return lead.salesperson === userName || lead.salesperson === salesperson.email || lead.manager_id === salesperson.id;
+      } else {
+        // For salespeople, show only their own leads
+        return lead.salesperson === userName || lead.salesperson === salesperson.email;
+      }
     });
 
     // Apply date range filter if set
@@ -92,19 +103,30 @@ export default function SalespersonDetail() {
     }
 
     return filtered;
-  }, [leads, salesperson, dateRange]);
+  }, [leads, salesperson, dateRange, isViewedUserManager]);
 
-  // Filter visits for this specific salesperson
+  // Filter visits for this specific user (manager or salesperson)
   const salespersonVisits = useMemo(() => {
     if (!visits || !salesperson) return [];
     
     let filtered = visits.filter(groupedVisit => {
-      const salespersonName = (salesperson as any).name || salesperson.email;
-      // Check both the lastVisit salesperson and the lead's salesperson
-      return (groupedVisit.lastVisit.salesperson === salespersonName || 
-              groupedVisit.lastVisit.salesperson === salesperson.email) ||
-             (groupedVisit.lead.salesperson === salespersonName || 
-              groupedVisit.lead.salesperson === salesperson.email);
+      const userName = (salesperson as any).name || salesperson.email;
+      
+      if (isViewedUserManager) {
+        // For managers, show BOTH their historical visits AND team visits
+        return (groupedVisit.lastVisit.salesperson === userName || 
+                groupedVisit.lastVisit.salesperson === salesperson.email ||
+                groupedVisit.lastVisit.manager_id === salesperson.id) ||
+               (groupedVisit.lead.salesperson === userName || 
+                groupedVisit.lead.salesperson === salesperson.email ||
+                groupedVisit.lead.manager_id === salesperson.id);
+      } else {
+        // For salespeople, show only their own visits
+        return (groupedVisit.lastVisit.salesperson === userName || 
+                groupedVisit.lastVisit.salesperson === salesperson.email) ||
+               (groupedVisit.lead.salesperson === userName || 
+                groupedVisit.lead.salesperson === salesperson.email);
+      }
     });
 
     // Apply date range filter if set
@@ -134,7 +156,7 @@ export default function SalespersonDetail() {
     }
 
     return filtered;
-  }, [visits, salesperson, dateRange]);
+  }, [visits, salesperson, dateRange, isViewedUserManager]);
 
   // Calculate dashboard stats for this salesperson
   const dashboardStats = useMemo(() => {
@@ -255,7 +277,9 @@ export default function SalespersonDetail() {
           </Avatar>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">{salespersonName}</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Salesperson Performance Overview</p>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {isViewedUserManager ? 'Manager Performance Overview' : 'Salesperson Performance Overview'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -347,6 +371,7 @@ export default function SalespersonDetail() {
           </CardTitle>
           <CardDescription>
             Visual representation of {salespersonName}'s territory and lead distribution
+            {isViewedUserManager && ' (including team leads)'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -373,7 +398,10 @@ export default function SalespersonDetail() {
             Leads ({salespersonLeads.length})
           </CardTitle>
           <CardDescription>
-            All leads managed by {salespersonName}
+            {isViewedUserManager 
+              ? `All leads managed by ${salespersonName} (including team leads)`
+              : `All leads managed by ${salespersonName}`
+            }
           </CardDescription>
         </CardHeader>
                 <CardContent>

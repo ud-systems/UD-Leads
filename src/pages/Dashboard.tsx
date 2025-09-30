@@ -28,7 +28,7 @@ export default function Dashboard() {
   const { data: territories = [], isLoading: territoriesLoading, refetch: refetchTerritories } = useTerritories();
   const { data: visits = [], isLoading: visitsLoading, refetch: refetchVisits } = useVisits();
   const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useUsers();
-  const { userRole } = useRoleAccess();
+  const { userRole, isAdmin, isManager, isSalesperson } = useRoleAccess();
   const { user: currentUser } = useAuth();
   const { data: profile } = useProfile(currentUser?.id);
 
@@ -59,12 +59,17 @@ export default function Dashboard() {
     }
   };
 
-  // Get salespeople for filter dropdown
+  // Get salespeople for filter dropdown (include managers for admins)
   const salespeople = useMemo(() => {
+    const roleFilter = isAdmin ? ['salesperson', 'manager'] : ['salesperson'];
     return users
-      .filter(user => (user as any).role === 'salesperson')
-      .map(user => ({ id: user.id, name: (user as any).name || user.email }));
-  }, [users]);
+      .filter(user => roleFilter.includes((user as any).role))
+      .map(user => ({ 
+        id: user.id, 
+        name: (user as any).name || user.email,
+        role: (user as any).role 
+      }));
+  }, [users, isAdmin]);
 
   // Filter data based on global filters and user role
   const filteredLeads = useMemo(() => {
@@ -81,7 +86,11 @@ export default function Dashboard() {
         lead.salesperson === salespersonName || lead.salesperson === salespersonEmail
       );
     } else if (userRole === 'manager' && currentUser) {
-      filtered = filtered.filter(lead => lead.manager_id === currentUser.id);
+      // Managers can see BOTH their historical leads AND team leads
+      const managerName = profile?.name || currentUser.email;
+      filtered = filtered.filter(lead => 
+        lead.manager_id === currentUser.id || lead.salesperson === managerName
+      );
     }
 
     // Apply salesperson filter

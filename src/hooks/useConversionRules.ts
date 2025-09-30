@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, withRetry } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export type ConversionRule = Tables<'conversion_rules'>;
@@ -11,11 +11,13 @@ export const useConversionRules = () => {
   return useQuery({
     queryKey: ['conversion_rules'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('conversion_rules')
-        .select('*')
-        .order('is_default', { ascending: false })
-        .order('created_at', { ascending: false });
+      const { data, error } = await withRetry(async () => {
+        return await supabase
+          .from('conversion_rules')
+          .select('*')
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: false });
+      });
       
       if (error) {
         console.error('Error fetching conversion rules:', error);
@@ -33,12 +35,14 @@ export const useDefaultConversionRule = () => {
   return useQuery({
     queryKey: ['conversion_rules', 'default'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('conversion_rules')
-        .select('*')
-        .eq('is_default', true)
-        .eq('is_active', true)
-        .maybeSingle();
+      const { data, error } = await withRetry(async () => {
+        return await supabase
+          .from('conversion_rules')
+          .select('*')
+          .eq('is_default', true)
+          .eq('is_active', true)
+          .maybeSingle();
+      });
       
       if (error) {
         console.error('Error fetching default conversion rule:', error);
@@ -164,27 +168,75 @@ export const useConversionHistory = (leadIds?: string[]) => {
   return useQuery({
     queryKey: ['conversion_history', leadIds],
     queryFn: async () => {
-      let query = supabase
-        .from('lead_status_history')
-        .select('*')
-        .eq('conversion_counted', true)
-        .order('changed_at', { ascending: false });
-      
-      if (leadIds && leadIds.length > 0) {
-        query = query.in('lead_id', leadIds);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('Error fetching conversion history:', error);
-        // Return empty array instead of throwing error
+      try {
+        // If too many lead IDs, fetch in batches to avoid URL length limits
+        if (leadIds && leadIds.length > 50) {
+          console.log(`Fetching conversion history for ${leadIds.length} leads in batches...`);
+          const batchSize = 50;
+          const batches = [];
+          
+          for (let i = 0; i < leadIds.length; i += batchSize) {
+            const batch = leadIds.slice(i, i + batchSize);
+            batches.push(batch);
+          }
+          
+          const allResults = [];
+          for (const batch of batches) {
+            try {
+              const { data, error } = await supabase
+                .from('lead_status_history')
+                .select('*')
+                .eq('conversion_counted', true)
+                .in('lead_id', batch)
+                .order('changed_at', { ascending: false });
+              
+              if (error) {
+                console.warn('Error fetching batch:', error);
+                continue; // Skip this batch but continue with others
+              }
+              
+              if (data) {
+                allResults.push(...data);
+              }
+            } catch (batchError) {
+              console.warn('Batch fetch failed:', batchError);
+              continue;
+            }
+          }
+          
+          return allResults;
+        }
+        
+        // For smaller queries, use the original approach
+        let query = supabase
+          .from('lead_status_history')
+          .select('*')
+          .eq('conversion_counted', true)
+          .order('changed_at', { ascending: false });
+        
+        if (leadIds && leadIds.length > 0) {
+          query = query.in('lead_id', leadIds);
+        }
+        
+        const { data, error } = await withRetry(async () => {
+          return await query;
+        });
+        
+        if (error) {
+          console.error('Error fetching conversion history:', error);
+          // Return empty array instead of throwing error
+          return [];
+        }
+        
+        return data || [];
+      } catch (error) {
+        console.error('Unexpected error in useConversionHistory:', error);
         return [];
       }
-      
-      return data || [];
     },
     enabled: !leadIds || leadIds.length > 0,
+    retry: 2, // Retry failed queries up to 2 times
+    retryDelay: 1000, // Wait 1 second between retries
   });
 };
 

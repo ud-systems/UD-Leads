@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Target, Users, UserPlus } from "lucide-react";
+import { MapPin, Target, Users, UserPlus, Shield } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -24,9 +24,21 @@ interface SalespersonData {
 
 interface SalespersonsSectionProps {
   dateRange?: { from: Date; to: Date };
+  showOnlyManagers?: boolean;
+  showOnlySalespeople?: boolean;
+  showCurrentUserOnly?: boolean;
+  showMyTeamOnly?: boolean;
+  title?: string;
 }
 
-export function SalespersonsSection({ dateRange }: SalespersonsSectionProps) {
+export function SalespersonsSection({ 
+  dateRange, 
+  showOnlyManagers = false,
+  showOnlySalespeople = false,
+  showCurrentUserOnly = false,
+  showMyTeamOnly = false,
+  title
+}: SalespersonsSectionProps) {
   const { data: users, isLoading: usersLoading } = useUsers();
   const { data: visits, isLoading: visitsLoading } = useVisits();
   const { data: systemSettings } = useSystemSettings();
@@ -77,41 +89,74 @@ export function SalespersonsSection({ dateRange }: SalespersonsSectionProps) {
     const dailyTargetSetting = systemSettings?.find(s => s.setting_key === 'daily_visit_target');
     const dailyTarget = dailyTargetSetting ? parseInt(dailyTargetSetting.setting_value) : 15;
 
-    // Filter users based on role
-    let filteredUsers = users.filter((user: any) => user.role === 'salesperson');
+    // Filter users based on props and role
+    let filteredUsers = users.filter((user: any) => user.role === 'salesperson' || user.role === 'manager');
     
-    if (isSalesperson) {
-      // Salespeople only see their own data
+    // Apply specific filtering based on props
+    if (showOnlyManagers) {
+      filteredUsers = filteredUsers.filter((u: any) => u.role === 'manager');
+    } else if (showOnlySalespeople) {
+      filteredUsers = filteredUsers.filter((u: any) => u.role === 'salesperson');
+    } else if (showCurrentUserOnly) {
+      // Show only the current user
       const currentUser = users.find((u: any) => u.id === user?.id);
       if (currentUser) {
         filteredUsers = filteredUsers.filter((u: any) => u.id === currentUser.id);
       }
-    } else if (isManager) {
-      // Managers see their team members
+    } else if (showMyTeamOnly) {
+      // Show only team members for managers
       const currentUser = users.find((u: any) => u.id === user?.id);
       if (currentUser) {
         filteredUsers = filteredUsers.filter((u: any) => (u as any).manager_id === currentUser.id);
       }
+    } else {
+      // Default role-based filtering
+      if (isSalesperson) {
+        // Salespeople only see their own data
+        const currentUser = users.find((u: any) => u.id === user?.id);
+        if (currentUser) {
+          filteredUsers = filteredUsers.filter((u: any) => u.id === currentUser.id);
+        }
+      } else if (isManager) {
+        // Managers see their team members (only salespeople, not other managers)
+        const currentUser = users.find((u: any) => u.id === user?.id);
+        if (currentUser) {
+          filteredUsers = filteredUsers.filter((u: any) => (u as any).manager_id === currentUser.id);
+        }
+      }
+      // Admins see all salespeople and managers
     }
-    // Admins see all salespeople
 
     return filteredUsers
       .map((user: any) => {
-        // Count visits for this salesperson within the date range
+        // Count visits for this user within the date range
         const periodVisits = visits.reduce((total, visitGroup) => {
-          // Count all visits in this group that match the salesperson and date range
+          // Count all visits in this group that match the user and date range
           const matchingVisits = visitGroup.allVisits.filter(visit => {
             const visitDate = new Date(visit.date);
             const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
             const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
             const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
             
-            const salespersonMatch = visit.salesperson === user.name || 
-                                    visit.salesperson === user.email ||
-                                    visitGroup.lead?.salesperson === user.name ||
-                                    visitGroup.lead?.salesperson === user.email;
+            let userMatch = false;
             
-            return salespersonMatch && 
+            if (user.role === 'manager') {
+              // For managers, count both their own visits AND team visits
+              userMatch = visit.salesperson === user.name || 
+                         visit.salesperson === user.email ||
+                         visit.manager_id === user.id ||
+                         visitGroup.lead?.salesperson === user.name ||
+                         visitGroup.lead?.salesperson === user.email ||
+                         visitGroup.lead?.manager_id === user.id;
+            } else {
+              // For salespeople, count only their own visits
+              userMatch = visit.salesperson === user.name || 
+                         visit.salesperson === user.email ||
+                         visitGroup.lead?.salesperson === user.name ||
+                         visitGroup.lead?.salesperson === user.email;
+            }
+            
+            return userMatch && 
                    visitDateOnly >= startDateOnly && 
                    visitDateOnly <= endDateOnly;
           });
@@ -119,14 +164,28 @@ export function SalespersonsSection({ dateRange }: SalespersonsSectionProps) {
           return total + matchingVisits.length;
         }, 0);
 
-        // Get the most recent visit for this salesperson
+        // Get the most recent visit for this user
         const lastVisit = visits
           .filter(visitGroup => {
-            const salespersonMatch = visitGroup.lastVisit.salesperson === user.name || 
-                                   visitGroup.lastVisit.salesperson === user.email ||
-                                   visitGroup.lead?.salesperson === user.name ||
-                                   visitGroup.lead?.salesperson === user.email;
-            return salespersonMatch;
+            let userMatch = false;
+            
+            if (user.role === 'manager') {
+              // For managers, find visits from both their own work AND team work
+              userMatch = visitGroup.lastVisit.salesperson === user.name || 
+                         visitGroup.lastVisit.salesperson === user.email ||
+                         visitGroup.lastVisit.manager_id === user.id ||
+                         visitGroup.lead?.salesperson === user.name ||
+                         visitGroup.lead?.salesperson === user.email ||
+                         visitGroup.lead?.manager_id === user.id;
+            } else {
+              // For salespeople, find only their own visits
+              userMatch = visitGroup.lastVisit.salesperson === user.name || 
+                         visitGroup.lastVisit.salesperson === user.email ||
+                         visitGroup.lead?.salesperson === user.name ||
+                         visitGroup.lead?.salesperson === user.email;
+            }
+            
+            return userMatch;
           })
           .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())[0];
 
@@ -169,7 +228,14 @@ export function SalespersonsSection({ dateRange }: SalespersonsSectionProps) {
         <div className="text-center py-6 text-muted-foreground">
           <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">
-            {isSalesperson ? "No performance data found" : "No salespersons found"}
+            {(() => {
+              if (showOnlyManagers) return "No managers found";
+              if (showOnlySalespeople) return "No salespeople found";
+              if (showCurrentUserOnly) return "No performance data found";
+              if (showMyTeamOnly) return "No team members found";
+              if (isSalesperson) return "No performance data found";
+              return "No team members found";
+            })()}
           </p>
         </div>
       ) : (
@@ -199,6 +265,19 @@ export function SalespersonsSection({ dateRange }: SalespersonsSectionProps) {
                       {salesperson.name}
                     </h4>
                     <div className="flex gap-1">
+                      {/* Role Badge */}
+                      {(() => {
+                        const user = users?.find((u: any) => u.id === salesperson.id);
+                        if (user?.role === 'manager') {
+                          return (
+                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Manager
+                            </Badge>
+                          );
+                        }
+                        return null;
+                      })()}
                       <Badge 
                         variant={isOnTarget ? "default" : isCloseToTarget ? "secondary" : "outline"}
                         className="text-xs px-1.5 py-0.5"

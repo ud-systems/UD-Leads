@@ -66,25 +66,30 @@ export default function Visits() {
         groupedVisit.lastVisit.salesperson === salespersonEmail
       );
     } else if (userRole === 'manager') {
-      // Manager sees visits where they are the manager_id
-      return visits.filter(groupedVisit => groupedVisit.lastVisit.manager_id === currentUser.id);
+      // Managers can see BOTH their historical visits AND team visits
+      const managerName = profile?.name || currentUser.email;
+      return visits.filter(groupedVisit => 
+        groupedVisit.lastVisit.manager_id === currentUser.id || 
+        groupedVisit.lastVisit.salesperson === managerName
+      );
     }
     
     // Admin sees all visits
     return visits;
   }, [visits, userRole, currentUser, profile]);
 
-  // Filter users with salesperson role
+  // Filter users with salesperson/manager role
   const salespeople = useMemo(() => {
-    const allSalespeople = users.filter(user => (user as any).role === 'salesperson');
+    const roleFilter = isAdmin ? ['salesperson', 'manager'] : ['salesperson'];
+    const allUsers = users.filter(user => roleFilter.includes((user as any).role));
     
     if (userRole === 'manager' && currentUser) {
-      // Manager sees only their team members
-      return allSalespeople.filter(user => (user as any).manager_id === currentUser.id);
+      // Manager sees only their team members (salespeople only)
+      return allUsers.filter(user => (user as any).role === 'salesperson' && (user as any).manager_id === currentUser.id);
     }
     
-    return allSalespeople;
-  }, [users, userRole, currentUser]);
+    return allUsers;
+  }, [users, userRole, currentUser, isAdmin]);
 
   const filteredVisits = useMemo(() => {
     return roleFilteredVisits.filter(groupedVisit => {
@@ -265,9 +270,18 @@ export default function Visits() {
                   <SelectValue placeholder="Salesperson" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Salespeople</SelectItem>
+                  <SelectItem value="All">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
                   {salespeople.map(salesperson => (
-                    <SelectItem key={salesperson.id} value={salesperson.name}>{salesperson.name}</SelectItem>
+                    <SelectItem key={salesperson.id} value={salesperson.name}>
+                      <div className="flex items-center gap-2">
+                        {(salesperson as any).role === 'manager' && (
+                          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                            Manager
+                          </Badge>
+                        )}
+                        {salesperson.name}
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

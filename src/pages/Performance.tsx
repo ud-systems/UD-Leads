@@ -10,6 +10,7 @@ import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { SalespersonsSection } from "@/components/dashboard/SalespersonsSection";
 import { useAuth } from "@/hooks/useAuth";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Users, UserCheck, Building, Target } from "lucide-react";
 
 export default function Performance() {
   // Set default date range to current week
@@ -57,17 +58,118 @@ export default function Performance() {
         </div>
       </div>
 
-      {/* Salespersons Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Team Performance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SalespersonsSection dateRange={dateRange} />
-          </CardContent>
-        </Card>
+      {/* Role-based Performance Sections */}
+      {isAdmin && (
+        <>
+          {/* Managers Section - Admin Only */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-blue-600" />
+                Managers Performance
+              </CardTitle>
+              <CardDescription>
+                Individual manager performance metrics and targets
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SalespersonsSection 
+                dateRange={dateRange} 
+                showOnlyManagers={true}
+                title="Managers"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Salespersons Team Performance - Admin Only */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5 text-green-600" />
+                Salespersons Team Performance
+              </CardTitle>
+              <CardDescription>
+                All salespeople performance organized by teams
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SalespersonsSection 
+                dateRange={dateRange} 
+                showOnlySalespeople={true}
+                title="Salespeople"
+              />
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {isManager && (
+        <>
+          {/* My Performance - Manager */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-purple-600" />
+                My Performance
+              </CardTitle>
+              <CardDescription>
+                Your individual performance metrics and achievements
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SalespersonsSection 
+                dateRange={dateRange} 
+                showCurrentUserOnly={true}
+                title="My Performance"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Team Performance - Manager */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-orange-600" />
+                Team Performance
+              </CardTitle>
+              <CardDescription>
+                Performance metrics for your sales team
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SalespersonsSection 
+                dateRange={dateRange} 
+                showMyTeamOnly={true}
+                title="My Team"
+              />
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {isSalesperson && (
+        <>
+          {/* My Performance - Salesperson */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-indigo-600" />
+                My Performance
+              </CardTitle>
+              <CardDescription>
+                Your individual performance metrics and achievements
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SalespersonsSection 
+                dateRange={dateRange} 
+                showCurrentUserOnly={true}
+                title="My Performance"
+              />
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

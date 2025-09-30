@@ -106,8 +106,11 @@ export default function Leads() {
         lead.salesperson === salespersonName || lead.salesperson === salespersonEmail
       );
     } else if (userRole === 'manager') {
-      // Manager sees leads where they are the manager_id
-      return leads.filter(lead => lead.manager_id === currentUser.id);
+      // Managers can see BOTH their historical leads AND team leads
+      const managerName = profile?.name || currentUser.email;
+      return leads.filter(lead => 
+        lead.manager_id === currentUser.id || lead.salesperson === managerName
+      );
     }
     
     // Admin sees all leads
