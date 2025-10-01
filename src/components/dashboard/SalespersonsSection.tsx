@@ -204,7 +204,7 @@ export function SalespersonsSection({
         };
       })
       .sort((a, b) => (b.dailyVisits) - (a.dailyVisits));
-  }, [users, visits, systemSettings, isSalesperson, isManager, isAdmin, dateRange, user]);
+  }, [users, visits, systemSettings, isSalesperson, isManager, isAdmin, dateRange, user, showOnlyManagers, showOnlySalespeople, showCurrentUserOnly, showMyTeamOnly]);
 
   if (usersLoading || visitsLoading) {
     return (

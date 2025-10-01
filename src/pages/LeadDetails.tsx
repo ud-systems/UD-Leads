@@ -29,7 +29,7 @@ import { PhotoPreviewDialog } from "@/components/leads/PhotoPreviewDialog";
 import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-validation";
 import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 
 // Inline edit component moved outside to prevent recreation on every render
 interface InlineEditProps {

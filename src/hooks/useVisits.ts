@@ -150,38 +150,94 @@ export const useCreateVisit = () => {
   
   return useMutation({
     mutationFn: async (visit: VisitInsert) => {
-      let managerId = visit.manager_id;
-      
-      if (isManager) {
-        // If current user is a manager, set their ID as manager_id
-        managerId = user?.id;
-      } else if (isSalesperson) {
-        // If current user is a salesperson, get their assigned manager_id
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('manager_id')
-          .eq('id', user?.id)
+      try {
+        // Validate required fields
+        if (!visit.lead_id) {
+          throw new Error('Lead ID is required');
+        }
+        if (!visit.date) {
+          throw new Error('Visit date is required');
+        }
+        if (!visit.time) {
+          throw new Error('Visit time is required');
+        }
+        if (!visit.salesperson) {
+          throw new Error('Salesperson is required');
+        }
+        
+        // Validate user authentication
+        if (!user?.id) {
+          throw new Error('User not authenticated');
+        }
+        
+        let managerId = visit.manager_id;
+        
+        if (isManager) {
+          // If current user is a manager, set their ID as manager_id
+          managerId = user?.id;
+        } else if (isSalesperson) {
+          // If current user is a salesperson, get their assigned manager_id
+          try {
+            const { data: currentProfile, error: profileError } = await supabase
+              .from('profiles')
+              .select('manager_id')
+              .eq('id', user?.id)
+              .single();
+            
+            if (profileError) {
+              console.error('Error fetching user profile:', profileError);
+              throw new Error('Failed to fetch user profile');
+            }
+            
+            managerId = currentProfile?.manager_id || null;
+          } catch (error) {
+            console.error('Error in profile lookup:', error);
+            throw new Error('Failed to determine manager assignment');
+          }
+        }
+        
+        // Validate lead exists before creating visit
+        try {
+          const { data: leadExists, error: leadError } = await supabase
+            .from('leads')
+            .select('id')
+            .eq('id', visit.lead_id)
+            .single();
+          
+          if (leadError || !leadExists) {
+            throw new Error('Lead not found or access denied');
+          }
+        } catch (error) {
+          console.error('Error validating lead:', error);
+          throw new Error('Lead validation failed');
+        }
+        
+        // Add manager_id to the visit data
+        const visitData = {
+          ...visit,
+          manager_id: managerId
+        };
+        
+        const { data, error } = await supabase
+          .from('visits')
+          .insert(visitData)
+          .select()
           .single();
         
-        managerId = currentProfile?.manager_id || null;
-      }
-      
-      // Add manager_id to the visit data
-      const visitData = {
-        ...visit,
-        manager_id: managerId
-      };
-      
-      const { data, error } = await supabase
-        .from('visits')
-        .insert(visitData)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating visit:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error creating visit:', error);
+          
+          // Provide more specific error messages
+          if (error.code === '23503') {
+            throw new Error('Invalid lead or manager reference');
+          } else if (error.code === '23505') {
+            throw new Error('A visit for this lead already exists on this date');
+          } else if (error.code === '23514') {
+            throw new Error('Invalid visit status or data format');
+          } else {
+            throw new Error(`Database error: ${error.message}`);
+          }
+        }
 
       // If visit has notes, append them to the lead's notes field
       if (visit.notes && visit.notes.trim() && visit.lead_id) {
@@ -227,6 +283,11 @@ export const useCreateVisit = () => {
       }
       
       return data;
+        
+      } catch (error) {
+        console.error('Error in visit creation:', error);
+        throw error; // Re-throw to be handled by the UI
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visits'] });
