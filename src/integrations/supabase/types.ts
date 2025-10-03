@@ -48,6 +48,12 @@ export interface Database {
           followup_completed_time: string | null
           followup_notes: string | null
           status_color_id: number | null
+          first_visit_date: string | null
+          last_visit_date: string | null
+          total_visit_count: number | null
+          lead_age_days: number | null
+          conversion_date: string | null
+          lead_status_updated_at: string | null
         }
         Insert: {
           id?: string
@@ -118,6 +124,12 @@ export interface Database {
           followup_completed_time?: string | null
           followup_notes?: string | null
           status_color_id?: number | null
+          first_visit_date?: string | null
+          last_visit_date?: string | null
+          total_visit_count?: number | null
+          lead_age_days?: number | null
+          conversion_date?: string | null
+          lead_status_updated_at?: string | null
         }
       }
       visits: {
@@ -131,6 +143,18 @@ export interface Database {
           notes: string | null
           created_at: string | null
           manager_id: string | null
+          exterior_photos: string[] | null
+          interior_photos: string[] | null
+          visit_start_time: string | null
+          visit_end_time: string | null
+          visit_duration_minutes: number | null
+          visit_number: number | null
+          photo_count: number | null
+          visit_latitude: number | null
+          visit_longitude: number | null
+          location_validated: boolean | null
+          location_accuracy_meters: number | null
+          visit_type: string | null
         }
         Insert: {
           id?: string
@@ -142,6 +166,18 @@ export interface Database {
           notes?: string | null
           created_at?: string | null
           manager_id?: string | null
+          exterior_photos?: string[] | null
+          interior_photos?: string[] | null
+          visit_start_time?: string | null
+          visit_end_time?: string | null
+          visit_duration_minutes?: number | null
+          visit_number?: number | null
+          photo_count?: number | null
+          visit_latitude?: number | null
+          visit_longitude?: number | null
+          location_validated?: boolean | null
+          location_accuracy_meters?: number | null
+          visit_type?: string | null
         }
         Update: {
           id?: string
@@ -153,6 +189,18 @@ export interface Database {
           notes?: string | null
           created_at?: string | null
           manager_id?: string | null
+          exterior_photos?: string[] | null
+          interior_photos?: string[] | null
+          visit_start_time?: string | null
+          visit_end_time?: string | null
+          visit_duration_minutes?: number | null
+          visit_number?: number | null
+          photo_count?: number | null
+          visit_latitude?: number | null
+          visit_longitude?: number | null
+          location_validated?: boolean | null
+          location_accuracy_meters?: number | null
+          visit_type?: string | null
         }
       }
       territories: {

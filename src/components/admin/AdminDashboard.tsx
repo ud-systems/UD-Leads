@@ -13,13 +13,28 @@ export function AdminDashboard() {
         supabase.from('profiles').select('role'),
         supabase.from('leads').select('id, status'),
         supabase.from('territories').select('id'),
-        supabase.from('visits').select('status, date')
+        supabase.from('visits').select('status, date, notes')
       ]);
 
       const users = usersResult.data || [];
       const leads = retailersResult.data || [];
       const territories = territoriesResult.data || [];
       const visits = visitsResult.data || [];
+
+      // Categorize visits by their notes to get accurate counts (matching Dashboard logic)
+      const totalVisits = visits.length;
+      const initialDiscoveryVisits = visits.filter(v => v.notes?.includes('Initial Discovery')).length;
+      const completedFollowupVisits = visits.filter(v => v.notes?.includes('Follow-up completed')).length;
+      const otherVisits = totalVisits - initialDiscoveryVisits - completedFollowupVisits;
+      
+      // Calculate metrics using new categorization system
+      const totalUniqueLeads = leads.length; // Total unique leads
+      const totalRevisits = otherVisits; // Revisits/scheduled visits
+      const completedFollowups = completedFollowupVisits; // Completed followups
+      const scheduledFollowups = leads.filter(l => l.next_visit).length; // Pending followups
+      
+      // TOTAL LEADS = Total unique leads + Total revisits + Completed followups
+      const totalLeads = totalUniqueLeads + totalRevisits + completedFollowups;
 
       const usersByRole = users.reduce((acc: any, user: any) => {
         acc[user.role] = (acc[user.role] || 0) + 1;
@@ -40,9 +55,13 @@ export function AdminDashboard() {
 
       return {
         totalUsers: users.length,
-        totalLeads: leads.length,
+        totalLeads,
+        totalUniqueLeads,
+        totalRevisits,
+        completedFollowups,
+        scheduledFollowups,
         totalTerritories: territories.length,
-        totalVisits: visits.length,
+        totalVisits,
         recentVisits,
         usersByRole,
         leadsByStatus,

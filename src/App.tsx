@@ -16,7 +16,7 @@ const Leads = lazy(() => import("@/pages/Leads"));
 const LeadDetails = lazy(() => import("@/pages/LeadDetails"));
 const Visits = lazy(() => import("@/pages/Visits"));
 const Analytics = lazy(() => import("@/pages/Analytics"));
-const Performance = lazy(() => import("@/pages/Performance"));
+const PerformanceEnhanced = lazy(() => import("@/pages/PerformanceEnhanced"));
 const Territory = lazy(() => import("@/pages/Territory"));
 const ScheduledFollowups = lazy(() => import("@/pages/ScheduledFollowups"));
 const SalespersonDetail = lazy(() => import("@/pages/SalespersonDetail"));
@@ -73,7 +73,7 @@ function AppContent() {
                     <Route path="/leads/:id" element={<LeadDetails />} />
                     <Route path="/visits" element={<Visits />} />
                     <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/performance" element={<Performance />} />
+                    <Route path="/performance-enhanced" element={<PerformanceEnhanced />} />
                     <Route path="/salesperson/:salespersonId" element={<SalespersonDetail />} />
                     <Route path="/territory" element={<Territory />} />
                     <Route path="/scheduled-followups" element={<ScheduledFollowups />} />

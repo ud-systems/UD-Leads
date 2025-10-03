@@ -5,7 +5,7 @@ import { useLeads } from "@/hooks/useLeads";
 import { useUsers } from "@/hooks/useUsers";
 import { useToast } from "@/hooks/use-toast";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { ScheduleVisitDialog } from "@/components/visits/ScheduleVisitDialog";
+import { RecordVisitDialog } from "@/components/visits/RecordVisitDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,8 +84,13 @@ export default function Visits() {
     const allUsers = users.filter(user => roleFilter.includes((user as any).role));
     
     if (userRole === 'manager' && currentUser) {
-      // Manager sees only their team members (salespeople only)
-      return allUsers.filter(user => (user as any).role === 'salesperson' && (user as any).manager_id === currentUser.id);
+      // Manager sees themselves + their team members (salespeople only)
+      return allUsers.filter(user => 
+        // Include themselves (manager)
+        (user.id === currentUser.id && (user as any).role === 'manager') ||
+        // Include their team members (salespeople only)
+        ((user as any).role === 'salesperson' && (user as any).manager_id === currentUser.id)
+      );
     }
     
     return allUsers;
@@ -218,7 +223,7 @@ export default function Visits() {
           <p className="text-sm lg:text-base text-muted-foreground">{pageDescription}</p>
         </div>
         <div className="w-full sm:w-auto">
-          {canScheduleVisits && <ScheduleVisitDialog />}
+          {canScheduleVisits && <RecordVisitDialog />}
         </div>
       </div>
 

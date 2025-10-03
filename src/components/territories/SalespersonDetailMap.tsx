@@ -99,56 +99,6 @@ export function SalespersonDetailMap({
 
   return (
     <div className="space-y-6">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Building className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm font-medium">Total Leads</p>
-                <p className="text-2xl font-bold">{stats.totalLeads}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm font-medium">Mapped Leads</p>
-                <p className="text-2xl font-bold">{stats.leadsWithCoords}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-sm font-medium">Converted</p>
-                <p className="text-2xl font-bold">{stats.convertedLeads}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-orange-600" />
-              <div>
-                <p className="text-sm font-medium">Conversion Rate</p>
-                <p className="text-2xl font-bold">{stats.conversionRate.toFixed(1)}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Map Card */}
       <Card>

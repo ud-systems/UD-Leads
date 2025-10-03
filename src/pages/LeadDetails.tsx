@@ -17,6 +17,7 @@ import { useLeads, useUpdateLead, useLeadVisitCount } from "@/hooks/useLeads";
 import { useStoreTypeOptions, useLeadStatusOptions, useOwnsShopOrWebsiteOptions, useNumberOfStoresOptions } from "@/hooks/useSystemSettings";
 import { useUsers } from "@/hooks/useUsers";
 import { useTerritories } from "@/hooks/useTerritories";
+import { useVisits } from "@/hooks/useVisits";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { formatUKDate, formatUKTime } from "@/utils/timeUtils";
@@ -27,6 +28,7 @@ import { LeadPhotoDisplay } from "@/components/leads/LeadPhotoDisplay";
 import { DeleteLeadDialog } from "@/components/leads/DeleteLeadDialog";
 import { PhotoPreviewDialog } from "@/components/leads/PhotoPreviewDialog";
 import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-validation";
+import { VisitHistorySection } from "@/components/leads/VisitHistorySection";
 import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import React, { useCallback } from "react";
@@ -175,6 +177,7 @@ export default function LeadDetails() {
   const { mutate: updateLeadMutation, isPending } = useUpdateLead();
   const { data: users = [] } = useUsers();
   const { data: territories = [] } = useTerritories();
+  const { data: visits = [] } = useVisits();
   const { user } = useAuth();
   const { isAdmin, isManager, isSalesperson } = useRoleAccess();
   const { data: storeTypeOptions = [] } = useStoreTypeOptions();
@@ -222,6 +225,12 @@ export default function LeadDetails() {
     
     return [];
   }, [users, isAdmin, isManager, isSalesperson, user]);
+
+  // Filter visits for the current lead
+  const leadVisits = useMemo(() => {
+    if (!lead || !visits) return [];
+    return visits.filter(visit => visit.lead_id === lead.id);
+  }, [lead, visits]);
   
   // State for inline editing
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -1153,6 +1162,9 @@ export default function LeadDetails() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Visit History Section */}
+      <VisitHistorySection lead={lead} visits={leadVisits} />
 
       {/* Photo Preview Dialog */}
       <PhotoPreviewDialog

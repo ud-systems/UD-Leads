@@ -30,8 +30,22 @@ export function EnhancedAnalytics() {
       new Date(visit.date) >= cutoffDate
     );
 
-    // Calculate metrics
-    const totalLeads = leads.length;
+    // Categorize visits by their notes to get accurate counts (matching Dashboard logic)
+    const totalVisits = filteredVisits.length;
+    const initialDiscoveryVisits = filteredVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
+    const completedFollowupVisits = filteredVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
+    const otherVisits = totalVisits - initialDiscoveryVisits - completedFollowupVisits;
+    
+    // Calculate metrics using new categorization system
+    const totalUniqueLeads = leads.length; // Total unique leads
+    const totalRevisits = otherVisits; // Revisits/scheduled visits
+    const completedFollowups = completedFollowupVisits; // Completed followups
+    const scheduledFollowups = leads.filter(l => l.next_visit).length; // Pending followups
+    
+    // TOTAL LEADS = Total unique leads + Total revisits + Completed followups
+    const totalLeads = totalUniqueLeads + totalRevisits + completedFollowups;
+    
+    // Legacy metrics for compatibility
     const activeLeads = leads.filter(l => l.last_visit).length;
     const conversionRate = calculateConversionRateWithRules(leads, conversionRules);
     const completedVisits = filteredVisits.filter(v => v.status === 'completed').length;
@@ -88,6 +102,10 @@ export function EnhancedAnalytics() {
 
     return {
       totalLeads,
+      totalUniqueLeads,
+      totalRevisits,
+      completedFollowups,
+      scheduledFollowups,
       activeLeads,
       conversionRate,
       completedVisits,

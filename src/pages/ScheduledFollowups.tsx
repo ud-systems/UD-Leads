@@ -35,6 +35,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useCreateVisit } from "@/hooks/useVisits";
 import { useToast } from "@/hooks/use-toast";
 import { DatePicker } from "@/components/ui/date-picker";
 import { LeadsSkeleton } from "@/components/ui/leads-skeleton";
@@ -58,6 +59,7 @@ export default function ScheduledFollowups() {
   const { toast } = useToast();
   const { isMobile } = useIsMobile();
   const navigate = useNavigate();
+  const createVisit = useCreateVisit();
   
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState("");
@@ -224,6 +226,48 @@ export default function ScheduledFollowups() {
   const handleDelete = (lead: Lead) => {
     setDeletingLead(lead);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleCompleteFollowup = async (lead: Lead) => {
+    if (!lead.next_visit) {
+      toast({
+        title: "Error",
+        description: "No followup date set for this lead.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const currentDate = new Date().toISOString().split('T')[0];
+      const currentTime = new Date().toTimeString().split(' ')[0].substring(0, 5);
+      
+      // Create visit record with "Follow-up completed" notes
+      await createVisit.mutateAsync({
+        lead_id: lead.id,
+        date: currentDate,
+        time: currentTime,
+        status: 'completed',
+        salesperson: profile?.name || user?.email || 'Unknown',
+        notes: `Follow-up completed - ${lead.next_visit ? `Scheduled for ${format(new Date(lead.next_visit), 'MMM dd, yyyy')}` : 'Scheduled followup'}`,
+        manager_id: profile?.role === 'manager' ? user?.id : undefined
+      });
+
+      toast({
+        title: "Success",
+        description: "Followup completed successfully and visit recorded.",
+      });
+
+      // Refresh the leads data to update the UI
+      window.location.reload();
+    } catch (error) {
+      console.error('Error completing followup:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete followup. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Get buying power color
@@ -527,6 +571,10 @@ export default function ScheduledFollowups() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleCompleteFollowup(lead)} className="text-green-600">
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Complete Followup
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(lead)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Followup
@@ -597,6 +645,10 @@ export default function ScheduledFollowups() {
                 </div>
                 
                 <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" onClick={() => handleCompleteFollowup(lead)} className="h-9 px-3 hover:bg-green-50 hover:text-green-600">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <span className="text-sm">Complete</span>
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(lead)} className="h-9 px-3 hover:bg-blue-50 hover:text-blue-600">
                     <Edit className="h-4 w-4 mr-1" />
                     <span className="text-sm">Edit</span>

@@ -5,6 +5,7 @@ import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/type
 import { useAuth } from './useAuth';
 import { useProfile } from './useProfile';
 import { useRoleAccess } from './useRoleAccess';
+import { useLocationValidation } from './useLocationValidation';
 
 export type Visit = Tables<'visits'>;
 export type VisitInsert = TablesInsert<'visits'>;
@@ -147,6 +148,7 @@ export const useCreateVisit = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isManager, isSalesperson } = useRoleAccess();
+  const { validateProximity } = useLocationValidation();
   
   return useMutation({
     mutationFn: async (visit: VisitInsert) => {
@@ -196,20 +198,40 @@ export const useCreateVisit = () => {
           }
         }
         
-        // Validate lead exists before creating visit
+        // Validate lead exists and get lead details for location validation
+        let leadData;
         try {
           const { data: leadExists, error: leadError } = await supabase
             .from('leads')
-            .select('id')
+            .select('id, latitude, longitude, store_name')
             .eq('id', visit.lead_id)
             .single();
           
           if (leadError || !leadExists) {
             throw new Error('Lead not found or access denied');
           }
+          
+          leadData = leadExists;
         } catch (error) {
           console.error('Error validating lead:', error);
           throw new Error('Lead validation failed');
+        }
+        
+        // LOCATION VALIDATION - Check if user is within allowed distance
+        if (leadData.latitude && leadData.longitude) {
+          try {
+            const validationResult = await validateProximity(
+              leadData.latitude,
+              leadData.longitude
+            );
+            
+            if (!validationResult.isValid) {
+              throw new Error(validationResult.error || 'You are too far from the lead location to record a visit');
+            }
+          } catch (error) {
+            console.error('Location validation failed:', error);
+            throw error;
+          }
         }
         
         // Add manager_id to the visit data
@@ -231,7 +253,12 @@ export const useCreateVisit = () => {
           if (error.code === '23503') {
             throw new Error('Invalid lead or manager reference');
           } else if (error.code === '23505') {
-            throw new Error('A visit for this lead already exists on this date');
+            // Check if it's the unique constraint violation
+            if (error.message.includes('unique_lead_date_visit')) {
+              throw new Error('A visit for this lead already exists on this date. Only one visit per lead per day is allowed.');
+            } else {
+              throw new Error('A visit for this lead already exists on this date');
+            }
           } else if (error.code === '23514') {
             throw new Error('Invalid visit status or data format');
           } else {

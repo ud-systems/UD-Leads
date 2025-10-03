@@ -8,7 +8,7 @@ import { DashboardFilters, DashboardFilters as DashboardFiltersType } from "@/co
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Users, Calendar, DollarSign, Target, Activity, CheckCircle, XCircle, Building, ShoppingCart, Clock, RefreshCw } from "lucide-react";
+import { TrendingUp, Users, Calendar, DollarSign, Activity, CheckCircle, Building, ShoppingCart, Clock, RefreshCw } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisits } from "@/hooks/useVisits";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -16,10 +16,27 @@ import { useUsers } from "@/hooks/useUsers";
 import { useTargetAchievements } from "@/hooks/useTargets";
 import { EnhancedLineChart, EnhancedBarChart, EnhancedPieChart } from "@/components/charts/EnhancedCharts";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { LeadsGrowthChart } from "@/components/charts/LeadsGrowthChart";
+import { LeadsVsRevisitsChart } from "@/components/charts/LeadsVsRevisitsChart";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount, useConversionRules, calculateConversionRateWithRules, getConvertedLeadsCountWithRules } from "@/hooks/useConversionRules";
+
+// Helper function to calculate working days between two dates (excluding weekends)
+const calculateWorkingDays = (startDate: Date, endDate: Date): number => {
+  let count = 0;
+  const current = new Date(startDate);
+  
+  while (current <= endDate) {
+    const dayOfWeek = current.getDay();
+    // Count only Monday (1) through Friday (5)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return count;
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -32,10 +49,22 @@ export default function Dashboard() {
   const { user: currentUser } = useAuth();
   const { data: profile } = useProfile(currentUser?.id);
 
-  // Global filters state - default to All Time
-  const [filters, setFilters] = useState<DashboardFiltersType>({
-    selectedSalesperson: 'all',
-    dateRange: undefined // Default to All Time instead of Today
+  // Global filters state - default to current week (Monday to Friday)
+  const [filters, setFilters] = useState<DashboardFiltersType>(() => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    // Calculate Monday of current week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = today.getDay();
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday = -6, Monday = 0, Tuesday = -1, etc.
+    startOfWeek.setDate(today.getDate() + daysToMonday);
+    
+    return {
+      selectedSalesperson: 'all',
+      dateRange: { 
+        from: startOfWeek, 
+        to: today 
+      } // Default to current week (Monday to today)
+    };
   });
 
   const currentUserId = currentUser?.id;
@@ -67,7 +96,8 @@ export default function Dashboard() {
       .map(user => ({ 
         id: user.id, 
         name: (user as any).name || user.email,
-        role: (user as any).role 
+        role: (user as any).role,
+        daily_visit_target: user.user_preferences?.daily_visit_target || 15 // Include daily visit target with default fallback
       }));
   }, [users, isAdmin]);
 
@@ -101,8 +131,8 @@ export default function Dashboard() {
       }
     }
 
-    // Apply date range filter
-    if (filters.dateRange) {
+    // Apply date range filter (only if both from and to dates are provided)
+    if (filters.dateRange?.from && filters.dateRange?.to) {
       filtered = filtered.filter(lead => {
         const leadDate = new Date(lead.created_at || lead.updated_at);
         
@@ -160,8 +190,8 @@ export default function Dashboard() {
       }
     }
 
-    // Apply date range filter
-    if (filters.dateRange) {
+    // Apply date range filter (only if both from and to dates are provided)
+    if (filters.dateRange?.from && filters.dateRange?.to) {
       filtered = filtered.filter(groupedVisit => {
         const visitDate = new Date(groupedVisit.lastVisit.date);
         
@@ -199,103 +229,112 @@ export default function Dashboard() {
   );
   const { data: conversionRules = [] } = useConversionRules();
   
+  // Calculate min/max dates from leads only for "All Time" calculations
+  const minMaxDates = useMemo(() => {
+    let minDate: Date | null = null;
+    const maxDate = new Date(); // Always use today as max date
+
+    // Process all leads to find min date (All Time = from first lead entry)
+    leads?.forEach(lead => {
+      const createdAt = new Date(lead.created_at);
+      if (!minDate || createdAt < minDate) minDate = createdAt;
+    });
+
+    return { minDate, maxDate };
+  }, [leads]);
+  
+
   // Calculate dashboard metrics based on filtered data
   const dashboardStats = useMemo(() => {
-    const totalLeads = filteredLeads.length;
+    // Get visits for calculations
+    const isAllTime = !filters.dateRange?.from || !filters.dateRange?.to;
     
-    // Calculate conversion rate using conversion history
-    const conversionRate = calculateConversionRateWithRules(filteredLeads, conversionRules);
+    // For All Time, use ALL visits from raw data. For filtered periods, use filtered visits
+    const allVisits = isAllTime 
+      ? visits?.flatMap(groupedVisit => groupedVisit.allVisits || []) || []
+      : filteredVisits.flatMap(groupedVisit => groupedVisit.allVisits || []);
     
-    // Calculate converted leads count using conversion rules
-    const convertedLeads = getConvertedLeadsCountWithRules(filteredLeads, conversionRules);
     
-    // Get all visits (not filtered by date) for visit completion stats
-    const allVisitsUnfiltered = visits?.flatMap(groupedVisit => groupedVisit.allVisits || []) || [];
-    const completedVisits = allVisitsUnfiltered.filter(v => v.status === 'completed').length;
-    const scheduledVisits = allVisitsUnfiltered.filter(v => v.status === 'scheduled').length;
     
-    // Get filtered visits for daily target calculation
-    const allVisits = filteredVisits.flatMap(groupedVisit => groupedVisit.allVisits || []);
+    // Categorize visits by their notes to get accurate counts
+    const totalVisits = allVisits.length;
+    const initialDiscoveryVisits = allVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
+    const completedFollowupVisits = allVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
+    const otherVisits = totalVisits - initialDiscoveryVisits - completedFollowupVisits;
     
-                    const scheduledFollowups = filteredLeads.filter(l => l.next_visit).length;
-    const activeSalespeople = [...new Set(filteredLeads.map(l => l.salesperson).filter(Boolean))].length;
-
-    // Calculate daily target based on number of salespeople (15 per salesperson)
-    const totalSalespeople = salespeople.length;
-    const dailyTarget = totalSalespeople * 15;
+    // Calculate all metrics dynamically
+    const totalUniqueLeads = filteredLeads.length; // Total unique leads in filtered data
+    const totalRevisits = otherVisits; // Revisits/scheduled visits
+    const completedFollowups = completedFollowupVisits; // Completed followups
+    const scheduledFollowups = filteredLeads.filter(l => l.next_visit).length; // Pending followups
     
-    // Calculate visits completed today from actual visits data
-    const today = new Date().toISOString().split('T')[0];
-    const visitsToday = allVisits.filter(v => v.date === today && v.status === 'completed').length;
-    const visitTargetAchievement = dailyTarget > 0 ? (visitsToday / dailyTarget) * 100 : 0;
-    const visitTargetCompleted = visitsToday >= dailyTarget;
+    // 1. TOTAL LEADS = Total unique leads + Total revisits + Completed followups
+    const totalLeads = totalUniqueLeads + totalRevisits + completedFollowups;
     
     // Debug logging
-    console.log('Dashboard Stats Debug:', {
-      today,
-      totalSalespeople,
-      dailyTarget,
-      visitsToday,
-      visitTargetAchievement,
-      visitTargetCompleted,
-      completedVisits,
-      scheduledVisits,
-      totalVisits: allVisits.length,
-      totalVisitsUnfiltered: allVisitsUnfiltered.length
+    console.log('Dynamic Dashboard Stats:', {
+      totalLeads,
+      totalUniqueLeads,
+      totalRevisits,
+      completedFollowups,
+      scheduledFollowups,
+      totalVisits,
+      initialDiscoveryVisits,
+      completedFollowupVisits,
+      otherVisits,
+      hasDateRange: !!(filters.dateRange?.from && filters.dateRange?.to)
     });
     
     return [
       {
-        title: "Daily Visit Target",
-        value: `${visitTargetAchievement.toFixed(1)}%`,
-        description: `${visitsToday} / ${dailyTarget} visits today`,
-        icon: Target,
-        iconBg: "bg-blue-100 text-blue-600",
-        color: "text-blue-600",
-        trend: (visitTargetCompleted ? "up" : visitsToday >= dailyTarget * 0.67 ? "stable" : "down") as "up" | "stable" | "down",
-        badge: visitTargetCompleted ? (
-          <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Target Met
-          </Badge>
-        ) : (
-          <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-            <XCircle className="h-3 w-3 mr-1" />
-            {dailyTarget - visitsToday} More Needed
-          </Badge>
-        )
-      },
-      {
         title: "Total Leads",
         value: totalLeads.toString(),
-        description: `${convertedLeads} converted (${conversionRate.toFixed(1)}%)`,
+        description: `${totalUniqueLeads} new leads + ${totalRevisits} revisits + ${completedFollowups} completed followups`,
+        icon: Building,
+        iconBg: "bg-indigo-100 text-indigo-600",
+        color: "text-indigo-600",
+        trend: (totalLeads > 0 ? "up" : "stable") as "up" | "stable" | "down"
+      },
+      {
+        title: "Total Unique Leads",
+        value: totalUniqueLeads.toString(),
+        description: `New leads created${filters.dateRange?.from && filters.dateRange?.to ? ' in selected period' : ' (all time)'}`,
         icon: Users,
         iconBg: "bg-green-100 text-green-600",
         color: "text-green-600",
-        trend: (conversionRate > 20 ? "up" : conversionRate > 10 ? "stable" : "down") as "up" | "stable" | "down"
+        trend: (totalUniqueLeads > 0 ? "up" : "stable") as "up" | "stable" | "down"
       },
       {
-        title: "Visit Completion",
-        value: `${completedVisits}`,
-        description: `${scheduledVisits} scheduled visits`,
-        icon: Calendar,
+        title: "Total Revisits",
+        value: totalRevisits.toString(),
+        description: `Scheduled visits and revisits`,
+        icon: RefreshCw,
         iconBg: "bg-purple-100 text-purple-600",
         color: "text-purple-600",
-        trend: (completedVisits > scheduledVisits * 0.8 ? "up" : "down") as "up" | "stable" | "down"
+        trend: (totalRevisits > 0 ? "up" : "stable") as "up" | "stable" | "down"
+      },
+      {
+        title: "Completed Followups",
+        value: completedFollowups.toString(),
+        description: `Followups completed${filters.dateRange?.from && filters.dateRange?.to ? ' in selected period' : ' (all time)'}`,
+        icon: CheckCircle,
+        iconBg: "bg-green-100 text-green-600",
+        color: "text-green-600",
+        trend: (completedFollowups > 0 ? "up" : "stable") as "up" | "stable" | "down"
       },
       {
         title: "Scheduled Followups",
         value: scheduledFollowups.toString(),
-        description: `${activeSalespeople} active salespeople`,
+        description: `Followups pending${filters.dateRange?.from && filters.dateRange?.to ? ' in selected period' : ' (all time)'}`,
         icon: Clock,
         iconBg: "bg-orange-100 text-orange-600",
         color: "text-orange-600",
-        trend: (scheduledFollowups > totalLeads * 0.3 ? "up" : "stable") as "up" | "stable" | "down",
+        trend: (scheduledFollowups > 0 ? "up" : "stable") as "up" | "stable" | "down",
         clickable: true,
         onClick: () => navigate('/scheduled-followups')
       }
     ];
-  }, [filteredLeads, filteredVisits, dailyTargetAchievements, salespeople]);
+  }, [filteredLeads, filteredVisits, visits, filters.selectedSalesperson, salespeople, isManager, currentUser, users, navigate]);
 
   // Territory distribution data
   const territoryData = useMemo(() => {
@@ -435,38 +474,23 @@ export default function Dashboard() {
       />
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
         {dashboardStats.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}
       </div>
 
-      {/* Charts Section - Hide on Today view */}
-      {!filters.dateRange || 
-       (filters.dateRange.from && filters.dateRange.to && 
-        filters.dateRange.from.toDateString() !== filters.dateRange.to.toDateString()) ? (
-        <LeadsGrowthChart
-          selectedSalesperson={
-            filters.selectedSalesperson !== 'all' 
-              ? salespeople.find(p => p.id === filters.selectedSalesperson)?.name 
-              : undefined
-          }
-          dateRange={filters.dateRange}
-          timeGranularity="day"
-        />
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-              Today's Overview
-            </CardTitle>
-            <CardDescription>
-              Focused view of today's performance - growth chart hidden for cleaner daily review
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
+      {/* Charts Section - Always show charts */}
+      <LeadsVsRevisitsChart
+        selectedSalesperson={
+          filters.selectedSalesperson !== 'all' 
+            ? salespeople.find(p => p.id === filters.selectedSalesperson)?.name 
+            : undefined
+        }
+        dateRange={filters.dateRange}
+        timeGranularity="day"
+      />
     </div>
   );
 }
+

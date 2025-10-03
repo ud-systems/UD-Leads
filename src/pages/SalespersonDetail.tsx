@@ -32,7 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { SalespersonDetailMap } from "@/components/territories/SalespersonDetailMap";
-import { LeadsGrowthChart } from "@/components/charts/LeadsGrowthChart";
+import { LeadsVsRevisitsChart } from "@/components/charts/LeadsVsRevisitsChart";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function SalespersonDetail() {
@@ -48,10 +48,13 @@ export default function SalespersonDetail() {
   const { user: currentUser } = useAuth();
   const { data: profile } = useProfile(currentUser?.id);
 
-  // Date range filter for this salesperson's data - default to current week like Performance page
+  // Date range filter for this salesperson's data - default to current week (Monday to Friday)
   const today = new Date();
   const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+  // Calculate Monday of current week (0 = Sunday, 1 = Monday, etc.)
+  const dayOfWeek = today.getDay();
+  const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday = -6, Monday = 0, Tuesday = -1, etc.
+  startOfWeek.setDate(today.getDate() + daysToMonday);
   
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>({
     from: startOfWeek,
@@ -165,79 +168,52 @@ export default function SalespersonDetail() {
     return filtered;
   }, [visits, salesperson, dateRange, isViewedUserManager]);
 
-  // Calculate dashboard stats for this salesperson
+  // Calculate dashboard stats for this salesperson using new lead counting logic
   const dashboardStats = useMemo(() => {
-    const totalLeads = salespersonLeads.length;
-    const convertedLeads = salespersonLeads.filter(l => l.status === 'converted').length;
-    const conversionRate = totalLeads > 0 ? ((convertedLeads / totalLeads) * 100) : 0;
-    // Calculate total visit records by filtering individual visits by date range (like Performance page)
-    let totalVisitRecords = 0;
-    const uniqueLeadsVisited = new Set();
+    // Get all visits for this salesperson (filtered by date range if applicable)
+    const allVisits = salespersonVisits.flatMap(visitGroup => visitGroup.allVisits || []);
     
-    salespersonVisits.forEach(visitGroup => {
-      visitGroup.allVisits.forEach(visit => {
-        if (!dateRange) {
-          totalVisitRecords++;
-          uniqueLeadsVisited.add(visitGroup.leadId);
-          return;
-        }
-        
+    // Apply date range filtering to visits if date range is provided
+    let filteredVisits = allVisits;
+    if (dateRange) {
+      filteredVisits = allVisits.filter(visit => {
         const visitDate = new Date(visit.date);
         const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
         const startDateOnly = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
         const endDateOnly = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
-        
-        if (visitDateOnly >= startDateOnly && visitDateOnly <= endDateOnly) {
-          totalVisitRecords++;
-          uniqueLeadsVisited.add(visitGroup.leadId);
-        }
+        return visitDateOnly >= startDateOnly && visitDateOnly <= endDateOnly;
       });
-    });
+    }
     
-    const totalVisits = uniqueLeadsVisited.size; // Unique leads visited within date range
-    // Calculate completed visits within date range
-    const completedVisits = salespersonVisits.reduce((total, visitGroup) => {
-      if (!dateRange) {
-        return total + visitGroup.allVisits.filter(visit => visit.status === 'completed').length;
-      }
-      const matchingVisits = visitGroup.allVisits.filter(visit => {
-        const visitDate = new Date(visit.date);
-        const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
-        const startDateOnly = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
-        const endDateOnly = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
-        return visitDateOnly >= startDateOnly && visitDateOnly <= endDateOnly && visit.status === 'completed';
-      });
-      return total + matchingVisits.length;
-    }, 0);
+    // Categorize visits by their notes to get accurate counts (matching Dashboard logic)
+    const totalVisits = filteredVisits.length;
+    const initialDiscoveryVisits = filteredVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
+    const completedFollowupVisits = filteredVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
+    const otherVisits = totalVisits - initialDiscoveryVisits - completedFollowupVisits;
     
-    const visitCompletionRate = totalVisitRecords > 0 ? ((completedVisits / totalVisitRecords) * 100) : 0;
+    // Calculate metrics using new categorization system
+    const totalUniqueLeads = salespersonLeads.length; // Total unique leads in filtered data
+    const totalRevisits = otherVisits; // Revisits/scheduled visits
+    const completedFollowups = completedFollowupVisits; // Completed followups
+    const scheduledFollowups = salespersonLeads.filter(l => l.next_visit).length; // Pending followups
     
-    // Calculate revisits (total visits minus unique leads visited)
-    const revisits = totalVisitRecords - totalVisits;
+    // TOTAL LEADS = Total unique leads + Total revisits + Completed followups
+    const totalLeads = totalUniqueLeads + totalRevisits + completedFollowups;
 
     return [
       {
         title: "Total Leads",
         value: totalLeads.toString(),
-        description: "Leads generated",
+        description: `${totalUniqueLeads} new leads + ${totalRevisits} revisits + ${completedFollowups} completed followups`,
         icon: Building,
         trend: "up",
         trendValue: "+12%",
         color: "text-blue-600"
       },
       {
-        title: "Conversion Rate",
-        value: `${conversionRate.toFixed(1)}%`,
-        description: "Leads converted",
-        icon: CheckCircle,
-        trend: conversionRate > 15 ? "up" : "down",
-        trendValue: conversionRate > 15 ? "+5%" : "-2%",
-        color: "text-green-600"
-      },
-      {
         title: "Leads Visited",
-        value: totalVisits.toString(),
-        description: "Unique leads visited",
+        value: totalUniqueLeads.toString(),
+        description: "New leads visited",
         icon: Calendar,
         trend: "up",
         trendValue: "+8%",
@@ -245,33 +221,33 @@ export default function SalespersonDetail() {
       },
       {
         title: "Revisits",
-        value: revisits.toString(),
+        value: totalRevisits.toString(),
         description: "Additional visits to existing leads",
         icon: RefreshCw,
-        trend: revisits > 0 ? "up" : "neutral",
-        trendValue: revisits > 0 ? "+8%" : "0%",
+        trend: totalRevisits > 0 ? "up" : "neutral",
+        trendValue: totalRevisits > 0 ? "+8%" : "0%",
         color: "text-amber-600"
       },
       {
-        title: "Total Visit Records",
-        value: totalVisitRecords.toString(),
-        description: "All visits including revisits",
-        icon: Activity,
+        title: "Completed Followups",
+        value: completedFollowups.toString(),
+        description: "Followups completed",
+        icon: CheckCircle,
         trend: "up",
-        trendValue: "+12%",
-        color: "text-indigo-600"
+        trendValue: "+5%",
+        color: "text-green-600"
       },
       {
-        title: "Visit Completion",
-        value: `${visitCompletionRate.toFixed(1)}%`,
-        description: "Leads with completed visits",
-        icon: CheckCircle,
-        trend: visitCompletionRate > 80 ? "up" : "down",
-        trendValue: visitCompletionRate > 80 ? "+3%" : "-1%",
+        title: "Scheduled Followups",
+        value: scheduledFollowups.toString(),
+        description: "Followups pending",
+        icon: Clock,
+        trend: "up",
+        trendValue: "+3%",
         color: "text-orange-600"
       }
     ];
-  }, [salespersonLeads, salespersonVisits]);
+  }, [salespersonLeads, salespersonVisits, dateRange]);
 
   // Refresh function
   const handleRefresh = async () => {
@@ -367,15 +343,6 @@ export default function SalespersonDetail() {
 
       {/* Date Range Filter */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Date Range Filter
-          </CardTitle>
-          <CardDescription>
-            Filter data for this salesperson by date range
-          </CardDescription>
-        </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             <Button 
@@ -386,19 +353,35 @@ export default function SalespersonDetail() {
               All Time
             </Button>
             <Button 
-              variant={dateRange && dateRange.from.getDay() === 0 && dateRange.to.toDateString() === today.toDateString() ? "default" : "outline"} 
+              variant={(() => {
+                if (!dateRange) return "outline";
+                const today = new Date();
+                const startOfWeek = new Date(today);
+                // Calculate Monday of current week (same logic as default)
+                const dayOfWeek = today.getDay();
+                const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                startOfWeek.setDate(today.getDate() + daysToMonday);
+                return (dateRange.from.getTime() === startOfWeek.getTime() && dateRange.to.getTime() === today.getTime()) ? "default" : "outline";
+              })()} 
               size="sm"
               onClick={() => {
                 const today = new Date();
                 const startOfWeek = new Date(today);
-                startOfWeek.setDate(today.getDate() - today.getDay());
+                // Calculate Monday of current week (same logic as default)
+                const dayOfWeek = today.getDay();
+                const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                startOfWeek.setDate(today.getDate() + daysToMonday);
                 handleDateRangeChange({ from: startOfWeek, to: today });
               }}
             >
               This Week
             </Button>
             <Button 
-              variant={dateRange && dateRange.from.toDateString() === dateRange.to.toDateString() ? "default" : "outline"} 
+              variant={(() => {
+                if (!dateRange) return "outline";
+                const today = new Date();
+                return (dateRange.from.toDateString() === dateRange.to.toDateString() && dateRange.from.toDateString() === today.toDateString()) ? "default" : "outline";
+              })()} 
               size="sm"
               onClick={() => {
                 const today = new Date();
@@ -408,7 +391,14 @@ export default function SalespersonDetail() {
               Today
             </Button>
             <Button 
-              variant="outline" 
+              variant={(() => {
+                if (!dateRange) return "outline";
+                const today = new Date();
+                const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                // Check if the date range matches "Last 7 Days" (approximately)
+                const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+                return (daysDiff === 7 && dateRange.to.getTime() === today.getTime()) ? "default" : "outline";
+              })()} 
               size="sm"
               onClick={() => {
                 const today = new Date();
@@ -419,7 +409,14 @@ export default function SalespersonDetail() {
               Last 7 Days
             </Button>
             <Button 
-              variant="outline" 
+              variant={(() => {
+                if (!dateRange) return "outline";
+                const today = new Date();
+                const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                // Check if the date range matches "Last 30 Days" (approximately)
+                const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+                return (daysDiff === 30 && dateRange.to.getTime() === today.getTime()) ? "default" : "outline";
+              })()} 
               size="sm"
               onClick={() => {
                 const today = new Date();
@@ -434,7 +431,7 @@ export default function SalespersonDetail() {
       </Card>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
         {dashboardStats.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}
@@ -442,16 +439,6 @@ export default function SalespersonDetail() {
 
       {/* Coverage Map */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Territory Coverage
-          </CardTitle>
-          <CardDescription>
-            Visual representation of {salespersonName}'s territory and lead distribution
-            {isViewedUserManager && ' (including team leads)'}
-          </CardDescription>
-        </CardHeader>
         <CardContent>
           <SalespersonDetailMap 
             salespersonName={salespersonName}
@@ -462,7 +449,7 @@ export default function SalespersonDetail() {
       </Card>
 
       {/* Performance Chart */}
-      <LeadsGrowthChart
+      <LeadsVsRevisitsChart
         selectedSalesperson={salespersonName}
         dateRange={dateRange}
         timeGranularity="day"

@@ -1,22 +1,25 @@
-import { useSystemSettings, useUpdateSystemSetting } from "@/hooks/useSystemSettings";
+import { useSystemSettings, useUpdateSystemSetting, useVisitDistanceValidation } from "@/hooks/useSystemSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Target, Save, Loader2 } from "lucide-react";
+import { Target, Save, Loader2, MapPin } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import React from "react";
 
 export function VisitTargetSettings() {
   const { data: systemSettings, isLoading } = useSystemSettings();
+  const { data: currentDistance = 25 } = useVisitDistanceValidation();
   const updateSetting = useUpdateSystemSetting();
   const { toast } = useToast();
   
   const [visitTarget, setVisitTarget] = useState<string>('15');
+  const [distanceValidation, setDistanceValidation] = useState<string>('25');
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingDistance, setIsEditingDistance] = useState(false);
 
-  // Set initial value when data loads
+  // Set initial values when data loads
   React.useEffect(() => {
     if (systemSettings) {
       const targetSetting = systemSettings.find(s => s.setting_key === 'default_daily_visit_target');
@@ -25,6 +28,10 @@ export function VisitTargetSettings() {
       }
     }
   }, [systemSettings]);
+
+  React.useEffect(() => {
+    setDistanceValidation(currentDistance.toString());
+  }, [currentDistance]);
 
   const handleSave = async () => {
     try {
@@ -47,10 +54,37 @@ export function VisitTargetSettings() {
     }
   };
 
+  const handleSaveDistance = async () => {
+    try {
+      await updateSetting.mutateAsync({
+        key: 'visit_distance_validation',
+        value: distanceValidation,
+        description: 'Maximum distance (in meters) allowed for visit location validation'
+      });
+      
+      setIsEditingDistance(false);
+      toast({
+        title: "Distance validation updated",
+        description: `Maximum distance has been set to ${distanceValidation} meters.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update distance validation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCancel = () => {
     const targetSetting = systemSettings?.find(s => s.setting_key === 'default_daily_visit_target');
     setVisitTarget(targetSetting?.setting_value || '15');
     setIsEditing(false);
+  };
+
+  const handleCancelDistance = () => {
+    setDistanceValidation(currentDistance.toString());
+    setIsEditingDistance(false);
   };
 
   if (isLoading) {
@@ -144,6 +178,74 @@ export function VisitTargetSettings() {
             <p>• New salespersons will have a default target of {visitTarget} visits per day</p>
             <p>• Existing salespersons will keep their current targets</p>
             <p>• Individual targets can be adjusted in user management</p>
+          </div>
+        </div>
+
+        {/* Distance Validation Settings */}
+        <div className="space-y-2 border-t pt-4">
+          <Label htmlFor="distance-validation" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Visit Location Validation Distance
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="distance-validation"
+              type="number"
+              min="5"
+              max="1000"
+              value={distanceValidation}
+              onChange={(e) => setDistanceValidation(e.target.value)}
+              disabled={!isEditingDistance}
+              className="w-32"
+            />
+            <span className="text-sm text-muted-foreground">meters radius</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Maximum distance allowed between user location and lead location when recording visits.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isEditingDistance ? (
+            <>
+              <Button 
+                onClick={handleSaveDistance} 
+                disabled={updateSetting.isPending}
+                size="sm"
+              >
+                {updateSetting.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Save Distance
+              </Button>
+              <Button 
+                onClick={handleCancelDistance} 
+                variant="outline" 
+                size="sm"
+                disabled={updateSetting.isPending}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button 
+              onClick={() => setIsEditingDistance(true)} 
+              variant="outline" 
+              size="sm"
+            >
+              Edit Distance
+            </Button>
+          )}
+        </div>
+
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h4 className="font-medium text-sm mb-2 text-blue-900 dark:text-blue-100">Location Validation Impact</h4>
+          <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+            <p>• Users must be within {distanceValidation}m of lead location to record visits</p>
+            <p>• Prevents recording visits from incorrect locations</p>
+            <p>• Requires location permissions to be enabled</p>
           </div>
         </div>
       </CardContent>

@@ -2,10 +2,11 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, Target, Users, Award, FileText, Download, Calendar, DollarSign, Activity, BarChart3, CheckCircle, XCircle, RefreshCw, MapPin, Building, ShoppingCart } from "lucide-react";
+import { TrendingUp, Target, Users, Award, FileText, Download, Calendar, DollarSign, Activity, BarChart3, CheckCircle, XCircle, RefreshCw, MapPin, Building, ShoppingCart, Clock, Search } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisits } from "@/hooks/useVisits";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -17,6 +18,7 @@ import { EnhancedLineChart, EnhancedBarChart, EnhancedPieChart } from "@/compone
 import { WeeklySpendAreaChart } from "@/components/charts/WeeklySpendAreaChart";
 import { StoreTypeAreaChart } from "@/components/charts/StoreTypeAreaChart";
 import { StatCardsCarousel } from "@/components/ui/stat-cards-carousel";
+import { StatsCard } from "@/components/dashboard/StatsCard";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -25,6 +27,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 export default function Analytics() {
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [selectedSalesperson, setSelectedSalesperson] = useState("all");
+  const [productSearchTerm, setProductSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1), // Start of current month
     to: new Date()
@@ -148,7 +151,52 @@ export default function Analytics() {
   const { data: conversionRules = [] } = useConversionRules();
   
   const keyMetrics = useMemo(() => {
-    const totalLeads = roleFilteredLeads.length;
+    // Apply date range filtering to visits if date range is provided
+    let filteredVisits = visits.flatMap(groupedVisit => groupedVisit.allVisits || []);
+    if (dateRange?.from && dateRange?.to) {
+      filteredVisits = filteredVisits.filter(visit => {
+        const visitDate = new Date(visit.date);
+        return visitDate >= dateRange.from && visitDate <= dateRange.to;
+      });
+    }
+    
+    // Apply role-based filtering to visits
+    if (userRole === 'salesperson' && currentUser) {
+      const salespersonName = profile?.name || currentUser.email;
+      filteredVisits = filteredVisits.filter(visit => 
+        visit.salesperson === salespersonName
+      );
+    } else if (userRole === 'manager' && currentUser) {
+      const managerName = profile?.name || currentUser.email;
+      filteredVisits = filteredVisits.filter(visit => 
+        visit.manager_id === currentUser.id || visit.salesperson === managerName
+      );
+    }
+    
+    // Apply salesperson filter to visits if specific salesperson is selected
+    if (selectedSalesperson !== "all") {
+      const selectedUser = users.find(u => u.id === selectedSalesperson);
+      if (selectedUser) {
+        filteredVisits = filteredVisits.filter(visit => 
+          visit.salesperson === selectedUser.name || visit.salesperson === selectedUser.email
+        );
+      }
+    }
+    
+    // Categorize visits by their notes to get accurate counts (matching Dashboard logic)
+    const totalVisits = filteredVisits.length;
+    const initialDiscoveryVisits = filteredVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
+    const completedFollowupVisits = filteredVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
+    const otherVisits = totalVisits - initialDiscoveryVisits - completedFollowupVisits;
+    
+    // Calculate metrics using new categorization system
+    const totalUniqueLeads = roleFilteredLeads.length; // Total unique leads in filtered data
+    const totalRevisits = otherVisits; // Revisits/scheduled visits
+    const completedFollowups = completedFollowupVisits; // Completed followups
+    const scheduledFollowups = roleFilteredLeads.filter(l => l.next_visit).length; // Pending followups
+    
+    // TOTAL LEADS = Total unique leads + Total revisits + Completed followups
+    const totalLeads = totalUniqueLeads + totalRevisits + completedFollowups;
     
     // Create status counts dynamically from database values
     const statusCounts = leadStatusOptions.reduce((acc, status) => {
@@ -169,13 +217,17 @@ export default function Analytics() {
     
     return {
       totalLeads,
+      totalUniqueLeads,
+      totalRevisits,
+      completedFollowups,
+      scheduledFollowups,
       statusCounts,
       conversionRate,
       highValueLeads,
       mediumValueLeads,
       lowValueLeads
     };
-  }, [roleFilteredLeads, conversionHistory, leadStatusOptions, conversionRules]);
+  }, [roleFilteredLeads, visits, dateRange, userRole, currentUser, profile, selectedSalesperson, users, conversionHistory, leadStatusOptions, conversionRules]);
 
   // Weekly Spend Distribution - Area Chart Data
   const weeklySpendAreaData = useMemo(() => {
@@ -277,44 +329,84 @@ export default function Analytics() {
 
 
 
-  // Dynamic Stat Cards based on database status options
-  const statCards = useMemo(() => {
-    const cards = [
+  // Dynamic Stat Cards matching Dashboard style
+  const dashboardStats = useMemo(() => {
+    const totalLeads = keyMetrics.totalLeads;
+    const totalUniqueLeads = keyMetrics.totalUniqueLeads;
+    const totalRevisits = keyMetrics.totalRevisits;
+    const completedFollowups = keyMetrics.completedFollowups;
+    const scheduledFollowups = keyMetrics.scheduledFollowups;
+    
+    return [
       {
         title: "Total Leads",
-        value: keyMetrics.totalLeads,
-        description: dateRange.from && dateRange.to ? 
-          `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}` : 
-          'All time',
-        icon: <Users className="h-4 w-4 text-muted-foreground" />
+        value: totalLeads.toString(),
+        description: `${totalUniqueLeads} new leads + ${totalRevisits} revisits + ${completedFollowups} completed followups`,
+        icon: Building,
+        iconBg: "bg-indigo-100 text-indigo-600",
+        color: "text-indigo-600",
+        trend: (totalLeads > 0 ? "up" : "stable") as "up" | "stable" | "down"
       },
       {
-        title: "Conversion Rate",
-        value: `${keyMetrics.conversionRate.toFixed(1)}%`,
-        description: `${getConvertedLeadsCountWithRules(roleFilteredLeads, conversionRules)} of ${keyMetrics.totalLeads} leads`,
-        icon: <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        title: "Total Unique Leads",
+        value: totalUniqueLeads.toString(),
+        description: `New leads created${dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
+        icon: Users,
+        iconBg: "bg-green-100 text-green-600",
+        color: "text-green-600",
+        trend: (totalUniqueLeads > 0 ? "up" : "stable") as "up" | "stable" | "down"
+      },
+      {
+        title: "Total Revisits",
+        value: totalRevisits.toString(),
+        description: `Scheduled visits and revisits`,
+        icon: RefreshCw,
+        iconBg: "bg-purple-100 text-purple-600",
+        color: "text-purple-600",
+        trend: (totalRevisits > 0 ? "up" : "stable") as "up" | "stable" | "down"
+      },
+      {
+        title: "Completed Followups",
+        value: completedFollowups.toString(),
+        description: `Followups completed${dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
+        icon: CheckCircle,
+        iconBg: "bg-green-100 text-green-600",
+        color: "text-green-600",
+        trend: (completedFollowups > 0 ? "up" : "stable") as "up" | "stable" | "down"
+      },
+      {
+        title: "Scheduled Followups",
+        value: scheduledFollowups.toString(),
+        description: `Followups pending${dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
+        icon: Clock,
+        iconBg: "bg-orange-100 text-orange-600",
+        color: "text-orange-600",
+        trend: (scheduledFollowups > 0 ? "up" : "stable") as "up" | "stable" | "down"
       }
     ];
+  }, [keyMetrics, dateRange]);
 
-    // Add dynamic status cards from database
-    leadStatusOptions.forEach(status => {
+  // Lead Status Progress Bars Card
+  const leadStatusProgressData = useMemo(() => {
+    const totalLeads = keyMetrics.totalLeads;
+    if (totalLeads === 0) return [];
+    
+    return leadStatusOptions.map(status => {
       const count = keyMetrics.statusCounts[status] || 0;
-      if (count > 0) {
-        cards.push({
-          title: status,
-          value: count,
-          description: `${status.toLowerCase()} leads`,
-          icon: status.includes('Active') ? 
-            <CheckCircle className="h-4 w-4 text-muted-foreground" /> : 
-            <Users className="h-4 w-4 text-muted-foreground" />
-        });
-      }
-    });
+      const percentage = totalLeads > 0 ? (count / totalLeads) * 100 : 0;
+      
+      return {
+        status,
+        count,
+        percentage,
+        color: status.includes('Active') ? 'bg-green-500' : 
+               status.includes('Converted') ? 'bg-blue-500' :
+               status.includes('Lost') ? 'bg-red-500' : 'bg-gray-500'
+      };
+    }).filter(item => item.count > 0); // Only show statuses with leads
+  }, [keyMetrics, leadStatusOptions]);
 
-    return cards;
-  }, [keyMetrics, leadStatusOptions, dateRange, selectedSalesperson, roleFilteredLeads, conversionRules]);
-
-  // Top 3 Selling Products Analysis
+  // Top Selling Products Analysis (Top 10 with search)
   const topProductsData = useMemo(() => {
     const productStats = roleFilteredLeads.reduce((acc, lead) => {
       if (lead.top_3_selling_products && Array.isArray(lead.top_3_selling_products)) {
@@ -328,13 +420,22 @@ export default function Analytics() {
       return acc;
     }, {} as Record<string, number>);
 
-    return Object.entries(productStats)
+    let filteredProducts = Object.entries(productStats)
       .map(([product, count]: [string, number]) => ({
         name: product,
         count: count
       }))
-      .sort((a, b) => b.count - a.count); // Sort by count, show all products
-  }, [roleFilteredLeads]);
+      .sort((a, b) => b.count - a.count); // Sort by count
+
+    // Apply search filter
+    if (productSearchTerm.trim()) {
+      filteredProducts = filteredProducts.filter(product =>
+        product.name.toLowerCase().includes(productSearchTerm.toLowerCase())
+      );
+    }
+
+    return filteredProducts.slice(0, 10); // Show top 10
+  }, [roleFilteredLeads, productSearchTerm]);
 
   return (
     <div className="space-y-6">
@@ -389,8 +490,45 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Dynamic Stat Cards with Carousel */}
-      <StatCardsCarousel cards={statCards} />
+      {/* Dynamic Stat Cards matching Dashboard style */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        {dashboardStats.map((stat, index) => (
+          <StatsCard key={index} {...stat} />
+        ))}
+      </div>
+
+      {/* Lead Status Progress Bars */}
+      {leadStatusProgressData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Lead Status Distribution
+            </CardTitle>
+            <CardDescription>
+              Visual breakdown of leads by status with progress bars
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {leadStatusProgressData.map((item, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{item.status}</span>
+                    <span className="text-muted-foreground">{item.count} leads ({item.percentage.toFixed(1)}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full ${item.color}`}
+                      style={{ width: `${item.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Section */}
       <Tabs defaultValue="leads" className="w-full">
@@ -468,32 +606,70 @@ export default function Analytics() {
         </TabsContent>
       </Tabs>
 
-      {/* Top 3 Selling Products */}
+      {/* Top Selling Products */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Top 3 Selling Products
+            Top Selling Products
           </CardTitle>
-          <CardDescription>Most popular products listed as top selling by stores</CardDescription>
+          <CardDescription>Top 10 most popular products listed as top selling by stores</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {topProductsData.map((product, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-sm">{product.name}</span>
-                  <span className="text-sm text-muted-foreground">{product.count} stores</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min((product.count / Math.max(...topProductsData.map(p => p.count))) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search for a specific product..."
+                value={productSearchTerm}
+                onChange={(e) => setProductSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {productSearchTerm && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Showing {topProductsData.length} product{topProductsData.length !== 1 ? 's' : ''} matching "{productSearchTerm}"
+              </p>
+            )}
           </div>
+          
+          {/* Products Grid */}
+          {topProductsData.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {topProductsData.map((product, index) => {
+                const maxCount = Math.max(...topProductsData.map(p => p.count));
+                const percentage = maxCount > 0 ? (product.count / maxCount) * 100 : 0;
+                
+                return (
+                  <div key={index} className="space-y-2 p-3 border rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-sm">{product.name}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {product.count} store{product.count !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {percentage.toFixed(1)}% of top product
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              {productSearchTerm ? 
+                `No products found matching "${productSearchTerm}"` : 
+                'No products data available'
+              }
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

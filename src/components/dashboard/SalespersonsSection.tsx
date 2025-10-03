@@ -129,10 +129,9 @@ export function SalespersonsSection({
 
     return filteredUsers
       .map((user: any) => {
-        // Count visits for this user within the date range
-        const periodVisits = visits.reduce((total, visitGroup) => {
-          // Count all visits in this group that match the user and date range
-          const matchingVisits = visitGroup.allVisits.filter(visit => {
+        // Count visits for this user within the date range using new categorization logic
+        const allUserVisits = visits.flatMap(visitGroup => 
+          visitGroup.allVisits.filter(visit => {
             const visitDate = new Date(visit.date);
             const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
             const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
@@ -159,10 +158,17 @@ export function SalespersonsSection({
             return userMatch && 
                    visitDateOnly >= startDateOnly && 
                    visitDateOnly <= endDateOnly;
-          });
-          
-          return total + matchingVisits.length;
-        }, 0);
+          })
+        );
+        
+        // Categorize visits by their notes to get accurate counts (matching Dashboard logic)
+        const totalVisits = allUserVisits.length;
+        const initialDiscoveryVisits = allUserVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
+        const completedFollowupVisits = allUserVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
+        const otherVisits = totalVisits - initialDiscoveryVisits - completedFollowupVisits;
+        
+        // Calculate total period visits using new categorization system
+        const periodVisits = totalVisits;
 
         // Get the most recent visit for this user
         const lastVisit = visits

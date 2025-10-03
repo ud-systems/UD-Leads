@@ -45,6 +45,8 @@ const DEFAULT_NUMBER_OF_STORES_OPTIONS = [
   "10+"
 ];
 
+const DEFAULT_VISIT_DISTANCE_VALIDATION = "25"; // meters
+
 export const useSystemSettings = () => {
   return useQuery({
     queryKey: ['system_settings'],
@@ -181,6 +183,24 @@ export const useNumberOfStoresOptions = () => {
   
   return {
     data: numberOfStoresOptions,
+    isLoading,
+    error
+  };
+};
+
+export const useVisitDistanceValidation = () => {
+  const { data: settings, isLoading, error } = useSystemSettings();
+  
+  const distanceSetting = settings?.find(s => s.setting_key === 'visit_distance_validation');
+  
+  let distanceValidation = DEFAULT_VISIT_DISTANCE_VALIDATION;
+  
+  if (distanceSetting) {
+    distanceValidation = distanceSetting.setting_value || DEFAULT_VISIT_DISTANCE_VALIDATION;
+  }
+  
+  return {
+    data: parseInt(distanceValidation),
     isLoading,
     error
   };

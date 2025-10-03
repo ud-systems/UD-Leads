@@ -31,7 +31,7 @@ const navigationItems = [
   { icon: Store, label: "Leads", href: "/leads" },
   { icon: Calendar, label: "Visits", href: "/visits" },
   { icon: Clock, label: "Followup", href: "/scheduled-followups" },
-  { icon: TrendingUp, label: "Performance", href: "/performance" },
+  { icon: Target, label: "Performance+", href: "/performance-enhanced" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
   { icon: Map, label: "Territories", href: "/territory" },
 
