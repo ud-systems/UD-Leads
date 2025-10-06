@@ -148,14 +148,18 @@ export function calculateTargetPeriod(targetType: 'daily' | 'weekly' | 'monthly'
 }
 
 // Helper function to get default visit targets only
-export function getDefaultVisitTargets(userId: string, targetType: 'daily' | 'weekly' | 'monthly' | 'yearly') {
+export function getDefaultVisitTargets(userId: string, targetType: 'daily' | 'weekly' | 'monthly' | 'yearly', systemSettings?: any[]) {
   const { periodStart, periodEnd } = calculateTargetPeriod(targetType);
+  
+  // Get system default for daily target
+  const systemDefault = systemSettings?.find(s => s.setting_key === 'default_daily_visit_target')?.setting_value;
+  const dailyTarget = systemDefault ? parseInt(systemDefault) : 15;
   
   return {
     user_id: userId,
     target_type: targetType,
     metric_type: 'visits' as const,
-    target_value: targetType === 'daily' ? 15 : targetType === 'weekly' ? 75 : targetType === 'monthly' ? 300 : 3600,
+    target_value: targetType === 'daily' ? dailyTarget : targetType === 'weekly' ? dailyTarget * 5 : targetType === 'monthly' ? dailyTarget * 20 : dailyTarget * 240,
     achieved_value: 0,
     period_start: periodStart.toISOString(),
     period_end: periodEnd.toISOString(),

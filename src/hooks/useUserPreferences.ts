@@ -30,7 +30,7 @@ export const useUserPreferences = (userId?: string) => {
           secondary_color: '#f1f5f9', // Slate
           active_color: '#22c55e', // Green
           inactive_color: '#ef4444', // Red
-          daily_visit_target: 15,
+          daily_visit_target: 15, // Will be overridden by system default when used
         };
       }
       
@@ -54,7 +54,7 @@ export const useUserPreferences = (userId?: string) => {
           secondary_color: '#f1f5f9', // Slate
           active_color: '#22c55e', // Green
           inactive_color: '#ef4444', // Red
-          daily_visit_target: 15,
+          daily_visit_target: 15, // Will be overridden by system default when used
         };
       }
       
@@ -72,7 +72,7 @@ export const useUserPreferences = (userId?: string) => {
         secondary_color: '#f1f5f9', // Slate
         active_color: '#22c55e', // Green
         inactive_color: '#ef4444', // Red
-        daily_visit_target: 15,
+        daily_visit_target: 15, // Will be overridden by system default when used
       };
     },
     enabled: true, // Always enabled, but we handle the no-user case in queryFn
@@ -176,7 +176,7 @@ export const useUpsertUserPreferences = () => {
           secondary_color: '#f1f5f9',
           active_color: '#22c55e',
           inactive_color: '#ef4444',
-          daily_visit_target: 15,
+          daily_visit_target: 15, // Will be overridden by system default when used
           ...updates
         };
         

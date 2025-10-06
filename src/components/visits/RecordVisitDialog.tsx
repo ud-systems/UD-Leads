@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Loader2, Search, X, MapPin, Camera, CheckCircle, AlertCircle } from "lucide-react";
+import { Calendar, Clock, Loader2, Search, X, MapPin, Camera, CheckCircle, AlertCircle, Save, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLeads } from "@/hooks/useLeads";
 import { useCreateVisit, useVisits } from "@/hooks/useVisits";
@@ -13,10 +13,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useLocationValidation } from "@/hooks/useLocationValidation";
+import { useVisitDraft } from "@/hooks/useVisitDraft";
 import { getUKDate, getUKTime, formatUKDate } from "@/utils/timeUtils";
 import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-validation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { VisitDraftRecoveryDialog } from "./VisitDraftRecoveryDialog";
 
 interface RecordVisitDialogProps {
   children?: React.ReactNode;
@@ -32,6 +34,18 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
   const createVisit = useCreateVisit();
   const { validateProximity } = useLocationValidation();
   const { toast } = useToast();
+  
+  // Draft functionality
+  const { 
+    draft, 
+    hasDraft, 
+    saveDraft, 
+    clearDraft, 
+    updateDraftStep, 
+    updateDraftData 
+  } = useVisitDraft();
+  
+  const [showDraftRecovery, setShowDraftRecovery] = useState(false);
   
   // Get current date and time
   const getCurrentDateTime = () => {
@@ -79,6 +93,13 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Check for draft when dialog opens
+  useEffect(() => {
+    if (open && hasDraft && draft) {
+      setShowDraftRecovery(true);
+    }
+  }, [open, hasDraft, draft]);
 
   // Filter leads based on search term
   const filteredLeads = useMemo(() => {
@@ -160,17 +181,94 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
     setCurrentStep(1);
   };
 
+  // Draft recovery functions
+  const handleRecoverDraft = () => {
+    if (!draft) return;
+    
+    setCurrentStep(draft.step);
+    setVisitData(draft.visitData);
+    setLeadSearch(draft.leadSearch);
+    setExteriorPhotos(draft.exteriorPhotos || []);
+    setInteriorPhotos(draft.interiorPhotos || []);
+    setLocationValidated(draft.locationValidated);
+    setLocationError(draft.locationError);
+    setVisitStartTime(draft.visitStartTime);
+    
+    toast({
+      title: "Draft Recovered",
+      description: "Your visit draft has been restored. You can continue where you left off.",
+    });
+  };
+
+  const handleDiscardDraft = () => {
+    clearDraft();
+    toast({
+      title: "Draft Discarded",
+      description: "The saved draft has been permanently deleted.",
+    });
+  };
+
   // Step navigation functions
   const nextStep = () => {
+    if (currentStep === 2) {
+      // Enforce at least one exterior photo before moving to Step 3
+      const hasExterior = exteriorPhotos.length > 0;
+      if (!hasExterior) {
+        // Inline validation only, do not use toast
+        return;
+      }
+    }
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
+      // Save draft when moving to next step
+      saveDraft(
+        currentStep + 1,
+        visitData,
+        leadSearch,
+        exteriorPhotos,
+        interiorPhotos,
+        locationValidated,
+        locationError,
+        visitStartTime
+      );
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      // Save draft when moving to previous step
+      saveDraft(
+        currentStep - 1,
+        visitData,
+        leadSearch,
+        exteriorPhotos,
+        interiorPhotos,
+        locationValidated,
+        locationError,
+        visitStartTime
+      );
     }
+  };
+
+  // Save & Exit functionality
+  const handleSaveAndExit = () => {
+    // Save current progress and close dialog
+    saveDraft(
+      currentStep,
+      visitData,
+      leadSearch,
+      exteriorPhotos,
+      interiorPhotos,
+      locationValidated,
+      locationError,
+      visitStartTime
+    );
+    setOpen(false);
+    toast({
+      title: "Draft Saved",
+      description: "Your visit progress has been saved. You can continue later.",
+    });
   };
 
   // Check if current step is valid
@@ -179,7 +277,8 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
       case 1:
         return visitData.lead_id !== ""; // Only require lead selection, location validation is optional
       case 2:
-        return true; // Photos are optional
+        // Require at least 1 exterior photo
+        return exteriorPhotos.length > 0;
       case 3:
         return true; // Status and notes are optional
       default:
@@ -362,6 +461,13 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
       
       const duration = visitStartTime ? Math.round((new Date(endTime).getTime() - new Date(visitStartTime).getTime()) / 60000) : null;
       
+      // Determine visit type based on existing visits for this lead
+      const existingVisitsForLead = visits?.flatMap(visitGroup => 
+        visitGroup.allVisits.filter(visit => visit.lead_id === visitData.lead_id)
+      ) || [];
+      
+      const visitType = existingVisitsForLead.length === 0 ? 'initial' : 'revisit';
+
       await createVisit.mutateAsync({
         lead_id: visitData.lead_id,
         date: visitData.date,
@@ -378,12 +484,16 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
         exterior_photos: exteriorPhotos.length > 0 ? exteriorPhotos : null,
         interior_photos: interiorPhotos.length > 0 ? interiorPhotos : null,
         photo_count: exteriorPhotos.length + interiorPhotos.length,
+        visit_type: visitType,
       });
       
       toast({
         title: "Success",
         description: "Visit recorded successfully with photos and location data",
       });
+      
+      // Clear draft on successful submission
+      clearDraft();
       
       setOpen(false);
       setVisitData({
@@ -655,12 +765,18 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Exterior Photos</Label>
+                  <Label>
+                    Exterior Photos <span className="text-red-600">*</span>
+                  </Label>
                   <PhotoUploadWithValidation
                     onPhotosChange={setExteriorPhotos}
                     maxPhotos={3}
                     storagePath={`visit-photos/${selectedLead.id}/exterior`}
+                    forceLivePhoto
                   />
+                  {exteriorPhotos.length === 0 && (
+                    <div className="text-xs text-red-600">This field is required</div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -669,6 +785,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
                     onPhotosChange={setInteriorPhotos}
                     maxPhotos={3}
                     storagePath={`visit-photos/${selectedLead.id}/interior`}
+                    forceLivePhoto
                   />
                 </div>
               </div>
@@ -686,7 +803,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
                           {exteriorPhotos.map((photo, index) => (
                             <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted">
                               <img
-                                src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${selectedLead.id}/exterior/${photo}`}
+                                src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${photo}`}
                                 alt={`Exterior photo ${index + 1}`}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -716,7 +833,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
                           {interiorPhotos.map((photo, index) => (
                             <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted">
                               <img
-                                src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${selectedLead.id}/interior/${photo}`}
+                                src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${photo}`}
                                 alt={`Interior photo ${index + 1}`}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -789,6 +906,19 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
             </div>
             
             <div className="flex space-x-2">
+              {/* Save & Exit button - show when there's meaningful progress */}
+              {(visitData.lead_id || exteriorPhotos.length > 0 || interiorPhotos.length > 0 || visitData.notes.trim()) && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleSaveAndExit}
+                  className="flex items-center space-x-2"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Save & Exit</span>
+                </Button>
+              )}
+              
               {currentStep < 3 ? (
                 <Button 
                   type="button" 
@@ -874,6 +1004,15 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Visit Draft Recovery Dialog */}
+    <VisitDraftRecoveryDialog
+      open={showDraftRecovery}
+      onOpenChange={setShowDraftRecovery}
+      onRecover={handleRecoverDraft}
+      onDiscard={handleDiscardDraft}
+      draft={draft}
+    />
     </>
   );
 }

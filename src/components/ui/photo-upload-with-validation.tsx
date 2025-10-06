@@ -37,6 +37,10 @@ export function PhotoUploadWithValidation({
   const finalBucket = storagePath ? "visit-photos" : bucket;
   const finalFolder = storagePath || folder || "general";
 
+  // Detect mobile devices to force live photo capture
+  const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const effectiveForceLive = forceLivePhoto || isMobile; // Always force on mobile
+
   return (
     <div className={cn("space-y-1", className)}>
       <MultiPhotoUpload
@@ -46,7 +50,7 @@ export function PhotoUploadWithValidation({
         bucket={finalBucket}
         folder={finalFolder}
         maxPhotos={maxPhotos}
-        forceLivePhoto={forceLivePhoto}
+        forceLivePhoto={effectiveForceLive}
       />
       
       {finalError && (

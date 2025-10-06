@@ -321,7 +321,7 @@ export function SalespersonsSection({
               <Target className="h-3 w-3" />
               <span>
                 {(() => {
-                  if (!dateRange) return "Target: 15 visits (daily)";
+                  if (!dateRange) return `Target: ${systemSettings?.find(s => s.setting_key === 'default_daily_visit_target')?.setting_value || '15'} visits (daily)`;
                   const baseTarget = systemSettings?.find(s => s.setting_key === 'default_daily_visit_target')?.setting_value || '15';
                   const workingDays = countWorkingDays(dateRange.from, dateRange.to);
                   const fromDate = dateRange.from.toLocaleDateString();

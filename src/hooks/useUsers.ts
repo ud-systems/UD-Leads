@@ -177,7 +177,7 @@ export const useCreateUser = () => {
             secondary_color: '#f1f5f9',
             active_color: '#22c55e',
             inactive_color: '#ef4444',
-            daily_visit_target: userData.daily_visit_target || 15
+            daily_visit_target: userData.daily_visit_target || 15 // Will be overridden by system default when used
           });
 
         if (preferencesError) {

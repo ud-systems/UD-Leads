@@ -179,7 +179,7 @@ export const getSalespersonOptions = (
     id: user.id,
     name: (user as any).name || user.email,
     role: (user as any).role,
-    daily_visit_target: user.user_preferences?.daily_visit_target || 15
+    daily_visit_target: user.user_preferences?.daily_visit_target || 15 // Will be overridden by system default when used
   }));
 };
 

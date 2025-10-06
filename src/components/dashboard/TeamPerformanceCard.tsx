@@ -80,79 +80,71 @@ export function TeamPerformanceCard({
           </Badge>
         </div>
         
-        {/* Manager Progress Bar */}
-        <div 
-          className="bg-primary-foreground/10 rounded-lg p-3 cursor-pointer hover:bg-primary-foreground/20 transition-colors"
-          onClick={() => navigate(`/salesperson/${manager.id}`)}
-          title="Click to view manager's detailed performance"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-primary-foreground">Manager Progress</span>
-            <span className="text-sm text-primary-foreground/80">
-              {teamStats.managerExpectedVisits ? 
-                `${Math.round(teamStats.managerTargetAchievement * teamStats.managerExpectedVisits / 100)}/${teamStats.managerExpectedVisits}` :
-                '0/0'
-              }
-            </span>
+        {/* Team Overview Stats moved into header */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-2">
+          <div className="text-center p-3 bg-primary-foreground/10 rounded-lg">
+            <div className="flex items-center justify-center mb-2">
+              <Users className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="text-2xl font-bold text-primary-foreground">{teamStats.totalUniqueLeads || 0}</div>
+            <div className="text-xs text-primary-foreground/80">Total Unique Leads</div>
           </div>
-          <div className="w-full bg-primary-foreground/20 rounded-full h-2">
-            <div 
-              className="h-2 rounded-full transition-all duration-300"
-              style={{ 
-                width: `${Math.min(teamStats.managerTargetAchievement || 0, 100)}%`,
-                background: 'linear-gradient(90deg, hsl(var(--primary-foreground)) 0%, hsl(var(--primary-foreground)) 100%)'
-              }}
-            />
+          <div className="text-center p-3 bg-primary-foreground/10 rounded-lg">
+            <div className="flex items-center justify-center mb-2">
+              <RefreshCw className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="text-2xl font-bold text-primary-foreground">{teamStats.totalRevisits || 0}</div>
+            <div className="text-xs text-primary-foreground/80">Total Revisits</div>
           </div>
-          <div className="flex items-center justify-between text-xs text-primary-foreground/70 mt-1">
-            <span>{(teamStats.managerTargetAchievement || 0).toFixed(1)}%</span>
-            <span>Target Achievement</span>
+          <div className="text-center p-3 bg-primary-foreground/10 rounded-lg">
+            <div className="flex items-center justify-center mb-2">
+              <CheckCircle className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="text-2xl font-bold text-primary-foreground">{teamStats.completedFollowups}</div>
+            <div className="text-xs text-primary-foreground/80">Completed Followups</div>
+          </div>
+          <div className="text-center p-3 bg-primary-foreground/10 rounded-lg">
+            <div className="flex items-center justify-center mb-2">
+              <Clock className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="text-2xl font-bold text-primary-foreground">{teamStats.scheduledFollowups}</div>
+            <div className="text-xs text-primary-foreground/80">Scheduled Followups</div>
           </div>
         </div>
       </CardHeader>
       
       <CardContent className="space-y-6">
-              {/* Team Overview Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center justify-center mb-2">
-                    <Users className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-green-600">{teamStats.totalUniqueLeads || 0}</div>
-                  <div className="text-xs text-muted-foreground">Total Unique Leads</div>
-                </div>
-
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center justify-center mb-2">
-                    <RefreshCw className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-purple-600">{teamStats.totalRevisits || 0}</div>
-                  <div className="text-xs text-muted-foreground">Total Revisits</div>
-                </div>
-
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center justify-center mb-2">
-                    <CheckCircle className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-emerald-600">{teamStats.completedFollowups}</div>
-                  <div className="text-xs text-muted-foreground">Completed Followups</div>
-                </div>
-
-                <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center justify-center mb-2">
-                    <Clock className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div className="text-2xl font-bold text-orange-600">{teamStats.scheduledFollowups}</div>
-                  <div className="text-xs text-muted-foreground">Scheduled Followups</div>
-                </div>
-              </div>
-
-
+        {/* Manager Progress moved below header and named dynamically */}
+        <div 
+          className="p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors mt-4"
+          onClick={() => navigate(`/salesperson/${manager.id}`)}
+          title="Click to view manager's detailed performance"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">{manager.name}</span>
+            <span className="text-sm text-muted-foreground">
+              {teamStats.managerExpectedVisits ? 
+                `${Math.round((teamStats.managerTargetAchievement || 0) * (teamStats.managerExpectedVisits || 0) / 100)}/${teamStats.managerExpectedVisits}` :
+                '0/0'
+              }
+            </span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2">
+            <div 
+              className="h-2 rounded-full transition-all duration-300 bg-primary"
+              style={{ width: `${Math.min(teamStats.managerTargetAchievement || 0, 100)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+            <span>{(teamStats.managerTargetAchievement || 0).toFixed(1)}%</span>
+            <span>Target Achievement</span>
+          </div>
+        </div>
 
         {/* Team Members */}
         <div>
           <h4 className="font-semibold mb-3">
-            Team ({teamMembers.length})
+            Team ({teamMembers.length}) - Unique Leads + Revisits
           </h4>
           <div className="grid grid-cols-1 gap-3">
             {teamMembers.map((member) => {

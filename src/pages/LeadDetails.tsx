@@ -229,7 +229,8 @@ export default function LeadDetails() {
   // Filter visits for the current lead
   const leadVisits = useMemo(() => {
     if (!lead || !visits) return [];
-    return visits.filter(visit => visit.lead_id === lead.id);
+    const group = visits.find(g => g.lead?.id === lead.id);
+    return group?.allVisits ?? [];
   }, [lead, visits]);
   
   // State for inline editing

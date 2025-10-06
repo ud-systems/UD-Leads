@@ -7,6 +7,7 @@ import { useVisits } from "@/hooks/useVisits";
 import { useUsers } from "@/hooks/useUsers";
 import { useTargetAchievements } from "@/hooks/useTargets";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { SalespersonsSection } from "@/components/dashboard/SalespersonsSection";
 import { TeamPerformanceCard } from "@/components/dashboard/TeamPerformanceCard";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +20,7 @@ import {
   Award,
   Calendar
 } from "lucide-react";
+import { getSystemDefaultVisitTarget } from "@/utils/targetUtils";
 
 export default function PerformanceEnhanced() {
   // Set default date range to current week (Monday to Friday)
@@ -33,6 +35,7 @@ export default function PerformanceEnhanced() {
   const { data: leads = [] } = useLeads();
   const { data: visits = [] } = useVisits();
   const { data: users = [] } = useUsers();
+  const { data: systemSettings = [] } = useSystemSettings();
   const { userRole, isSalesperson, isManager, isAdmin } = useRoleAccess();
   const { user: currentUser } = useAuth();
 
@@ -143,19 +146,99 @@ export default function PerformanceEnhanced() {
         })
       );
 
-      // Categorize visits using the same logic as SalespersonsSection
+      // Categorize visits properly: first visit to each lead = unique lead, subsequent visits = revisits
       const managerTotalVisits = allManagerVisits.length;
-      const managerInitialDiscovery = allManagerVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
-      const managerCompletedFollowups = allManagerVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
-      const managerOtherVisits = managerTotalVisits - managerInitialDiscovery - managerCompletedFollowups;
+      
+      // Group visits by lead_id to determine first vs subsequent visits
+      const managerVisitsByLead = allManagerVisits.reduce((acc, visit) => {
+        if (!acc[visit.lead_id]) {
+          acc[visit.lead_id] = [];
+        }
+        acc[visit.lead_id].push(visit);
+        return acc;
+      }, {} as Record<string, any[]>);
+      
+      const managerInitialDiscovery = Object.values(managerVisitsByLead).length; // Number of unique leads
+      const managerCompletedFollowups = allManagerVisits.filter(v => 
+        (v.visit_type === 'followup' && v.status === 'completed') ||
+        v.notes?.includes('Follow-up completed')
+      ).length;
+      const managerRevisits = managerTotalVisits - managerInitialDiscovery - managerCompletedFollowups;
+      const managerOtherVisits = 0; // All visits are now categorized
 
-      const teamTotalVisits = allTeamVisits.length;
-      const teamInitialDiscovery = allTeamVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
-      const teamCompletedFollowups = allTeamVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
-      const teamOtherVisits = teamTotalVisits - teamInitialDiscovery - teamCompletedFollowups;
+      // Calculate team stats by summing individual member stats to ensure consistency
+      const teamTotalVisits = managerTotalVisits + teamMembers.reduce((sum, member) => {
+        const memberVisits = visits.flatMap(visitGroup => 
+          visitGroup.allVisits.filter(visit => {
+            const userMatch = visit.salesperson === member.name || 
+                             visit.salesperson === member.email ||
+                             visitGroup.lead?.salesperson === member.name ||
+                             visitGroup.lead?.salesperson === member.email;
+            
+            if (isAllTime) {
+              return userMatch;
+            } else {
+              const visitDate = new Date(visit.date);
+              const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
+              const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+              const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+              
+              return userMatch && 
+                     visitDateOnly >= startDateOnly && 
+                     visitDateOnly <= endDateOnly;
+            }
+          })
+        );
+        return sum + memberVisits.length;
+      }, 0);
+      
+      // Group ALL team visits by lead_id for accurate unique lead count
+      const allTeamVisitsForGrouping = [...allManagerVisits, ...visits.flatMap(visitGroup => 
+        visitGroup.allVisits.filter(visit => {
+          const teamMemberNames = [manager.name, ...teamMembers.map(m => m.name)];
+          const teamMemberEmails = [manager.email, ...teamMembers.map(m => m.email)];
+          const teamMemberIds = [manager.id, ...teamMembers.map(m => m.id)];
+          
+          const userMatch = teamMemberNames.includes(visit.salesperson) ||
+                           teamMemberEmails.includes(visit.salesperson) ||
+                           teamMemberIds.includes(visit.manager_id) ||
+                           teamMemberNames.includes(visitGroup.lead?.salesperson || '') ||
+                           teamMemberEmails.includes(visitGroup.lead?.salesperson || '') ||
+                           teamMemberIds.includes(visitGroup.lead?.manager_id || '');
+          
+          if (isAllTime) {
+            return userMatch;
+          } else {
+            const visitDate = new Date(visit.date);
+            const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
+            const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            
+            return userMatch && 
+                   visitDateOnly >= startDateOnly && 
+                   visitDateOnly <= endDateOnly;
+          }
+        })
+      )];
+      
+      const teamVisitsByLead = allTeamVisitsForGrouping.reduce((acc, visit) => {
+        if (!acc[visit.lead_id]) {
+          acc[visit.lead_id] = [];
+        }
+        acc[visit.lead_id].push(visit);
+        return acc;
+      }, {} as Record<string, any[]>);
+      
+      const teamInitialDiscovery = Object.values(teamVisitsByLead).length; // Number of unique leads
+      const teamCompletedFollowups = allTeamVisitsForGrouping.filter(v => 
+        (v.visit_type === 'followup' && v.status === 'completed') ||
+        v.notes?.includes('Follow-up completed')
+      ).length;
+      const teamRevisits = teamTotalVisits - teamInitialDiscovery - teamCompletedFollowups;
+      const teamOtherVisits = 0; // All visits are now categorized
 
       // Calculate targets and achievements with proper working days calculation
-      const managerTarget = (manager as any).daily_visit_target || 15;
+      const managerTarget = (manager as any).daily_visit_target || getSystemDefaultVisitTarget(systemSettings);
       
       // Calculate working days based on selected date range
       let actualWorkingDays = workingDays;
@@ -177,7 +260,7 @@ export default function PerformanceEnhanced() {
       const managerTargetAchievement = managerExpectedVisits > 0 ? (managerTotalVisits / managerExpectedVisits) * 100 : 0;
 
       const teamTarget = teamMembers.reduce((sum, member) => {
-        return sum + ((member as any).daily_visit_target || 15);
+        return sum + ((member as any).daily_visit_target || getSystemDefaultVisitTarget(systemSettings));
       }, managerTarget);
       const teamExpectedVisits = teamTarget * actualWorkingDays;
       const teamTargetAchievement = teamExpectedVisits > 0 ? (teamTotalVisits / teamExpectedVisits) * 100 : 0;
@@ -210,7 +293,7 @@ export default function PerformanceEnhanced() {
           );
           
           const memberVisits = allMemberVisits.length;
-          const memberTarget = (member as any).daily_visit_target || 15;
+          const memberTarget = (member as any).daily_visit_target || getSystemDefaultVisitTarget(systemSettings);
           const memberExpectedVisits = memberTarget * actualWorkingDays;
           const memberAchievement = memberExpectedVisits > 0 ? (memberVisits / memberExpectedVisits) * 100 : 0;
           
@@ -234,9 +317,9 @@ export default function PerformanceEnhanced() {
         },
         teamStats: {
           totalVisits: teamTotalVisits,
-          totalLeads: teamInitialDiscovery + teamCompletedFollowups + teamOtherVisits,
+          totalLeads: teamInitialDiscovery + teamCompletedFollowups + teamRevisits + teamOtherVisits,
           totalUniqueLeads: teamInitialDiscovery,
-          totalRevisits: teamOtherVisits,
+          totalRevisits: teamRevisits,
           completedFollowups: teamCompletedFollowups,
           scheduledFollowups: filteredLeads.filter(l => 
             [manager.name, ...teamMembers.map(m => m.name)].includes(l.salesperson) && 

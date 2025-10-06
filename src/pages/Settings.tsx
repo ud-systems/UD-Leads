@@ -38,6 +38,7 @@ export default function Settings() {
             {isAdmin && <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>}
             <TabsTrigger value="notifications" className="flex-shrink-0">Notifications</TabsTrigger>
             <TabsTrigger value="data" className="flex-shrink-0">Data</TabsTrigger>
+            {isAdmin && <TabsTrigger value="targets" className="flex-shrink-0">Targets</TabsTrigger>}
             <TabsTrigger value="backups" className="flex-shrink-0">Backups</TabsTrigger>
             {isAdmin && <TabsTrigger value="dataManagement" className="flex-shrink-0">Data Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="conversionRules" className="flex-shrink-0">Conversion Rules</TabsTrigger>}
@@ -71,6 +72,12 @@ export default function Settings() {
         <TabsContent value="data" className="space-y-6">
           <DataExportImport />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="targets" className="space-y-6">
+            <VisitTargetSettings />
+          </TabsContent>
+        )}
 
         <TabsContent value="backups" className="space-y-6">
           <BackupManager />
