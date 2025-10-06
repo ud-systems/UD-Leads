@@ -22,7 +22,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { DatePicker } from "@/components/ui/date-picker";
+import { getPresetDateRange, isDateRangePreset } from "@/utils/dateRangeUtils";
 
 export default function Analytics() {
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
@@ -75,73 +75,59 @@ export default function Analytics() {
     refetchTargets();
   };
 
-  // Filter data based on user role, date range, and selected salesperson
+  // Filter data based on user role, date range, and selected salesperson - EXACTLY match Dashboard logic
   const roleFilteredLeads = useMemo(() => {
-    if (!leads || !currentUser) return [];
+    if (!leads) return [];
     
-    let filteredLeads = leads;
-    
-    // Apply role-based filtering - use exact same logic as useLeads hook
-    if (userRole === 'salesperson') {
-      const salespersonName = profile?.name || currentUser.email || 'Unknown';
-      const salespersonEmail = currentUser.email;
-      
-      console.log('Analytics - Salesperson filtering:', {
-        userRole,
-        salespersonName,
-        salespersonEmail,
-        currentUserEmail: currentUser.email,
-        totalLeads: leads.length,
-        profileName: profile?.name
-      });
-      
-      filteredLeads = leads.filter(lead => 
-        lead.salesperson === salespersonName || 
-        lead.salesperson === salespersonEmail
-      );
-      
-      console.log('Analytics - Filtered leads for salesperson:', {
-        filteredCount: filteredLeads.length,
-        sampleLeads: filteredLeads.slice(0, 3).map(l => ({
-          id: l.id,
-          store_name: l.store_name,
-          salesperson: l.salesperson
-        }))
-      });
-    } else if (userRole === 'manager') {
-      // Managers can see BOTH their historical leads AND team leads
-      const managerName = profile?.name || currentUser.email;
-      filteredLeads = leads.filter(lead => 
-        lead.manager_id === currentUser.id || lead.salesperson === managerName
-      );
-    }
-    
-    // Apply selected salesperson filtering (for admins/managers)
-    if (!isSalesperson && selectedSalesperson !== "all") {
-      const selectedUser = users.find((u: any) => u.id === selectedSalesperson);
-      if (selectedUser) {
-        // Try matching by email first, then by name
-        filteredLeads = filteredLeads.filter(lead => 
-          lead.salesperson === selectedUser.email || 
-          lead.salesperson === selectedUser.name ||
-          lead.salesperson === `${selectedUser.name} (${selectedUser.email})`
-        );
-        console.log('Filtering for salesperson:', selectedUser.email, 'User name:', selectedUser.name, 'Filtered leads count:', filteredLeads.length);
-        console.log('Sample leads salesperson field:', filteredLeads.slice(0, 3).map(l => l.salesperson));
+    let filtered = leads;
+
+    // Apply salesperson filter - EXACTLY match Dashboard logic
+    if (selectedSalesperson !== 'all') {
+      const selectedPerson = users.find((u: any) => u.id === selectedSalesperson);
+      if (selectedPerson) {
+        const isViewedUserManager = selectedPerson?.role === 'manager';
+        const userName = selectedPerson?.name || selectedPerson.email;
+        
+        filtered = filtered.filter(lead => {
+          if (isViewedUserManager) {
+            // For managers, show BOTH their historical leads AND team leads - EXACTLY match Dashboard
+            return lead.salesperson === userName || lead.salesperson === selectedPerson.email || lead.manager_id === selectedPerson.id;
+          } else {
+            // For salespeople, show only their own leads - EXACTLY match Dashboard
+            return lead.salesperson === userName || lead.salesperson === selectedPerson.email;
+          }
+        });
       }
     }
-    
-    // Apply date range filtering
+
+    // Apply date range filter - EXACTLY match Dashboard logic
+    if (dateRange && dateRange.from && dateRange.to) {
+      filtered = filtered.filter(lead => {
+        const leadDate = new Date(lead.created_at || lead.updated_at);
+        
+        if (dateRange.from && dateRange.to && 
+            dateRange.from.toDateString() === dateRange.to.toDateString()) {
+          return leadDate.toDateString() === dateRange.from.toDateString();
+        }
+        
+        if (dateRange.from && !dateRange.to) {
+          return leadDate >= dateRange.from;
+        }
+        
+        if (!dateRange.from && dateRange.to) {
+          return leadDate <= dateRange.to;
+        }
+        
     if (dateRange.from && dateRange.to) {
-      filteredLeads = filteredLeads.filter(lead => {
-        if (!lead.created_at) return false;
-        const leadDate = new Date(lead.created_at);
         return leadDate >= dateRange.from && leadDate <= dateRange.to;
+        }
+        
+        return true;
       });
     }
     
-    return filteredLeads;
-  }, [leads, userRole, currentUser, dateRange, selectedSalesperson, users, isSalesperson]);
+    return filtered;
+  }, [leads, selectedSalesperson, users, dateRange]);
 
   // Key Metrics - Get actual status values from database
   const { data: leadStatusOptions = [] } = useLeadStatusOptions();
@@ -153,10 +139,10 @@ export default function Analytics() {
   const keyMetrics = useMemo(() => {
     // Apply date range filtering to visits if date range is provided
     let filteredVisits = visits.flatMap(groupedVisit => groupedVisit.allVisits || []);
-    if (dateRange?.from && dateRange?.to) {
+    if (dateRange && dateRange.from && dateRange.to) {
       filteredVisits = filteredVisits.filter(visit => {
         const visitDate = new Date(visit.date);
-        return visitDate >= dateRange.from && visitDate <= dateRange.to;
+        return visitDate >= dateRange.from! && visitDate <= dateRange.to!;
       });
     }
     
@@ -350,7 +336,7 @@ export default function Analytics() {
       {
         title: "Total Unique Leads",
         value: totalUniqueLeads.toString(),
-        description: `New leads created${dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
+        description: `New leads created${dateRange && dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
         icon: Users,
         iconBg: "bg-green-100 text-green-600",
         color: "text-green-600",
@@ -368,7 +354,7 @@ export default function Analytics() {
       {
         title: "Completed Followups",
         value: completedFollowups.toString(),
-        description: `Followups completed${dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
+        description: `Followups completed${dateRange && dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
         icon: CheckCircle,
         iconBg: "bg-green-100 text-green-600",
         color: "text-green-600",
@@ -377,7 +363,7 @@ export default function Analytics() {
       {
         title: "Scheduled Followups",
         value: scheduledFollowups.toString(),
-        description: `Followups pending${dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
+        description: `Followups pending${dateRange && dateRange.from && dateRange.to ? ' in selected period' : ' (all time)'}`,
         icon: Clock,
         iconBg: "bg-orange-100 text-orange-600",
         color: "text-orange-600",
@@ -445,11 +431,45 @@ export default function Analytics() {
           <p className="text-muted-foreground">{pageDescription}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mobile-filters-stack">
-          <DatePicker
-            value={dateRange}
-            onChange={setDateRange}
-            className="w-full sm:w-auto h-10"
-          />
+          {/* Date Range Filter - Preset Buttons - EXACTLY match Dashboard */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={!dateRange ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateRange(null)}
+              className={!dateRange ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+            >
+              All Time
+            </Button>
+            <Button
+              variant={isDateRangePreset(dateRange, 'thisWeek') ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateRange(getPresetDateRange('thisWeek'))}
+            >
+              This Week
+            </Button>
+            <Button
+              variant={isDateRangePreset(dateRange, 'today') ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateRange(getPresetDateRange('today'))}
+            >
+              Today
+            </Button>
+            <Button
+              variant={isDateRangePreset(dateRange, 'last7Days') ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateRange(getPresetDateRange('last7Days'))}
+            >
+              Last 7 Days
+            </Button>
+            <Button
+              variant={isDateRangePreset(dateRange, 'last30Days') ? "default" : "outline"}
+              size="sm"
+              onClick={() => setDateRange(getPresetDateRange('last30Days'))}
+            >
+              Last 30 Days
+            </Button>
+          </div>
           <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
             <SelectTrigger className="w-full sm:w-[140px] h-10">
               <SelectValue />
@@ -476,7 +496,7 @@ export default function Analytics() {
                           Manager
                         </Badge>
                       )}
-                      {user.name || user.email}
+                    {user.name || user.email}
                     </div>
                   </SelectItem>
                 ))}
@@ -643,32 +663,32 @@ export default function Analytics() {
                 
                 return (
                   <div key={index} className="space-y-2 p-3 border rounded-lg hover:shadow-sm transition-shadow">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-sm">{product.name}</span>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">{product.name}</span>
                       <Badge variant="secondary" className="text-xs">
                         {product.count} store{product.count !== 1 ? 's' : ''}
                       </Badge>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${percentage}%` }}
-                      />
-                    </div>
+                  />
+                </div>
                     <div className="text-xs text-muted-foreground">
                       {percentage.toFixed(1)}% of top product
                     </div>
                   </div>
                 );
               })}
-            </div>
+              </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               {productSearchTerm ? 
                 `No products found matching "${productSearchTerm}"` : 
                 'No products data available'
               }
-            </div>
+          </div>
           )}
         </CardContent>
       </Card>

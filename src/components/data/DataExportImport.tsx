@@ -546,6 +546,20 @@ export function DataExportImport() {
             continue;
           }
 
+          // Validate coordinates are provided
+          if (!row.latitude || !row.longitude) {
+            errors.push(`Row ${rowNumber}: Missing required coordinates (latitude, longitude)`);
+            continue;
+          }
+
+          // Validate coordinates are valid numbers
+          const lat = parseFloat(row.latitude);
+          const lng = parseFloat(row.longitude);
+          if (isNaN(lat) || isNaN(lng)) {
+            errors.push(`Row ${rowNumber}: Invalid coordinates (latitude: ${row.latitude}, longitude: ${row.longitude})`);
+            continue;
+          }
+
           // Validate salesperson exists
           if (row.salesperson && !salespeople.includes(row.salesperson)) {
             errors.push(`Row ${rowNumber}: Invalid salesperson "${row.salesperson}"`);
@@ -608,8 +622,8 @@ export function DataExportImport() {
             store_type: row.store_type || '',
             weekly_spend: row.weekly_spend || '',
             territory_id: row.territory_id && row.territory_id.trim() !== '' ? row.territory_id : null,
-            latitude: row.latitude ? parseFloat(row.latitude) : null,
-            longitude: row.longitude ? parseFloat(row.longitude) : null,
+            latitude: lat,
+            longitude: lng,
             top_3_selling_products: row.top_3_selling_products ? 
               row.top_3_selling_products.split(',').map(p => p.trim()).filter(p => p) : 
               [],

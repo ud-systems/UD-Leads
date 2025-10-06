@@ -56,7 +56,7 @@ export function getCurrentLocation(): Promise<{ latitude: number; longitude: num
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 300000 // 5 minutes
+        maximumAge: 0 // Always get fresh location data
       }
     );
   });

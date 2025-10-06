@@ -225,25 +225,28 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
     setLocationError(null);
 
     try {
-      const currentLocation = await getCurrentLocation();
-      
-      setVisitData(prev => ({
-        ...prev,
-        visit_latitude: currentLocation.latitude,
-        visit_longitude: currentLocation.longitude
-      }));
-
+      // Use the proper validation function from the hook
       const validationResult = await validateProximity(
         selectedLead.latitude,
         selectedLead.longitude
       );
+
+      // Get current location for storing in visit data
+      const currentLocation = await getCurrentLocation();
+      if (currentLocation) {
+        setVisitData(prev => ({
+          ...prev,
+          visit_latitude: currentLocation.latitude,
+          visit_longitude: currentLocation.longitude
+        }));
+      }
 
       if (validationResult.isValid) {
         setLocationValidated(true);
         setLocationError(null);
         toast({
           title: "Location Validated",
-          description: "You are within the allowed distance from the lead location.",
+          description: `You are within the allowed distance from the lead location. Distance: ${validationResult.distance}m`,
         });
       } else {
         setLocationValidated(false);
@@ -256,10 +259,10 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
       }
     } catch (error) {
       setLocationValidated(false);
-      setLocationError("Failed to get current location. Please check your location permissions.");
+      setLocationError("Failed to validate location. Please check your location permissions.");
       toast({
         title: "Location Error",
-        description: "Failed to get current location. Please check your location permissions.",
+        description: "Failed to validate location. Please check your location permissions.",
         variant: "destructive",
       });
     } finally {
@@ -572,54 +575,67 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
 
 
           {/* Step 1: Location Validation */}
-          {selectedLead && selectedLead.latitude && selectedLead.longitude && (
+          {selectedLead && (
             <div className="space-y-4">
               <div className="text-lg font-semibold">Step 1: Location Validation</div>
               
-              <div className="text-xs text-muted-foreground">
-                Lead Location: {selectedLead.latitude.toFixed(6)}, {selectedLead.longitude.toFixed(6)}
-              </div>
-              
-              <div className="flex items-center justify-between">
-                {locationValidated === null ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleLocationValidation}
-                    disabled={isValidatingLocation}
-                    className="flex-1"
-                  >
-                    {isValidatingLocation ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Validating Location...
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="h-4 w-4 mr-2" />
-                        Validate Current Location
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-sm font-medium">Location Status:</span>
-                    {locationValidated === true ? (
-                      <div className="flex items-center space-x-2 px-3 py-2 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-md">
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="text-sm font-medium">Validated</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2 px-3 py-2 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-md">
-                        <AlertCircle className="h-4 w-4" />
-                        <span className="text-sm font-medium">Not Validated</span>
-                      </div>
-                    )}
+              {selectedLead.latitude && selectedLead.longitude ? (
+                <div className="text-xs text-muted-foreground">
+                  Lead Location: {selectedLead.latitude.toFixed(6)}, {selectedLead.longitude.toFixed(6)}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="text-xs text-amber-600 dark:text-amber-400">
+                    ⚠️ This lead does not have location coordinates. Location validation is not available.
                   </div>
-                )}
-              </div>
+                  <div className="text-xs text-muted-foreground">
+                    To enable location validation, edit this lead and add latitude/longitude coordinates.
+                  </div>
+                </div>
+              )}
+              
+              {selectedLead.latitude && selectedLead.longitude && (
+                <div className="flex items-center justify-between">
+                  {locationValidated === null ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleLocationValidation}
+                      disabled={isValidatingLocation}
+                      className="flex-1"
+                    >
+                      {isValidatingLocation ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Validating Location...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Validate Current Location
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-sm font-medium">Location Status:</span>
+                      {locationValidated === true ? (
+                        <div className="flex items-center space-x-2 px-3 py-2 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-md">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-sm font-medium">Validated</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2 px-3 py-2 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-md">
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="text-sm font-medium">Not Validated</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {locationValidated === false && (
+              {selectedLead.latitude && selectedLead.longitude && locationValidated === false && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>

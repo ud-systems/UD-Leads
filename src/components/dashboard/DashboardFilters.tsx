@@ -7,7 +7,7 @@ import { Users, Filter, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { DatePicker } from "@/components/ui/date-picker";
+import { getPresetDateRange, isDateRangePreset } from "@/utils/dateRangeUtils";
 
 export interface DashboardFilters {
   selectedSalesperson: string;
@@ -87,15 +87,47 @@ export function DashboardFilters({
             </div>
           )}
 
-          {/* Date Range Filter */}
+          {/* Date Range Filter - Preset Buttons */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Date Range</label>
-            <DatePicker
-              value={filters.dateRange}
-              onChange={handleDateChange}
-              placeholder="Select date range..."
-              className="h-10"
-            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={!filters.dateRange ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleDateChange(undefined)}
+                className={!filters.dateRange ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+              >
+                All Time
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'thisWeek') ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleDateChange(getPresetDateRange('thisWeek'))}
+              >
+                This Week
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'today') ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleDateChange(getPresetDateRange('today'))}
+              >
+                Today
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'last7Days') ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleDateChange(getPresetDateRange('last7Days'))}
+              >
+                Last 7 Days
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'last30Days') ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleDateChange(getPresetDateRange('last30Days'))}
+              >
+                Last 30 Days
+              </Button>
+            </div>
           </div>
         </div>
 

@@ -20,23 +20,15 @@ import { LeadsVsRevisitsChart } from "@/components/charts/LeadsVsRevisitsChart";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useConversionHistory, calculateConversionRate, getConvertedLeadsCount, useConversionRules, calculateConversionRateWithRules, getConvertedLeadsCountWithRules } from "@/hooks/useConversionRules";
-
-// Helper function to calculate working days between two dates (excluding weekends)
-const calculateWorkingDays = (startDate: Date, endDate: Date): number => {
-  let count = 0;
-  const current = new Date(startDate);
-  
-  while (current <= endDate) {
-    const dayOfWeek = current.getDay();
-    // Count only Monday (1) through Friday (5)
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      count++;
-    }
-    current.setDate(current.getDate() + 1);
-  }
-  
-  return count;
-};
+import { 
+  getSalespersonIdentifier, 
+  getSalespersonOptions 
+} from "@/utils/roleFiltering";
+import { 
+  getDefaultDateRange, 
+  calculateWorkingDays, 
+  isDateRangePreset 
+} from "@/utils/dateRangeUtils";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -51,19 +43,11 @@ export default function Dashboard() {
 
   // Global filters state - default to current week (Monday to Friday)
   const [filters, setFilters] = useState<DashboardFiltersType>(() => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    // Calculate Monday of current week (0 = Sunday, 1 = Monday, etc.)
-    const dayOfWeek = today.getDay();
-    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Sunday = -6, Monday = 0, Tuesday = -1, etc.
-    startOfWeek.setDate(today.getDate() + daysToMonday);
+    const defaultDateRange = getDefaultDateRange('dashboard');
     
     return {
       selectedSalesperson: 'all',
-      dateRange: { 
-        from: startOfWeek, 
-        to: today 
-      } // Default to current week (Monday to today)
+      dateRange: defaultDateRange // Uses centralized default date range logic
     };
   });
 
@@ -88,18 +72,15 @@ export default function Dashboard() {
     }
   };
 
-  // Get salespeople for filter dropdown (include managers for admins)
+  // Get user identifiers for consistent role filtering
+  const userIdentifiers = useMemo(() => {
+    return getSalespersonIdentifier(profile, currentUser);
+  }, [profile, currentUser]);
+
+  // Get salespeople for filter dropdown using centralized logic
   const salespeople = useMemo(() => {
-    const roleFilter = isAdmin ? ['salesperson', 'manager'] : ['salesperson'];
-    return users
-      .filter(user => roleFilter.includes((user as any).role))
-      .map(user => ({ 
-        id: user.id, 
-        name: (user as any).name || user.email,
-        role: (user as any).role,
-        daily_visit_target: user.user_preferences?.daily_visit_target || 15 // Include daily visit target with default fallback
-      }));
-  }, [users, isAdmin]);
+    return getSalespersonOptions(users, userRole, userIdentifiers);
+  }, [users, userRole, userIdentifiers]);
 
   // Filter data based on global filters and user role
   const filteredLeads = useMemo(() => {
@@ -107,52 +88,43 @@ export default function Dashboard() {
     
     let filtered = leads;
 
-    // Apply role-based filtering
-    if (userRole === 'salesperson' && currentUser) {
-      // Match by either name or email
-      const salespersonName = profile?.name || currentUser.email;
-      const salespersonEmail = currentUser.email;
-      filtered = filtered.filter(lead => 
-        lead.salesperson === salespersonName || lead.salesperson === salespersonEmail
-      );
-    } else if (userRole === 'manager' && currentUser) {
-      // Managers can see BOTH their historical leads AND team leads
-      const managerName = profile?.name || currentUser.email;
-      filtered = filtered.filter(lead => 
-        lead.manager_id === currentUser.id || lead.salesperson === managerName
-      );
-    }
-
-    // Apply salesperson filter
+    // Apply salesperson filter - EXACTLY match SalespersonDetail logic
     if (filters.selectedSalesperson !== 'all') {
       const selectedPerson = salespeople.find(p => p.id === filters.selectedSalesperson);
       if (selectedPerson) {
-        filtered = filtered.filter(lead => lead.salesperson === selectedPerson.name);
+        const isViewedUserManager = (selectedPerson as any)?.role === 'manager';
+        const userName = (selectedPerson as any)?.name || selectedPerson.email;
+        
+        filtered = filtered.filter(lead => {
+          if (isViewedUserManager) {
+            // For managers, show BOTH their historical leads AND team leads - EXACTLY match SalespersonDetail
+            return lead.salesperson === userName || lead.salesperson === selectedPerson.email || lead.manager_id === selectedPerson.id;
+          } else {
+            // For salespeople, show only their own leads - EXACTLY match SalespersonDetail
+            return lead.salesperson === userName || lead.salesperson === selectedPerson.email;
+          }
+        });
       }
     }
 
-    // Apply date range filter (only if both from and to dates are provided)
-    if (filters.dateRange?.from && filters.dateRange?.to) {
+    // Apply date range filter - EXACTLY match SalespersonDetail logic
+    if (filters.dateRange) {
       filtered = filtered.filter(lead => {
         const leadDate = new Date(lead.created_at || lead.updated_at);
         
-        // If both dates are the same (single day selection)
         if (filters.dateRange.from && filters.dateRange.to && 
             filters.dateRange.from.toDateString() === filters.dateRange.to.toDateString()) {
           return leadDate.toDateString() === filters.dateRange.from.toDateString();
         }
         
-        // If only from date is selected
         if (filters.dateRange.from && !filters.dateRange.to) {
           return leadDate >= filters.dateRange.from;
         }
         
-        // If only to date is selected
         if (!filters.dateRange.from && filters.dateRange.to) {
           return leadDate <= filters.dateRange.to;
         }
         
-        // If both dates are selected (range)
         if (filters.dateRange.from && filters.dateRange.to) {
           return leadDate >= filters.dateRange.from && leadDate <= filters.dateRange.to;
         }
@@ -162,66 +134,57 @@ export default function Dashboard() {
     }
 
     return filtered;
-  }, [leads, userRole, currentUser, filters, salespeople, profile]);
+  }, [leads, filters, salespeople]);
 
   const filteredVisits = useMemo(() => {
     if (!visits) return [];
     
     let filtered = visits;
 
-    // Apply role-based filtering
-    if (userRole === 'salesperson' && currentUser) {
-      // Match by either name or email
-      const salespersonName = profile?.name || currentUser.email;
-      const salespersonEmail = currentUser.email;
-      filtered = filtered.filter(groupedVisit => 
-        groupedVisit.lastVisit.salesperson === salespersonName || 
-        groupedVisit.lastVisit.salesperson === salespersonEmail
-      );
-    } else if (userRole === 'manager' && currentUser) {
-      filtered = filtered.filter(groupedVisit => groupedVisit.lastVisit.manager_id === currentUser.id);
-    }
-
-    // Apply salesperson filter
+    // Apply salesperson filter - EXACTLY match SalespersonDetail logic
     if (filters.selectedSalesperson !== 'all') {
       const selectedPerson = salespeople.find(p => p.id === filters.selectedSalesperson);
       if (selectedPerson) {
-        filtered = filtered.filter(groupedVisit => groupedVisit.lastVisit.salesperson === selectedPerson.name);
+        const isViewedUserManager = (selectedPerson as any)?.role === 'manager';
+        const userName = (selectedPerson as any)?.name || selectedPerson.email;
+        
+        filtered = filtered.filter(groupedVisit => {
+          if (isViewedUserManager) {
+            // For managers, show BOTH their historical visits AND team visits - EXACTLY match SalespersonDetail
+            return (groupedVisit.lastVisit.salesperson === userName || 
+                    groupedVisit.lastVisit.salesperson === selectedPerson.email ||
+                    groupedVisit.lastVisit.manager_id === selectedPerson.id) ||
+                   (groupedVisit.allVisits && groupedVisit.allVisits.some((visit: any) => 
+                     visit.salesperson === userName || 
+                     visit.salesperson === selectedPerson.email ||
+                     visit.manager_id === selectedPerson.id
+                   ));
+          } else {
+            // For salespeople, show only their own visits - EXACTLY match SalespersonDetail
+            return (groupedVisit.lastVisit.salesperson === userName || 
+                    groupedVisit.lastVisit.salesperson === selectedPerson.email) ||
+                   (groupedVisit.allVisits && groupedVisit.allVisits.some((visit: any) => 
+                     visit.salesperson === userName || 
+                     visit.salesperson === selectedPerson.email
+                   ));
+          }
+        });
       }
     }
 
-    // Apply date range filter (only if both from and to dates are provided)
-    if (filters.dateRange?.from && filters.dateRange?.to) {
+    // Apply date range filter - EXACTLY match SalespersonDetail logic
+    if (filters.dateRange) {
       filtered = filtered.filter(groupedVisit => {
         const visitDate = new Date(groupedVisit.lastVisit.date);
-        
-        // If both dates are the same (single day selection)
-        if (filters.dateRange.from && filters.dateRange.to && 
-            filters.dateRange.from.toDateString() === filters.dateRange.to.toDateString()) {
-          return visitDate.toDateString() === filters.dateRange.from.toDateString();
-        }
-        
-        // If only from date is selected
-        if (filters.dateRange.from && !filters.dateRange.to) {
-          return visitDate >= filters.dateRange.from;
-        }
-        
-        // If only to date is selected
-        if (!filters.dateRange.from && filters.dateRange.to) {
-          return visitDate <= filters.dateRange.to;
-        }
-        
-        // If both dates are selected (range)
-        if (filters.dateRange.from && filters.dateRange.to) {
-          return visitDate >= filters.dateRange.from && visitDate <= filters.dateRange.to;
-        }
-        
-        return true;
+        const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
+        const startDateOnly = new Date(filters.dateRange.from.getFullYear(), filters.dateRange.from.getMonth(), filters.dateRange.from.getDate());
+        const endDateOnly = new Date(filters.dateRange.to.getFullYear(), filters.dateRange.to.getMonth(), filters.dateRange.to.getDate());
+        return visitDateOnly >= startDateOnly && visitDateOnly <= endDateOnly;
       });
     }
 
     return filtered;
-  }, [visits, userRole, currentUser, filters, salespeople, profile]);
+  }, [visits, filters, salespeople]);
 
     // Get conversion history for all leads
   const { data: conversionHistory = [] } = useConversionHistory(
@@ -246,29 +209,42 @@ export default function Dashboard() {
 
   // Calculate dashboard metrics based on filtered data
   const dashboardStats = useMemo(() => {
-    // Get visits for calculations
+    // Get visits for calculations - EXACTLY match SalespersonDetail logic
     const isAllTime = !filters.dateRange?.from || !filters.dateRange?.to;
     
-    // For All Time, use ALL visits from raw data. For filtered periods, use filtered visits
-    const allVisits = isAllTime 
-      ? visits?.flatMap(groupedVisit => groupedVisit.allVisits || []) || []
-      : filteredVisits.flatMap(groupedVisit => groupedVisit.allVisits || []);
+    // Use the same visit processing logic as SalespersonDetail
+    let allVisits: any[] = [];
+    if (isAllTime) {
+      // For All Time, use ALL visits from raw data
+      allVisits = visits?.flatMap(groupedVisit => groupedVisit.allVisits || []) || [];
+    } else {
+      // For filtered periods, use filtered visits but process them the same way as SalespersonDetail
+      allVisits = filteredVisits.flatMap(groupedVisit => {
+        // Apply date filtering to individual visits within each grouped visit
+        return (groupedVisit.allVisits || []).filter((visit: any) => {
+          if (!filters.dateRange?.from || !filters.dateRange?.to) return true;
+          const visitDate = new Date(visit.date);
+          const visitDateOnly = new Date(visitDate.getFullYear(), visitDate.getMonth(), visitDate.getDate());
+          const startDateOnly = new Date(filters.dateRange.from.getFullYear(), filters.dateRange.from.getMonth(), filters.dateRange.from.getDate());
+          const endDateOnly = new Date(filters.dateRange.to.getFullYear(), filters.dateRange.to.getMonth(), filters.dateRange.to.getDate());
+          return visitDateOnly >= startDateOnly && visitDateOnly <= endDateOnly;
+        });
+      });
+    }
     
-    
-    
-    // Categorize visits by their notes to get accurate counts
+    // Categorize visits by their notes to get accurate counts - EXACTLY match SalespersonDetail logic
     const totalVisits = allVisits.length;
-    const initialDiscoveryVisits = allVisits.filter(v => v.notes?.includes('Initial Discovery')).length;
-    const completedFollowupVisits = allVisits.filter(v => v.notes?.includes('Follow-up completed')).length;
+    const initialDiscoveryVisits = allVisits.filter((v: any) => v.notes?.includes('Initial Discovery')).length;
+    const completedFollowupVisits = allVisits.filter((v: any) => v.notes?.includes('Follow-up completed')).length;
     const otherVisits = totalVisits - initialDiscoveryVisits - completedFollowupVisits;
     
-    // Calculate all metrics dynamically
+    // Calculate all metrics dynamically - EXACTLY match SalespersonDetail logic
     const totalUniqueLeads = filteredLeads.length; // Total unique leads in filtered data
     const totalRevisits = otherVisits; // Revisits/scheduled visits
     const completedFollowups = completedFollowupVisits; // Completed followups
     const scheduledFollowups = filteredLeads.filter(l => l.next_visit).length; // Pending followups
     
-    // 1. TOTAL LEADS = Total unique leads + Total revisits + Completed followups
+    // TOTAL LEADS = Total unique leads + Total revisits + Completed followups - EXACTLY match SalespersonDetail
     const totalLeads = totalUniqueLeads + totalRevisits + completedFollowups;
     
     // Debug logging

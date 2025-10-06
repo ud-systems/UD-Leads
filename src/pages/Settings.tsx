@@ -13,6 +13,7 @@ import { DataManagement } from "@/components/data/DataManagement";
 import { DataExportImport } from "@/components/data/DataExportImport";
 import { PushNotificationSettings } from "@/components/notifications/PushNotificationSettings";
 import { CacheManager } from "@/components/debug/CacheManager";
+import { BackupManager } from "@/components/backup/BackupManager";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function Settings() {
@@ -37,6 +38,7 @@ export default function Settings() {
             {isAdmin && <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>}
             <TabsTrigger value="notifications" className="flex-shrink-0">Notifications</TabsTrigger>
             <TabsTrigger value="data" className="flex-shrink-0">Data</TabsTrigger>
+            <TabsTrigger value="backups" className="flex-shrink-0">Backups</TabsTrigger>
             {isAdmin && <TabsTrigger value="dataManagement" className="flex-shrink-0">Data Management</TabsTrigger>}
             {isAdmin && <TabsTrigger value="conversionRules" className="flex-shrink-0">Conversion Rules</TabsTrigger>}
             <TabsTrigger value="debug" className="flex-shrink-0">Debug</TabsTrigger>
@@ -68,6 +70,10 @@ export default function Settings() {
 
         <TabsContent value="data" className="space-y-6">
           <DataExportImport />
+        </TabsContent>
+
+        <TabsContent value="backups" className="space-y-6">
+          <BackupManager />
         </TabsContent>
 
         {isAdmin && (

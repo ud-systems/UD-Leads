@@ -258,6 +258,35 @@ export interface Database {
           manager_id?: string | null
         }
       }
+      profiles: {
+        Row: {
+          id: string
+          email: string | null
+          name: string | null
+          role: string | null
+          created_at: string | null
+          updated_at: string | null
+          manager_id: string | null
+        }
+        Insert: {
+          id?: string
+          email?: string | null
+          name?: string | null
+          role?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          manager_id?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string | null
+          name?: string | null
+          role?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          manager_id?: string | null
+        }
+      }
       followups: {
         Row: {
           id: string

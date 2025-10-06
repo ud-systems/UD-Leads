@@ -431,111 +431,85 @@ export default function PerformanceEnhanced() {
         </div>
       </div>
 
-      {/* Role-based Performance Sections */}
-      {isAdmin && (
-        <>
-          {/* Overall Team Performance Summary */}
-          <Card className="border">
-            <CardHeader className="bg-muted/50">
-              <CardTitle className="flex items-center gap-3 text-2xl">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Award className="h-6 w-6 text-primary" />
-                </div>
-                Team Performance Overview
-              </CardTitle>
-              <CardDescription className="text-base">
-                Comprehensive view of all teams and their performance metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {teamStats.map((team) => (
-                  <TeamPerformanceCard
-                    key={team.manager.id}
-                    manager={team.manager}
-                    teamMembers={team.teamMembers}
-                    teamStats={team.teamStats}
-                    dateRange={dateRange}
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {isManager && (
-        <>
-          {/* My Performance - Manager */}
-          <Card className="border">
-            <CardHeader className="bg-muted/50">
-              <CardTitle className="flex items-center gap-3 text-2xl">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Target className="h-6 w-6 text-primary" />
-                </div>
-                My Performance
-              </CardTitle>
-              <CardDescription className="text-base">
-                Your individual performance metrics and achievements
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <SalespersonsSection 
-                dateRange={dateRange} 
-                showCurrentUserOnly={true}
-                title="My Performance"
-              />
-            </CardContent>
-          </Card>
-
-          <Separator className="my-8" />
-
-          {/* Team Performance - Manager */}
-          <Card className="border">
-            <CardHeader className="bg-muted/50">
-              <CardTitle className="flex items-center gap-3 text-2xl">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                My Team Performance
-              </CardTitle>
-              <CardDescription className="text-base">
-                Performance metrics for your sales team members
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <SalespersonsSection 
-                dateRange={dateRange} 
-                showMyTeamOnly={true}
-                title="My Team"
-              />
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {isSalesperson && (
-        <Card className="border">
-          <CardHeader className="bg-muted/50">
-            <CardTitle className="flex items-center gap-3 text-2xl">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Target className="h-6 w-6 text-primary" />
-              </div>
-              My Performance
-            </CardTitle>
-            <CardDescription className="text-base">
-              Your individual performance metrics and achievements
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <SalespersonsSection 
-              dateRange={dateRange} 
-              showCurrentUserOnly={true}
-              title="My Performance"
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* Performance Overview - Consistent UI for All Roles */}
+      <Card className="border">
+        <CardHeader className="bg-muted/50">
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Award className="h-6 w-6 text-primary" />
+            </div>
+            {isAdmin ? "Team Performance Overview" : isManager ? "My Team Performance" : "My Performance"}
+          </CardTitle>
+          <CardDescription className="text-base">
+            {isAdmin 
+              ? "Comprehensive view of all teams and their performance metrics"
+              : isManager 
+                ? "Performance metrics for your team"
+                : "Your individual performance metrics and achievements"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Filter team stats based on user role */}
+            {(() => {
+              let filteredTeamStats = teamStats;
+              
+              if (isManager) {
+                // Manager sees only their own team
+                const currentManager = users.find(user => user.id === currentUser?.id);
+                filteredTeamStats = teamStats.filter(team => team.manager.id === currentManager?.id);
+              } else if (isSalesperson) {
+                // Salesperson sees only their team (if they have a manager)
+                const currentUserData = users.find(user => user.id === currentUser?.id);
+                const managerId = (currentUserData as any)?.manager_id;
+                if (managerId) {
+                  filteredTeamStats = teamStats.filter(team => team.manager.id === managerId);
+                } else {
+                  // If no manager, show empty state
+                  filteredTeamStats = [];
+                }
+              }
+              
+              // If no team data to show, display empty state
+              if (filteredTeamStats.length === 0) {
+                return (
+                  <div className="col-span-full text-center py-12">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="p-4 bg-muted rounded-full">
+                        <Users className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {isAdmin ? "No Teams Found" : isManager ? "No Team Data Available" : "No Team Assignment"}
+                        </h3>
+                        <p className="text-muted-foreground max-w-md">
+                          {isAdmin 
+                            ? "There are no teams with managers set up yet. Team performance data will appear here once managers are assigned."
+                            : isManager 
+                              ? "Your team performance data will appear here once team members are assigned and start recording visits."
+                              : "You are not currently assigned to a team. Performance data will appear here once you're assigned to a team."
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              return filteredTeamStats.map((team) => (
+                <TeamPerformanceCard
+                  key={team.manager.id}
+                  manager={team.manager}
+                  teamMembers={team.teamMembers}
+                  teamStats={team.teamStats}
+                  dateRange={dateRange}
+                />
+              ));
+            })()}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
