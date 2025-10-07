@@ -90,6 +90,7 @@ export function VisitDraftRecoveryDialog({
                   <div>• <strong>Step:</strong> {getStepDescription(draft.step)}</div>
                   <div>• <strong>Lead:</strong> {draft.leadSearch || 'Not selected'}</div>
                   <div>• <strong>Date:</strong> {draft.visitData?.date ? formatUKDate(draft.visitData.date) : 'Not set'}</div>
+                  <div>• <strong>Type:</strong> {draft.draftType === 'manual-save' ? 'Save & Exit' : 'Auto-save'}</div>
                   <div>• <strong>Last Saved:</strong> {formatLastSaved(draft.lastSaved)}</div>
                 </div>
               </div>

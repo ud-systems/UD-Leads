@@ -12,6 +12,8 @@ export interface VisitDraft {
   visitStartTime: string | null;
   lastSaved: string;
   leadId: string | null;
+  draftType: 'auto-save' | 'manual-save';
+  version: number;
 }
 
 const DRAFT_STORAGE_KEY = 'visit-draft';
@@ -47,10 +49,12 @@ export function useVisitDraft() {
     interiorPhotos: string[],
     locationValidated: boolean | null,
     locationError: string | null,
-    visitStartTime: string | null
+    visitStartTime: string | null,
+    draftType: 'auto-save' | 'manual-save' = 'auto-save'
   ) => {
     if (!user?.id) return;
 
+    const currentVersion = draft?.version || 0;
     const draftData: VisitDraft = {
       step,
       visitData,
@@ -61,13 +65,15 @@ export function useVisitDraft() {
       locationError,
       visitStartTime,
       lastSaved: new Date().toISOString(),
-      leadId: visitData.lead_id || null
+      leadId: visitData.lead_id || null,
+      draftType,
+      version: currentVersion + 1
     };
 
     localStorage.setItem(`${DRAFT_STORAGE_KEY}-${user.id}`, JSON.stringify(draftData));
     setDraft(draftData);
     setHasDraft(true);
-  }, [user?.id]);
+  }, [user?.id, draft?.version]);
 
   // Clear draft
   const clearDraft = useCallback(() => {
@@ -89,7 +95,8 @@ export function useVisitDraft() {
         draft.interiorPhotos,
         draft.locationValidated,
         draft.locationError,
-        draft.visitStartTime
+        draft.visitStartTime,
+        'auto-save' // Step changes are auto-save
       );
     }
   }, [draft, saveDraft]);
@@ -105,7 +112,8 @@ export function useVisitDraft() {
         draft.interiorPhotos,
         draft.locationValidated,
         draft.locationError,
-        draft.visitStartTime
+        draft.visitStartTime,
+        'auto-save' // Form data changes are auto-save
       );
     }
   }, [draft, saveDraft]);

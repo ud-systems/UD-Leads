@@ -94,9 +94,9 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
     };
   }, []);
 
-  // Check for draft when dialog opens
+  // Check for draft when dialog opens - only show recovery for manual-save drafts
   useEffect(() => {
-    if (open && hasDraft && draft) {
+    if (open && hasDraft && draft && draft.draftType === 'manual-save') {
       setShowDraftRecovery(true);
     }
   }, [open, hasDraft, draft]);
@@ -201,7 +201,29 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
   };
 
   const handleDiscardDraft = () => {
+    // Clear stored draft
     clearDraft();
+    // Reset in-memory form state so user starts fresh
+    setVisitData({
+      lead_id: "",
+      date: getCurrentDateTime().date,
+      time: getCurrentDateTime().time,
+      notes: "",
+      status: "completed",
+      visit_start_time: "",
+      visit_end_time: "",
+      visit_latitude: null,
+      visit_longitude: null,
+    });
+    setLeadSearch("");
+    setShowLeadDropdown(false);
+    setExteriorPhotos([]);
+    setInteriorPhotos([]);
+    setLocationValidated(null);
+    setLocationError(null);
+    setVisitStartTime(null);
+    setCurrentStep(1);
+    setShowDraftRecovery(false);
     toast({
       title: "Draft Discarded",
       description: "The saved draft has been permanently deleted.",
@@ -220,7 +242,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
     }
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
-      // Save draft when moving to next step
+      // Save draft when moving to next step (auto-save)
       saveDraft(
         currentStep + 1,
         visitData,
@@ -229,7 +251,8 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
         interiorPhotos,
         locationValidated,
         locationError,
-        visitStartTime
+        visitStartTime,
+        'auto-save'
       );
     }
   };
@@ -237,7 +260,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-      // Save draft when moving to previous step
+      // Save draft when moving to previous step (auto-save)
       saveDraft(
         currentStep - 1,
         visitData,
@@ -246,14 +269,15 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
         interiorPhotos,
         locationValidated,
         locationError,
-        visitStartTime
+        visitStartTime,
+        'auto-save'
       );
     }
   };
 
   // Save & Exit functionality
   const handleSaveAndExit = () => {
-    // Save current progress and close dialog
+    // Save current progress and close dialog (manual-save)
     saveDraft(
       currentStep,
       visitData,
@@ -262,7 +286,8 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
       interiorPhotos,
       locationValidated,
       locationError,
-      visitStartTime
+      visitStartTime,
+      'manual-save'
     );
     setOpen(false);
     toast({
@@ -535,9 +560,18 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
     }
   };
 
+  // Handle dialog close - auto-clear auto-save drafts
+  const handleDialogClose = (newOpen: boolean) => {
+    if (!newOpen && draft?.draftType === 'auto-save') {
+      // Auto-clear auto-save drafts when dialog closes normally
+      clearDraft();
+    }
+    setOpen(newOpen);
+  };
+
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogTrigger asChild>
         {children || (
           <Button>
@@ -895,7 +929,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
           {/* Navigation Buttons */}
           <div className="flex justify-between space-x-2">
             <div className="flex space-x-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => handleDialogClose(false)}>
                 Cancel
               </Button>
               {currentStep > 1 && (
