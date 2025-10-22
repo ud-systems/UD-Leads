@@ -141,3 +141,4 @@ If something doesn't work:
 2. Check browser console (F12) for error messages
 3. Verify the SQL ran successfully in Supabase
 
+

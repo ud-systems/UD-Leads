@@ -50,3 +50,4 @@ FROM information_schema.columns
 WHERE table_name = 'leads' 
 AND column_name = 'store_type';
 
+

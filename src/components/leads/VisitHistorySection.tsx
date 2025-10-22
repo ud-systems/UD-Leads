@@ -81,13 +81,12 @@ export function VisitHistorySection({ lead, visits }: VisitHistorySectionProps) 
   // Handle photo preview
   const handlePhotoPreview = (photoFilename: string, allPhotos: string[], index: number, photoType: 'exterior' | 'interior', exteriorPhotosCount: number) => {
     // Construct full URLs for all photos
-    const fullPhotoUrls = allPhotos.map((photo, idx) => {
+    const fullPhotoUrls = allPhotos.map((photo) => {
       if (photo.startsWith('http')) return photo; // Already a full URL
-      const folder = idx < exteriorPhotosCount ? 'exterior' : 'interior';
-      return `https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${lead.id}/${folder}/${photo}`;
+      return `https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${photo}`;
     });
     
-    const currentPhotoUrl = `https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${lead.id}/${photoType}/${photoFilename}`;
+    const currentPhotoUrl = `https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${photoFilename}`;
     
     setPreviewPhotos(fullPhotoUrls);
     setPreviewIndex(index);
@@ -279,7 +278,7 @@ export function VisitHistorySection({ lead, visits }: VisitHistorySectionProps) 
                                     onClick={() => handlePhotoPreview(photo, allPhotos, allPhotos.indexOf(photo), 'exterior', visit.exterior_photos?.length || 0)}
                                   >
                                     <img
-                                      src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${lead.id}/exterior/${photo}`}
+                                      src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${photo}`}
                                       alt={`Exterior photo ${index + 1}`}
                                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                     />
@@ -302,7 +301,7 @@ export function VisitHistorySection({ lead, visits }: VisitHistorySectionProps) 
                                     onClick={() => handlePhotoPreview(photo, allPhotos, allPhotos.indexOf(photo), 'interior', visit.exterior_photos?.length || 0)}
                                   >
                                     <img
-                                      src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${lead.id}/interior/${photo}`}
+                                      src={`https://uiprdzdskaqakfwhzssc.supabase.co/storage/v1/object/public/visit-photos/${photo}`}
                                       alt={`Interior photo ${index + 1}`}
                                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                     />
