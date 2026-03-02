@@ -13,8 +13,10 @@ import {
   Menu,
   Bell,
   ChevronRight,
+  ArrowUpRight,
   LucideIcon,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface MenuCardItem {
   icon: LucideIcon;
@@ -76,26 +78,32 @@ interface MobileMenuProps {
 
 export function MobileMenu({ open, onClose, onNavigate }: MobileMenuProps) {
   const location = useLocation();
+  const { signOut } = useAuth();
 
   const handleLinkClick = () => {
     onNavigate?.();
     onClose();
   };
 
+  const handleLogout = () => {
+    onClose();
+    signOut();
+  };
+
   if (!open) return null;
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - above Leaflet map (map uses z-index 400-1000) */}
       <div
-        className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+        className="fixed inset-0 bg-black/40 z-[1000] lg:hidden"
         aria-hidden
         onClick={onClose}
       />
-      {/* Menu panel - full screen on mobile */}
+      {/* Menu panel - full screen on mobile, above map */}
       <div
         className={cn(
-          "fixed inset-0 z-50 w-full h-full bg-card flex flex-col lg:hidden",
+          "fixed inset-0 z-[1001] w-full h-full bg-card flex flex-col lg:hidden",
           "animate-in fade-in-0 duration-200"
         )}
       >
@@ -161,6 +169,18 @@ export function MobileMenu({ open, onClose, onNavigate }: MobileMenuProps) {
               </Link>
             );
           })}
+        </div>
+
+        {/* Logout at bottom */}
+        <div className="shrink-0 px-6 py-4 bg-background">
+          <Button
+            variant="ghost"
+            className="w-full flex items-center justify-between rounded-xl bg-black text-white hover:bg-gray-700 hover:text-white border-0"
+            onClick={handleLogout}
+          >
+            <span className="font-semibold">Log out</span>
+            <ArrowUpRight className="h-5 w-5 shrink-0" />
+          </Button>
         </div>
       </div>
     </>
