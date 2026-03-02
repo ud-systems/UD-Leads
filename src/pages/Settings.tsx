@@ -32,7 +32,7 @@ export default function Settings() {
 
       <Tabs defaultValue={isAdmin ? "overview" : "appearance"} className="space-y-6">
         <div className="overflow-x-auto mobile-tabs-scroll mobile-tabs-container">
-          <TabsList className="flex w-full min-w-max space-x-1 p-1">
+          <TabsList className="flex w-full min-w-max justify-start space-x-1 px-1 py-2">
             {isAdmin && <TabsTrigger value="overview" className="flex-shrink-0">Overview</TabsTrigger>}
             <TabsTrigger value="appearance" className="flex-shrink-0">Appearance</TabsTrigger>
             {isAdmin && <TabsTrigger value="branding" className="flex-shrink-0">Branding</TabsTrigger>}

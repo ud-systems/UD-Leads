@@ -115,12 +115,31 @@ export const useCreateLead = () => {
         managerId = currentProfile?.manager_id || null;
       }
       
-      // Add manager_id to the lead data
+      // Ensure status is never empty (DB may reject empty string)
+      const safeStatus = lead.status?.trim() || 'New Prospect';
+
+      // DB uses NUMERIC(10,8): max absolute value < 10^2. Round and clamp lat/lng to avoid overflow.
+      const MAX_NUMERIC_10_8 = 99.99999999;
+      const roundAndClamp = (v: number | null | undefined): number | null => {
+        if (v == null || Number.isNaN(v)) return null;
+        const n = Number(v);
+        const rounded = Math.round(n * 1e8) / 1e8;
+        if (rounded > MAX_NUMERIC_10_8) return MAX_NUMERIC_10_8;
+        if (rounded < -MAX_NUMERIC_10_8) return -MAX_NUMERIC_10_8;
+        return rounded;
+      };
+      const safeLat = lead.latitude != null ? roundAndClamp(Number(lead.latitude)) : null;
+      const safeLng = lead.longitude != null ? roundAndClamp(Number(lead.longitude)) : null;
+
+      // Add manager_id to the lead data and safe numeric fields
       const leadData = {
         ...lead,
-        manager_id: managerId
+        status: safeStatus,
+        manager_id: managerId,
+        latitude: safeLat,
+        longitude: safeLng
       };
-      
+
       // Start a transaction to create lead and initial visit
       const { data: newLead, error: leadError } = await supabase
         .from('leads')
@@ -130,7 +149,8 @@ export const useCreateLead = () => {
       
       if (leadError) {
         console.error('Error creating lead:', leadError);
-        console.error('Lead data that failed:', lead);
+        console.error('Error details:', leadError.message, leadError.details, leadError.hint);
+        console.error('Lead data that failed:', leadData);
         throw leadError;
       }
 

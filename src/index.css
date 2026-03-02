@@ -5,16 +5,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* ==========================================================================
+   DESIGN SYSTEM CORE – single source of truth for UI/UX.
+   Edit here to change appearance system-wide. All colors MUST be HSL.
+   - Elevation: use subtle borders and light pastels, not heavy shadows.
+   - Cards on white: use very light tint (--card) that complements the theme.
+   - Inputs with leading icon: use .input-with-leading-icon for padding.
+   ========================================================================== */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
+    /* Very light card tint – complements system, barely off white */
+    --card: 220 14% 99%;
     --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
@@ -35,11 +40,16 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    /* Very subtle borders – barely visible */
+    --border: 214.3 20% 95%;
+    --input: 214.3 20% 94%;
     --ring: 221.2 83.2% 53.3%;
 
     --radius: 0.5rem;
+
+    /* Subtle elevation: border only (no heavy shadows) */
+    --elevation-border: 214.3 31.8% 91.4%;
+    --elevation-subtle: 214.3 31.8% 94%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -63,7 +73,7 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(221.2 83.2% 53.3%) 0%, hsl(221.2 83.2% 65%) 100%);
     --gradient-primary-subtle: linear-gradient(135deg, hsl(221.2 83.2% 53.3%) 0%, hsl(221.2 83.2% 58%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(210 40% 96%) 0%, hsl(210 40% 98%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(220 14% 99%) 0%, hsl(220 12% 98%) 100%);
     --gradient-sidebar: linear-gradient(180deg, hsl(221.2 83.2% 53.3%) 0%, hsl(221.2 83.2% 48%) 100%);
     --gradient-button: linear-gradient(135deg, hsl(221.2 83.2% 53.3%) 0%, hsl(221.2 83.2% 58%) 100%);
     --gradient-button-hover: linear-gradient(135deg, hsl(221.2 83.2% 58%) 0%, hsl(221.2 83.2% 65%) 100%);
@@ -156,22 +166,33 @@ All colors MUST be HSL.
   }
 }
 
-/* Modern Shadow System */
+/* Elevation: subtle borders and very light pastels (design system preference over shadows) */
 @layer utilities {
+  .elevation-subtle {
+    border: 1px solid hsl(var(--border));
+    box-shadow: none;
+  }
+  .elevation-soft {
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 2px hsl(var(--border) / 0.4);
+  }
+  /* Legacy shadow utilities – prefer elevation-subtle / elevation-soft where possible */
   .shadow-soft {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px hsl(var(--border) / 0.5);
   }
-  
   .shadow-medium {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 3px hsl(var(--border) / 0.5);
   }
-  
   .shadow-strong {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 4px hsl(var(--border) / 0.4);
   }
-  
   .shadow-elevated {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 6px 20px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 2px 6px hsl(var(--border) / 0.35);
+  }
+
+  /* Search / input with leading icon: prevent icon overlapping placeholder (design system) */
+  .input-with-leading-icon {
+    padding-left: 3.25rem !important;
   }
 
   /* Gradient utility classes */
@@ -234,17 +255,17 @@ All colors MUST be HSL.
     background-clip: text;
   }
   
-  /* Modern card utilities */
+  /* Modern card utilities (very light card, subtle border) */
   .card-modern {
-    @apply rounded-lg bg-gradient-card shadow-lg hover:shadow-xl transition-all duration-200;
+    @apply rounded-lg bg-card border border-border/50 transition-all duration-200 hover:border-border/60;
   }
   
   .card-elevated {
-    @apply rounded-lg bg-gradient-card shadow-xl hover:shadow-2xl transition-all duration-200;
+    @apply rounded-lg bg-card border border-border/50 transition-all duration-200 hover:border-border/60;
   }
   
   .card-soft {
-    @apply rounded-lg bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200;
+    @apply rounded-lg bg-card border border-border/50 transition-all duration-200;
   }
 
   /* Animation utilities */
@@ -406,7 +427,7 @@ All colors MUST be HSL.
     }
     
     /* Form elements */
-    input, textarea, select {
+    input:not(.input-with-leading-icon), textarea, select {
       font-size: 11px !important;
       padding: 0.5rem 0.75rem !important;
       height: 2.25rem !important;
@@ -582,10 +603,20 @@ All colors MUST be HSL.
       padding: 0.5rem 0.75rem !important;
     }
     
-    /* Dialog specific improvements */
+    /* Dialog specific improvements - padding not reduced by global .p-6 override */
     [data-radix-dialog-content] {
-      max-height: calc(100vh - 2rem) !important;
+      max-height: 90vh !important;
       overflow-y: auto !important;
+      padding: 2rem 2rem 2.5rem 2rem !important;
+      /* Force modal bottom sheet on mobile (overrides any caller positioning) */
+      left: 0 !important;
+      right: 0 !important;
+      top: auto !important;
+      bottom: 0 !important;
+      transform: none !important;
+      width: 100% !important;
+      border-radius: 1rem 1rem 0 0 !important;
+      margin-bottom: 0 !important;
     }
     
     /* Override any large text that might break the mobile design */
@@ -1186,16 +1217,16 @@ All colors MUST be HSL.
   }
 }
 
-/* Card improvements */
+/* Card improvements (very light card, subtle border) */
 .card-responsive {
-  @apply bg-card text-card-foreground rounded-lg border shadow-soft;
+  @apply bg-card text-card-foreground rounded-lg border border-border/50;
   overflow: hidden;
   transition: all 0.2s ease-in-out;
 }
 
 .card-responsive:hover {
-  @apply shadow-medium;
-  transform: translateY(-2px);
+  @apply border-border/60;
+  transform: translateY(-1px);
 }
 
 /* Table improvements */

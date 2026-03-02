@@ -9,20 +9,21 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-button text-primary-foreground hover:bg-gradient-button-hover shadow-lg hover:shadow-xl transition-all duration-200",
+        default: "bg-gradient-button text-primary-foreground hover:bg-gradient-button-hover border border-primary/10 transition-all duration-200",
         destructive:
-          "bg-gradient-error text-destructive-foreground hover:bg-destructive/90 shadow-lg hover:shadow-xl transition-all duration-200",
+          "bg-gradient-error text-destructive-foreground hover:bg-destructive/90 border border-destructive/20 transition-all duration-200",
         outline:
-          "bg-background hover:bg-gradient-accent hover:text-accent-foreground transition-all duration-200 shadow-sm hover:shadow-md",
+          "bg-background border border-border/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200",
         secondary:
-          "bg-gradient-accent text-secondary-foreground hover:bg-secondary/80 shadow-lg hover:shadow-xl transition-all duration-200",
-        ghost: "hover:bg-gradient-accent hover:text-accent-foreground transition-all duration-200",
+          "bg-gradient-accent text-secondary-foreground hover:bg-secondary/80 border border-border/50 transition-all duration-200",
+        ghost: "hover:bg-accent hover:text-accent-foreground transition-all duration-200",
         link: "text-gradient-primary underline-offset-4 hover:underline",
+        back: "bg-neutral-900 text-white hover:bg-neutral-800 border-0 transition-all duration-200 [&_svg]:text-white",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        default: "min-h-10 px-4 py-4",
+        sm: "min-h-9 px-3 py-3 rounded-md",
+        lg: "min-h-11 px-5 py-5 rounded-md",
         icon: "h-10 w-10",
       },
     },

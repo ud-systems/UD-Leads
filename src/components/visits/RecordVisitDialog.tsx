@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-val
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VisitDraftRecoveryDialog } from "./VisitDraftRecoveryDialog";
+import { cn } from "@/lib/utils";
 
 interface RecordVisitDialogProps {
   children?: React.ReactNode;
@@ -580,17 +581,21 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Record Visit with Photos & Location</DialogTitle>
-          <DialogDescription>
-            Record a completed visit with photos, location validation, and duration tracking. Search for leads by store name, contact, company, or postal code.
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto pt-0" hideCloseButton>
+        <DialogHeader className="flex flex-row items-center justify-between gap-4 min-h-9 p-0 m-0 space-y-0 w-full">
+          <DialogTitle className="text-left leading-tight py-0">Record Visit with Photos & Location</DialogTitle>
+          <DialogClose
+            className="size-9 shrink-0 rounded-full bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center justify-center"
+            aria-label="Close"
+          >
+            <X className="size-4 shrink-0" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Step Progress Indicator */}
-          <div className="flex items-center justify-center space-x-4 mb-6">
+          {/* Step Progress Indicator - left-aligned on all screens */}
+          <div className="flex items-center justify-start space-x-4 mb-6">
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -614,12 +619,17 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
           {/* Step 1: Lead Selection and Location Validation */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              {/* Lead Selection */}
-              <div className="space-y-2">
+              {/* Lead Selection - reserve height for popover when open so 6 results show fully (not truncated by dialog) */}
+              <div
+                className={cn(
+                  "space-y-2",
+                  showLeadDropdown && leadSearch.trim() && "min-h-[calc(3rem+0.5rem+22rem)]"
+                )}
+              >
                 <Label htmlFor="lead">Lead *</Label>
             <div className="relative" ref={dropdownRef}>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none shrink-0 md:left-3" aria-hidden />
                 <Input
                   id="lead"
                   type="text"
@@ -627,7 +637,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
                   value={leadSearch}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => setShowLeadDropdown(true)}
-                  className="pl-10 pr-10"
+                  className="input-with-leading-icon pr-10 min-h-11 text-base md:text-sm placeholder:truncate"
                 />
                 {leadSearch && (
                   <Button
@@ -642,16 +652,16 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
                 )}
               </div>
               
-              {showLeadDropdown && filteredLeads.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-80 overflow-auto">
+              {showLeadDropdown && leadSearch.trim() && filteredLeads.length > 0 && (
+                <div className="absolute z-50 left-0 right-0 w-full mt-2 rounded-lg border border-border bg-popover text-popover-foreground overflow-hidden h-[22rem] overflow-y-auto">
                   {filteredLeads.slice(0, 15).map((lead) => (
                     <div
                       key={lead.id}
-                      className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0"
+                      className="px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors border-b border-border last:border-b-0"
                       onClick={() => handleLeadSelection(lead.id)}
                     >
                       <div className="font-medium text-sm">{lead.store_name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         {lead.contact_person} • {lead.company_name}
                         {lead.postal_code && ` • ${lead.postal_code}`}
                         {lead.top_3_selling_products && lead.top_3_selling_products.length > 0 && ` • ${lead.top_3_selling_products.slice(0, 2).join(', ')}`}
@@ -659,16 +669,16 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
                     </div>
                   ))}
                   {filteredLeads.length > 15 && (
-                    <div className="px-4 py-2 text-xs text-muted-foreground text-center">
+                    <div className="px-4 py-2 text-xs text-muted-foreground text-center border-t border-border">
                       Showing first 15 results. Refine your search for more specific results.
                     </div>
                   )}
                 </div>
               )}
               
-              {showLeadDropdown && leadSearch && filteredLeads.length === 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg">
-                  <div className="px-4 py-3 text-sm text-muted-foreground">
+              {showLeadDropdown && leadSearch.trim() && filteredLeads.length === 0 && (
+                <div className="absolute z-50 left-0 right-0 w-full mt-2 rounded-lg border border-border bg-popover text-popover-foreground">
+                  <div className="px-4 py-3 text-sm text-muted-foreground text-left">
                     No leads found matching "{leadSearch}"
                   </div>
                 </div>

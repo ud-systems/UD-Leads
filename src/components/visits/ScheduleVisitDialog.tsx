@@ -183,7 +183,7 @@ export function ScheduleVisitDialog() {
                   value={leadSearch}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => setShowLeadDropdown(true)}
-                  className="pl-10 pr-10"
+                  className="input-with-leading-icon pr-10"
                 />
                 {leadSearch && (
                   <Button
@@ -199,11 +199,11 @@ export function ScheduleVisitDialog() {
               </div>
               
               {showLeadDropdown && filteredLeads.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-50 w-full mt-2 rounded-lg border border-border bg-popover text-popover-foreground max-h-60 overflow-auto">
                   {filteredLeads.slice(0, 10).map((lead) => (
                     <div
                       key={lead.id}
-                      className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0"
+                      className="px-4 py-3 text-left hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors border-b border-border last:border-b-0"
                       onClick={() => handleLeadSelection(lead.id)}
                     >
                       <div className="font-medium text-sm">{lead.store_name}</div>
@@ -223,8 +223,8 @@ export function ScheduleVisitDialog() {
               )}
               
               {showLeadDropdown && leadSearch && filteredLeads.length === 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg">
-                  <div className="px-4 py-3 text-sm text-muted-foreground">
+                <div className="absolute z-50 w-full mt-2 rounded-lg border border-border bg-popover text-popover-foreground">
+                  <div className="px-4 py-3 text-sm text-muted-foreground text-left">
                     No leads found matching "{leadSearch}"
                   </div>
                 </div>

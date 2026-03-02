@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, ArrowUpLeft } from 'lucide-react';
 import { Button } from './button';
 import { Alert, AlertDescription, AlertTitle } from './alert';
 import { useNavigate } from 'react-router-dom';
@@ -85,8 +85,8 @@ export class ErrorBoundary extends Component<Props, State> {
               </Button>
               
               <div className="flex gap-2">
-                <Button variant="outline" onClick={this.handleGoBack} className="flex-1">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                <Button variant="back" onClick={this.handleGoBack} className="flex-1">
+                  <ArrowUpLeft className="h-4 w-4" />
                   Go Back
                 </Button>
                 <Button variant="outline" onClick={this.handleGoHome} className="flex-1">

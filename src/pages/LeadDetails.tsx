@@ -29,7 +29,7 @@ import { DeleteLeadDialog } from "@/components/leads/DeleteLeadDialog";
 import { PhotoPreviewDialog } from "@/components/leads/PhotoPreviewDialog";
 import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-validation";
 import { VisitHistorySection } from "@/components/leads/VisitHistorySection";
-import { ArrowLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
+import { ArrowUpLeft, Phone, Mail, MapPin, Calendar, User, Building, ShoppingCart, Camera, Image as ImageIcon, Edit, Save, X, Navigation, Loader2, MessageSquare, Send, ExternalLink } from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import React, { useCallback } from "react";
 
@@ -445,8 +445,8 @@ export default function LeadDetails() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
         <h2 className="text-xl font-semibold">Lead not found</h2>
-        <Button onClick={() => navigate('/leads')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+        <Button variant="back" onClick={() => navigate('/leads')}>
+          <ArrowUpLeft className="h-4 w-4" />
           Back to Leads
         </Button>
       </div>
@@ -544,12 +544,12 @@ export default function LeadDetails() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <Button 
-            variant="outline" 
+            variant="back" 
             onClick={() => navigate('/leads')} 
             className="flex items-center gap-2 text-sm sm:text-base"
             size="sm"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowUpLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back to Leads</span>
             <span className="sm:hidden">Back</span>
           </Button>

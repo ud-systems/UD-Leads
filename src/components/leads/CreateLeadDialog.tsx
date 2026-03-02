@@ -4,7 +4,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -31,7 +30,7 @@ import { FloatingLabelInput } from "@/components/ui/floating-label-input";
 import { FormFieldWithValidation, SelectFieldWithValidation } from "@/components/ui/form-field-with-validation";
 import { PhotoUploadWithValidation } from "@/components/ui/photo-upload-with-validation";
 import { EnhancedTerritorySelect } from "@/components/ui/enhanced-territory-select";
-import { Plus, Navigation, Loader2, X, Save, ArrowRight } from "lucide-react";
+import { Plus, Navigation, Loader2, X, Save, ArrowUpRight } from "lucide-react";
 import { useLeadDraft } from "@/hooks/useLeadDraft";
 import { DraftRecoveryDialog } from "./DraftRecoveryDialog";
 import { useOfflineStorage } from "@/hooks/useOfflineStorage";
@@ -560,7 +559,7 @@ export function CreateLeadDialog() {
             size="sm"
             onClick={getCurrentLocation}
             disabled={isLoadingLocation}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-black text-white border-black hover:bg-black/90 hover:text-white"
           >
             {isLoadingLocation ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -641,7 +640,7 @@ export function CreateLeadDialog() {
             error={getFieldError('territory_id')}
           >
             <Select value={formData.territory_id} onValueChange={(value) => handleInputChange("territory_id", value)}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 data-[placeholder]:text-muted-foreground">
                 <SelectValue placeholder="Select territory" />
               </SelectTrigger>
               <SelectContent>
@@ -668,7 +667,7 @@ export function CreateLeadDialog() {
             error={getFieldError('store_type')}
           >
             <Select value={formData.store_type} onValueChange={(value) => handleInputChange("store_type", value)}>
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 data-[placeholder]:text-muted-foreground">
                 <SelectValue placeholder="Select store type" />
               </SelectTrigger>
               <SelectContent>
@@ -692,7 +691,7 @@ export function CreateLeadDialog() {
               value={formData.salesperson}
               onValueChange={(value) => handleInputChange("salesperson", value)}
             >
-              <SelectTrigger className="h-12">
+              <SelectTrigger className="h-12 data-[placeholder]:text-muted-foreground">
                 <SelectValue placeholder="Select salesperson" />
               </SelectTrigger>
               <SelectContent>
@@ -896,7 +895,7 @@ export function CreateLeadDialog() {
             error={getFieldError('status')}
           >
             <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
-              <SelectTrigger className={`h-12 ${getFieldError('status') ? 'border-red-500' : ''}`}>
+              <SelectTrigger className={`h-12 data-[placeholder]:text-muted-foreground ${getFieldError('status') ? 'border-red-500' : ''}`}>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -969,15 +968,6 @@ export function CreateLeadDialog() {
     }
   };
 
-  const getStepDescription = () => {
-    switch (currentStep) {
-      case 1: return "Set location coordinates, upload exterior photo, and enter basic store information";
-      case 2: return "Provide contact details and business information, upload interior photo";
-      case 3: return "Set lead status and add required notes";
-      default: return "";
-    }
-  };
-
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -989,17 +979,11 @@ export function CreateLeadDialog() {
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto sm:max-h-[90vh] sm:overflow-y-auto w-full sm:w-full sm:max-w-2xl left-0 sm:left-[50%] translate-x-0 sm:translate-x-[-50%] top-[50%] sm:top-[50%] translate-y-[-50%] sm:translate-y-[-50%]">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
-                <DialogDescription className="text-left">
-                  {getStepDescription()}
-                </DialogDescription>
-              </div>
+            <div className="flex flex-col gap-2">
+              <DialogTitle className="text-left">{getStepTitle()}</DialogTitle>
               <OfflineStatusIndicator 
                 showSyncButton={false}
                 showExportButton={false}
-                className="ml-4"
               />
             </div>
           </DialogHeader>
@@ -1037,7 +1021,7 @@ export function CreateLeadDialog() {
                 {currentStep < 3 ? (
                   <Button type="button" onClick={nextStep} className="flex items-center gap-2">
                     Next
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowUpRight className="h-4 w-4" />
                   </Button>
                 ) : (
                   <Button type="submit" disabled={isPending}>

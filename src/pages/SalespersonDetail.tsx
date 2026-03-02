@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  ArrowLeft, 
+  ArrowUpLeft, 
   ArrowUpRight,
   Users, 
   Calendar, 
@@ -275,8 +275,8 @@ export default function SalespersonDetail() {
             <h1 className="text-3xl font-bold">Loading...</h1>
             <p className="text-muted-foreground">Loading salesperson data...</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button variant="back" size="sm" onClick={() => navigate(-1)}>
+            <ArrowUpLeft className="h-4 w-4" />
             Back
           </Button>
         </div>
@@ -293,8 +293,8 @@ export default function SalespersonDetail() {
             <h1 className="text-3xl font-bold">Salesperson Not Found</h1>
             <p className="text-muted-foreground">The requested salesperson could not be found.</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button variant="back" size="sm" onClick={() => navigate(-1)}>
+            <ArrowUpLeft className="h-4 w-4" />
             Back
           </Button>
         </div>
@@ -334,8 +334,8 @@ export default function SalespersonDetail() {
             <RefreshCw className={`h-4 w-4 mr-2 ${(leadsLoading || visitsLoading || usersLoading || territoriesLoading) ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button variant="back" size="sm" onClick={() => navigate(-1)}>
+            <ArrowUpLeft className="h-4 w-4" />
             Back
           </Button>
         </div>

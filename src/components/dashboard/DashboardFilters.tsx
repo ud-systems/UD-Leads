@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Users, Filter, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
@@ -67,10 +67,6 @@ export function DashboardFilters({
           {/* Salesperson Filter - Hidden for salespeople */}
           {!isSalesperson && (
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Salesperson
-              </label>
               <Select value={filters.selectedSalesperson} onValueChange={handleSalespersonChange}>
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder="Select salesperson" />
@@ -89,7 +85,6 @@ export function DashboardFilters({
 
           {/* Date Range Filter - Preset Buttons */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Date Range</label>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant={!filters.dateRange ? "default" : "outline"}
