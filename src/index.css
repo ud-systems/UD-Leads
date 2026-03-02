@@ -357,6 +357,17 @@
   .safe-area-right {
     padding-right: env(safe-area-inset-right);
   }
+
+  /* Bottom nav: no outline/ring/border on links or active item */
+  .mobile-bottom-nav a,
+  .mobile-bottom-nav a:focus,
+  .mobile-bottom-nav a:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  .mobile-bottom-nav a * {
+    outline: none;
+  }
 }
 
 @keyframes fadeIn {
