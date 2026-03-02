@@ -527,10 +527,6 @@ export function DataExportImport() {
         return obj;
       }).filter(row => Object.values(row).some(val => val && val !== '')); // Remove empty rows
 
-      console.log("Parsed CSV data:", rawData);
-      console.log("Sample raw data (first 3 rows):", rawData.slice(0, 3));
-      console.log("CSV headers:", headers);
-
       // Validate and transform data for database insertion
       const validatedLeads = [];
       const errors = [];
@@ -670,15 +666,6 @@ export function DataExportImport() {
         console.error('Database insertion error:', insertError);
         throw new Error(`Database error: ${insertError.message}`);
       }
-
-      console.log('Successfully inserted leads:', insertedLeads?.length || 0);
-      console.log('Sample inserted leads:', insertedLeads?.slice(0, 3).map(lead => ({
-        id: lead.id,
-        store_name: lead.store_name,
-        salesperson: lead.salesperson,
-        manager_id: lead.manager_id,
-        territory_id: lead.territory_id
-      })));
 
       // Auto-create initial visits for each imported lead using UK timezone
       const currentTime = getUKTime();

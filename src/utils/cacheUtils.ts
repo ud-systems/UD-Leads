@@ -12,7 +12,6 @@ export const clearAllCaches = async () => {
       await Promise.all(
         cacheNames.map(cacheName => caches.delete(cacheName))
       );
-      console.log('All caches cleared');
     }
 
     // Clear localStorage (optional - be careful with this)
@@ -37,7 +36,6 @@ export const updateServiceWorker = async () => {
       const registration = await navigator.serviceWorker.getRegistration();
       if (registration) {
         await registration.update();
-        console.log('Service worker updated');
       }
     } catch (error) {
       console.error('Error updating service worker:', error);

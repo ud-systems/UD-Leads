@@ -78,10 +78,6 @@ export function SalespersonsSection({
 
   const salespersonsData = useMemo(() => {
     if (!users || !visits || !dateRange) return [];
-    
-    console.log('SalespersonsSection - Users:', users);
-    console.log('SalespersonsSection - Visits:', visits);
-    console.log('SalespersonsSection - DateRange:', dateRange);
 
     const startDate = dateRange.from;
     const endDate = dateRange.to;

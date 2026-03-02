@@ -149,13 +149,11 @@ export function Layout({ children }: LayoutProps) {
         }`}
       >
         {/* Page Content */}
-        <main className={`flex-1 transition-all duration-300 ${
+        <main className={`flex-1 transition-all duration-300 bg-content overflow-auto ${
           isMobile
             ? 'p-2 sm:p-3' // Reduced padding for mobile
             : 'p-3 sm:p-4 lg:p-6' // Optimized padding for desktop
-        }`} style={{
-          backgroundColor: 'hsl(var(--active) / 0.02)' // Reduced background opacity
-        }}>
+        }`}>
           <div className={`h-full transition-all duration-300 ${
             isMobile
               ? 'w-full max-w-full'

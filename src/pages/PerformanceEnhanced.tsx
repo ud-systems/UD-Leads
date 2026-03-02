@@ -343,25 +343,6 @@ export default function PerformanceEnhanced() {
 
   const currentUserId = currentUser?.id;
 
-  // Debug logging
-  console.log('PerformanceEnhanced - Users:', users.length);
-  console.log('PerformanceEnhanced - Leads:', filteredLeads.length);
-  console.log('PerformanceEnhanced - Visits:', filteredVisits.length);
-  console.log('PerformanceEnhanced - Team Stats:', teamStats);
-  
-  // Debug user roles
-  console.log('User roles:', users.map(u => ({ name: u.name, role: (u as any).role, id: u.id })));
-  
-  // Debug sample data
-  if (filteredVisits.length > 0) {
-    console.log('Sample visit data:', {
-      salesperson: filteredVisits[0].salesperson,
-      date: filteredVisits[0].date,
-      status: filteredVisits[0].status,
-      notes: filteredVisits[0].notes
-    });
-  }
-
   return (
     <div className="space-y-8">
       {/* Header Section */}

@@ -58,7 +58,6 @@ export default function Dashboard() {
 
   // Refresh function to manually update dashboard data
   const handleRefresh = async () => {
-    console.log('Refreshing dashboard data...');
     try {
       await Promise.all([
         refetchLeads(),
@@ -66,7 +65,6 @@ export default function Dashboard() {
         refetchUsers(),
         refetchTerritories()
       ]);
-      console.log('Dashboard data refreshed');
     } catch (error) {
       console.error('Error refreshing dashboard data:', error);
     }
@@ -246,21 +244,6 @@ export default function Dashboard() {
     
     // TOTAL LEADS = Total unique leads + Total revisits + Completed followups - EXACTLY match SalespersonDetail
     const totalLeads = totalUniqueLeads + totalRevisits + completedFollowups;
-    
-    // Debug logging
-    console.log('Dynamic Dashboard Stats:', {
-      totalLeads,
-      totalUniqueLeads,
-      totalRevisits,
-      completedFollowups,
-      scheduledFollowups,
-      totalVisits,
-      initialDiscoveryVisits,
-      completedFollowupVisits,
-      otherVisits,
-      hasDateRange: !!(filters.dateRange?.from && filters.dateRange?.to)
-    });
-    
     return [
       {
         title: "Total Leads",

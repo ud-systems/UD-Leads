@@ -180,7 +180,6 @@ class ConnectionManager {
           );
           
           if (alternative) {
-            console.log(`Switching from ${this.currentStrategy} to ${alternative.strategy} due to health issues`);
             this.currentStrategy = alternative.strategy;
           }
         }
@@ -281,10 +280,6 @@ export const withRetry = async <T>(
         const manager = getConnectionManager();
         await manager.forceHealthCheck();
         
-        // If we switched strategies, log it
-        if (manager.getCurrentStrategy() !== 'rest-api') {
-          console.log(`Retrying with ${manager.getCurrentStrategy()} strategy`);
-        }
       }
       
       if (attempt === maxRetries) {

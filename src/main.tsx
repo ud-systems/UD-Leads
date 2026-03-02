@@ -39,8 +39,6 @@ if ('serviceWorker' in navigator) {
     if (import.meta.env.PROD || localStorage.getItem('enable-dev-sw') === 'true') {
       navigator.serviceWorker.register(swPath)
         .then((registration) => {
-          console.log('SW registered: ', registration);
-          
           // Check for updates
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
@@ -56,8 +54,8 @@ if ('serviceWorker' in navigator) {
             }
           });
         })
-        .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
+        .catch(() => {
+          // SW registration failed - silent in production
         });
     }
   });

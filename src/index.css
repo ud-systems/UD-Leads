@@ -18,8 +18,10 @@
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
-    /* Very light card tint – complements system, barely off white */
-    --card: 220 14% 99%;
+    /* Page content area: light grey so cards/sections stand out */
+    --content: 220 14% 94%;
+    /* Cards: white with clear separation; optional subtle primary tint */
+    --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
@@ -28,28 +30,28 @@
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 218 20% 92%;
     --secondary-foreground: 222.2 84% 4.9%;
 
-    --muted: 210 40% 96%;
+    --muted: 218 18% 91%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96%;
+    --accent: 221 30% 92%;
     --accent-foreground: 222.2 84% 4.9%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    /* Very subtle borders – barely visible */
-    --border: 214.3 20% 95%;
-    --input: 214.3 20% 94%;
+    /* Visible borders – greys so cards/sections are clearly defined */
+    --border: 214 18% 84%;
+    --input: 214 18% 90%;
     --ring: 221.2 83.2% 53.3%;
 
     --radius: 0.5rem;
 
-    /* Subtle elevation: border only (no heavy shadows) */
-    --elevation-border: 214.3 31.8% 91.4%;
-    --elevation-subtle: 214.3 31.8% 94%;
+    /* Elevation: visible greys for section/card separation */
+    --elevation-border: 214 18% 82%;
+    --elevation-subtle: 214 18% 88%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -87,29 +89,31 @@
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    /* Content area: slightly lighter than background for separation */
+    --content: 222 22% 8%;
+    --card: 222 20% 10%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 20% 10%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 84% 4.9%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 218 22% 14%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 218 20% 14%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 221 25% 14%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 218 20% 22%;
+    --input: 218 20% 18%;
     --ring: 224.3 76.3% 94.1%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -254,18 +258,30 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Page content area – grey so cards/sections stand out */
+  .bg-content {
+    background-color: hsl(var(--content));
+  }
+
+  /* Section cards: subtle primary accent (left border) for major sections */
+  .card-section-accent {
+    @apply rounded-lg bg-card border border-border transition-all duration-200 hover:border-border;
+    border-left-width: 4px;
+    border-left-color: hsl(var(--primary) / 0.5);
+  }
   
-  /* Modern card utilities (very light card, subtle border) */
+  /* Modern card utilities (visible border for separation) */
   .card-modern {
-    @apply rounded-lg bg-card border border-border/50 transition-all duration-200 hover:border-border/60;
+    @apply rounded-lg bg-card border border-border transition-all duration-200 hover:border-border/90;
   }
   
   .card-elevated {
-    @apply rounded-lg bg-card border border-border/50 transition-all duration-200 hover:border-border/60;
+    @apply rounded-lg bg-card border border-border transition-all duration-200 hover:border-border/90;
   }
   
   .card-soft {
-    @apply rounded-lg bg-card border border-border/50 transition-all duration-200;
+    @apply rounded-lg bg-card border border-border transition-all duration-200;
   }
 
   /* Animation utilities */

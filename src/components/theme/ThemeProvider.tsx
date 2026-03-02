@@ -60,7 +60,6 @@ export function ThemeProvider({
   // Update theme when system settings change and are loaded
   useEffect(() => {
     if (!systemSettingsLoading && systemSettings) {
-      console.log('Theme: Loading from system settings:', systemTheme)
       setTheme(systemTheme)
       setStoredTheme(systemTheme) // Update localStorage
       setIsInitialized(true)
@@ -82,7 +81,6 @@ export function ThemeProvider({
   // Initialize immediately if no system settings are needed
   useEffect(() => {
     if (!systemSettingsLoading && !systemSettings) {
-      console.log('Theme: No system settings, using stored theme')
       setIsInitialized(true)
     }
   }, [systemSettingsLoading, systemSettings])
@@ -90,7 +88,6 @@ export function ThemeProvider({
   // Force refresh system settings when theme changes locally
   useEffect(() => {
     if (isInitialized && theme !== systemTheme) {
-      console.log('Theme: Mismatch detected, refreshing settings')
       refetch()
     }
   }, [theme, systemTheme, isInitialized, refetch])
@@ -99,7 +96,6 @@ export function ThemeProvider({
   useEffect(() => {
     if (!isInitialized) return
 
-    console.log('Theme: Applying to document:', theme)
     const root = window.document.documentElement
 
     root.classList.remove("light", "dark")
@@ -139,7 +135,6 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      console.log('Theme: Setting to:', theme)
       setTheme(theme)
       setStoredTheme(theme) // Update localStorage immediately
     },

@@ -51,10 +51,11 @@ export const runConnectionDiagnostics = async (): Promise<ConnectionDiagnostics>
 
   // Test 4: Database connectivity
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
-      .select('count')
-      .limit(1);
+      .select('id')
+      .limit(1)
+      .maybeSingle();
     
     if (error) {
       diagnostics.errors.push(`Database error: ${error.message}`);

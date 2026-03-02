@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, withRetry } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from './useAuth';
 import { useProfile } from './useProfile';
@@ -18,74 +18,36 @@ export const useLeads = () => {
   return useQuery({
     queryKey: ['leads', user?.id, userRole],
     queryFn: async () => {
-      console.log('Fetching leads from leads table...');
-      console.log('Current user:', { id: user?.id, email: user?.email, role: userRole });
-      console.log('User profile:', profile);
-      
-      let query = supabase
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false });
+      return withRetry(async () => {
+        let query = supabase
+          .from('leads')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      // Temporarily disable role-based filtering for debugging
-      console.log('Current user role:', { isManager, isAdmin, isSalesperson, userId: user?.id });
-      
-      // Apply role-based filtering
-      if (isManager) {
-        // Managers can see BOTH their historical leads AND team leads
-        console.log('Manager accessing hybrid leads (historical + team)');
-        const managerName = profile?.name || user?.email || 'Unknown';
-        query = query.or(`manager_id.eq.${user?.id},salesperson.eq.${managerName}`);
-      } else if (isAdmin) {
-        // Admins can see all leads
-        console.log('Admin accessing all leads');
-      } else if (isSalesperson) {
-        // Salespeople can see their own leads and leads without manager_id
-        console.log('Salesperson accessing leads');
-        // Don't filter by manager_id for salespeople - let JavaScript filtering handle it
-      } else {
-        // Other roles (analyst, viewer) - same as managers
-        console.log('Other role accessing all leads');
-      }
+        if (isManager) {
+          const managerName = profile?.name || user?.email || 'Unknown';
+          query = query.or(`manager_id.eq.${user?.id},salesperson.eq.${managerName}`);
+        }
 
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('Error fetching leads:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw error;
-      }
-      
-      console.log('Successfully fetched leads:', data?.length || 0, 'records');
-      console.log('Sample fetched leads:', data?.slice(0, 3).map(lead => ({
-        id: lead.id,
-        store_name: lead.store_name,
-        salesperson: lead.salesperson,
-        manager_id: lead.manager_id
-      })));
-      
-      // Apply salesperson filtering in JavaScript for better reliability
-      let filteredData = data;
-      if (isSalesperson) {
-        const salespersonName = profile?.name || user?.email || 'Unknown';
-        const salespersonEmail = user?.email;
-        
-        filteredData = data?.filter(lead => 
-          lead.salesperson === salespersonName || lead.salesperson === salespersonEmail
-        ) || [];
-      }
-      
-      return filteredData;
+        const { data, error } = await query;
+        if (error) throw error;
+
+        let filteredData = data;
+        if (isSalesperson) {
+          const salespersonName = profile?.name || user?.email || 'Unknown';
+          const salespersonEmail = user?.email;
+          filteredData = data?.filter(lead =>
+            lead.salesperson === salespersonName || lead.salesperson === salespersonEmail
+          ) || [];
+        }
+        return filteredData;
+      }, 3, 1500);
     },
     enabled: !!user?.id,
     staleTime: 2 * 60 * 1000, // 2 minutes - leads change frequently
     gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    retry: 3,
+    retryDelay: 2000,
   });
 };
 
@@ -97,8 +59,6 @@ export const useCreateLead = () => {
   
   return useMutation({
     mutationFn: async (lead: LeadInsert) => {
-      console.log('Attempting to create lead:', lead);
-      
       let managerId = lead.manager_id;
       
       if (isManager) {
@@ -214,9 +174,6 @@ export const useCreateLead = () => {
           throw new Error(`Failed to create initial visit: ${visitError.message}`);
         }
         
-        console.log('Successfully created lead and initial visit:', { lead: newLead.id, visit: visitData?.id });
-      } else {
-        console.log('Visit already exists for this lead today, skipping visit creation');
       }
       return newLead;
     },
@@ -246,8 +203,6 @@ export const useUpdateLead = () => {
   
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: LeadUpdate }) => {
-      console.log('Updating lead:', { id, updates });
-      
       const { data, error } = await supabase
         .from('leads')
         .update(updates)
@@ -311,8 +266,6 @@ export const useBulkUpdateLeads = () => {
         throw new Error('No valid IDs provided for update');
       }
 
-      console.log('Bulk updating leads with IDs:', validIds, 'Updates:', updates);
-
       const { data, error } = await supabase
         .from('leads')
         .update(updates)
@@ -323,8 +276,6 @@ export const useBulkUpdateLeads = () => {
         console.error('Error bulk updating leads:', error);
         throw error;
       }
-      
-      console.log('Successfully updated leads:', data?.length || 0);
       return data;
     },
     onSuccess: () => {
@@ -352,8 +303,6 @@ export const useBulkDeleteLeads = () => {
         throw new Error('No valid IDs provided for deletion');
       }
 
-      console.log('Bulk deleting leads with IDs:', validIds);
-
       const { error } = await supabase
         .from('leads')
         .delete()
@@ -363,8 +312,6 @@ export const useBulkDeleteLeads = () => {
         console.error('Error bulk deleting leads:', error);
         throw error;
       }
-
-      console.log('Successfully deleted leads:', validIds.length);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -391,8 +338,6 @@ export const useLeadVisitCount = (leadId: string) => {
         console.error('Error fetching visit count for lead', leadId, ':', error);
         throw error;
       }
-      
-      console.log(`Visit count for lead ${leadId}:`, count || 0);
       return count || 0;
     },
     enabled: !!leadId,

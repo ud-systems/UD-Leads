@@ -48,8 +48,6 @@ export const usePushNotifications = () => {
 
   // Subscribe to push notifications
   const subscribeToPush = useCallback(async (): Promise<boolean> => {
-    // Push notifications disabled
-    console.log('Push notifications are currently disabled');
     return false;
   }, []);
 
@@ -62,7 +60,6 @@ export const usePushNotifications = () => {
   // Initialize push notifications
   const initialize = useCallback(async () => {
     // Push notifications disabled
-    console.log('Push notifications are currently disabled');
   }, []);
 
   useEffect(() => {

@@ -199,11 +199,9 @@ export function useBackupManager() {
     try {
       // Compress the backup data before storing
       const compressedData = compressBackupData(newBackups);
-      console.log('Backup data size:', compressedData.length, 'bytes');
       localStorage.setItem(BACKUP_STORAGE_KEY, compressedData);
       setBackups(newBackups);
       calculateStorageUsed(newBackups);
-      console.log('Backup saved successfully');
     } catch (error) {
       console.error('Error saving backups:', error);
       

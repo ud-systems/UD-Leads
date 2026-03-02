@@ -42,11 +42,6 @@ export function ConversionRulesManager() {
   const setDefaultRule = useSetDefaultConversionRule();
   const { toast } = useToast();
 
-  // Debug logging
-  console.log('ConversionRulesManager - statusOptions:', statusOptions);
-  console.log('ConversionRulesManager - statusLoading:', statusLoading);
-  console.log('ConversionRulesManager - statusError:', statusError);
-
   // Use only the status options from the database
   const availableStatusOptions = statusOptions || [];
 

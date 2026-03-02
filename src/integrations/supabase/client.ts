@@ -13,7 +13,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     persistSession: true,
     autoRefreshToken: true,
     storageKey: 'retail-lead-compass-auth-main',
-    flowType: 'pkce'
+    flowType: 'pkce',
+    detectSessionInUrl: true,
   },
   global: {
     headers: {
@@ -21,21 +22,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     },
     fetch: (url, options = {}) => {
       const controller = new AbortController();
-      
-      // Dynamic timeout based on request type
-      let timeout = 10000; // Default 10 seconds for API calls
-      
-      // Check if this is a storage upload (longer timeout needed)
+      // Longer timeouts for mobile/weak networks so connection doesn't drop easily
+      let timeout = 20000; // 20 seconds default (was 10) for API calls
       if (url.includes('/storage/v1/object/') && options.method === 'POST') {
         timeout = 120000; // 2 minutes for file uploads
-      }
-      // Check if this is a large data operation
-      else if (options.body && options.body instanceof FormData) {
+      } else if (options.body && options.body instanceof FormData) {
         timeout = 60000; // 1 minute for form data
+      } else if (url.includes('/auth/v1/')) {
+        timeout = 25000; // 25s for auth (login/session refresh)
       }
-      
       const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
       return fetch(url, {
         ...options,
         signal: controller.signal,
@@ -60,22 +56,18 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
   }
 });
 
-// Connection test function - optimized for speed
+// Connection test function - optimized for speed, does not require rows
 export const testConnection = async () => {
   try {
-    // Use a simple health check instead of querying profiles
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .select('id')
       .limit(1)
-      .single();
-    
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is fine
-      console.error('Connection test failed:', error);
+      .maybeSingle();
+    if (error) {
+      console.error('Connection test failed:', error.message);
       return false;
     }
-    
-    console.log('✅ Connection test successful');
     return true;
   } catch (error) {
     console.error('Connection test error:', error);
@@ -155,8 +147,6 @@ export const uploadWithRetry = async (
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Upload attempt ${attempt}/${maxRetries} for ${fileName} (${file.size > 5 * 1024 * 1024 ? 'large file' : 'small file'})`);
-      
       // Use resumable uploads for files larger than 5MB or when explicitly requested
       const shouldUseResumable = resumable && (file.size > 5 * 1024 * 1024 || uploadOptions.resumable);
       
@@ -236,8 +226,6 @@ export const uploadResumable = async (
   const { onProgress, maxRetries = 3, ...uploadOptions } = options;
   
   try {
-    console.log(`Starting resumable upload for ${fileName} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-    
     // For resumable uploads, we use a different approach
     // Supabase handles the chunking internally when resumable: true is set
     const { data, error } = await supabase.storage
@@ -264,8 +252,6 @@ export const uploadResumable = async (
         onProgress(progress);
       }
     }
-    
-    console.log(`Resumable upload completed for ${fileName}`);
     return { data, error: null };
     
   } catch (error) {
@@ -275,10 +261,8 @@ export const uploadResumable = async (
 };
 
 // Handle auth errors and clear invalid tokens
-supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-    console.log('Auth state changed:', event);
-  }
+supabase.auth.onAuthStateChange((_event, _session) => {
+  // Auth state change handled elsewhere as needed
 });
 
 // Handle auth errors
@@ -287,20 +271,20 @@ supabase.auth.onAuthStateChange((event, session) => {
     // Clear any invalid tokens from localStorage
     try {
       localStorage.removeItem('retail-lead-compass-auth-main');
-      console.log('Cleared invalid auth tokens');
     } catch (error) {
       console.warn('Failed to clear auth tokens:', error);
     }
   }
 });
 
-// Test connection on import (but don't block the app)
-testConnection().then(success => {
-  if (success) {
-    console.log('✅ Supabase connection established successfully');
-  } else {
-    console.warn('⚠️ Supabase connection test failed, but client is still available');
-  }
-}).catch(error => {
-  console.warn('⚠️ Connection test error:', error);
-});
+// Defer connection test so it doesn't block initial load or fail on slow networks
+// Run after a short delay and do not block; avoids dropping salesperson on first hit
+setTimeout(() => {
+  testConnection().then(success => {
+    if (!success) {
+      console.warn('⚠️ Supabase connection test failed, but client is still available');
+    }
+  }).catch(() => {
+    // Silently ignore so we don't spam console or affect UX
+  });
+}, 3000);

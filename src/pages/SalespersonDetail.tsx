@@ -251,14 +251,12 @@ export default function SalespersonDetail() {
 
   // Refresh function
   const handleRefresh = async () => {
-    console.log('Refreshing salesperson data...');
     await Promise.all([
       refetchLeads(),
       refetchVisits(),
       refetchUsers(),
       refetchTerritories()
     ]);
-    console.log('Salesperson data refreshed');
   };
 
   // Handle date range change

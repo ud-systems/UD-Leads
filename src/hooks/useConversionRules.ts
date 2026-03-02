@@ -171,7 +171,6 @@ export const useConversionHistory = (leadIds?: string[]) => {
       try {
         // If too many lead IDs, fetch in batches to avoid URL length limits
         if (leadIds && leadIds.length > 50) {
-          console.log(`Fetching conversion history for ${leadIds.length} leads in batches...`);
           const batchSize = 50;
           const batches = [];
           

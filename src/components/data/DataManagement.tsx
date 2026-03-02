@@ -66,9 +66,6 @@ export function DataManagement() {
 
   const handleSave = async () => {
     try {
-      console.log('Saving with dialogType:', dialogType, 'editingItem:', editingItem);
-      console.log('Form data:', formData);
-      
       // Validate required fields based on dialog type
       if (dialogType === "status" && (!formData.name || formData.name.trim() === '')) {
         throw new Error('Status name is required');
@@ -98,11 +95,7 @@ export function DataManagement() {
             
             // Handle status color update
             const existingColor = statusColors.find(sc => sc.status_name === editingItem.name);
-            console.log('Existing color found:', existingColor);
-            
             if (existingColor) {
-              // Update existing color record
-              console.log('Updating existing color with ID:', existingColor.id);
               await updateStatusColor.mutateAsync({
                 id: existingColor.id,
                 updates: {
@@ -112,17 +105,13 @@ export function DataManagement() {
                   text_color: formData.text_color,
                 }
               });
-              console.log('Color update completed');
             } else {
-              // Create new color record if none exists
-              console.log('Creating new color record');
               await createStatusColor.mutateAsync({
                 status_name: formData.name,
                 color_code: formData.color_code,
                 background_color: formData.background_color,
                 text_color: formData.text_color,
               });
-              console.log('Color creation completed');
             }
           } else {
             // Create new status
@@ -192,14 +181,6 @@ export function DataManagement() {
           }
           
           if (editingItem) {
-            // Update existing territory
-            console.log('Updating territory with data:', {
-              id: editingItem.id,
-              city: formData.city,
-              country: formData.country,
-              status: formData.status
-            });
-            
             await updateTerritory.mutateAsync({
               id: editingItem.id,
               updates: {
@@ -209,13 +190,6 @@ export function DataManagement() {
               }
             });
           } else {
-            // Create new territory
-            console.log('Creating territory with data:', {
-              city: formData.city,
-              country: formData.country,
-              status: formData.status
-            });
-            
             await createTerritory.mutateAsync({
               city: formData.city.trim(),
               country: formData.country || "United Kingdom",
@@ -256,7 +230,6 @@ export function DataManagement() {
   };
 
   const handleEdit = (item: any, type: string) => {
-    console.log('Editing item:', item, 'type:', type);
     setEditingItem(item);
     setDialogType(type);
     
@@ -418,8 +391,6 @@ export function DataManagement() {
                 };
                 
                 const dialogType = tabToDialogType[activeTab] || activeTab;
-                console.log('Add button clicked - activeTab:', activeTab, 'dialogType:', dialogType);
-                
                 setDialogType(dialogType);
                 setEditingItem(null);
                 setFormData({

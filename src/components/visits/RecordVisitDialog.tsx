@@ -410,10 +410,7 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
     e.preventDefault();
     
     // Only allow submission from Step 3
-    if (currentStep !== 3) {
-      console.log('Form submission blocked - not on final step');
-      return;
-    }
+    if (currentStep !== 3) return;
     
     // Call the actual submission logic
     await submitVisit();
@@ -431,45 +428,20 @@ export function RecordVisitDialog({ children }: RecordVisitDialogProps) {
     }
 
     // Check if visits data is loaded
-    if (!visits || visits.length === 0) {
-      console.log('Visits data not loaded or empty:', visits);
-      // Don't block submission if visits data is not available
-      // The server-side validation will catch duplicates
-    } else {
-      // Check if a visit already exists for this lead on this date
-      if (visitData.lead_id && visitData.date) {
-        console.log('Checking for existing visits:', {
-          leadId: visitData.lead_id,
-          date: visitData.date,
-          visitsCount: visits.length,
-          selectedLeadName: selectedLead?.store_name
+    if (visits && visits.length > 0 && visitData.lead_id && visitData.date) {
+      const existingVisit = visits.find(visit => {
+        const visitDate = visit.date;
+        const isSameLead = visit.lead_id === visitData.lead_id;
+        const isSameDate = visitDate === visitData.date;
+        return isSameLead && isSameDate;
+      });
+      if (existingVisit) {
+        setDuplicateVisitData({
+          leadName: selectedLead?.store_name || 'this lead',
+          date: formatUKDate(visitData.date)
         });
-        
-        const existingVisit = visits.find(visit => {
-          const visitDate = visit.date;
-          const isSameLead = visit.lead_id === visitData.lead_id;
-          const isSameDate = visitDate === visitData.date;
-          
-          console.log('Checking visit:', {
-            visitLeadId: visit.lead_id,
-            visitDate: visitDate,
-            isSameLead,
-            isSameDate,
-            visitSalesperson: visit.salesperson
-          });
-          
-          return isSameLead && isSameDate;
-        });
-        
-        if (existingVisit) {
-          console.log('Found existing visit:', existingVisit);
-          setDuplicateVisitData({
-            leadName: selectedLead?.store_name || 'this lead',
-            date: formatUKDate(visitData.date)
-          });
-          setShowDuplicateVisitDialog(true);
-          return;
-        }
+        setShowDuplicateVisitDialog(true);
+        return;
       }
     }
 

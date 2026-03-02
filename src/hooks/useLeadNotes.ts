@@ -16,10 +16,7 @@ export const useLeadNotes = (leadId: string) => {
     queryKey: ['leadNotes', leadId],
     queryFn: async () => {
       if (!user?.id) return [];
-      
-      console.log('Fetching lead notes for lead:', leadId);
-      console.log('Current user:', user);
-      
+
       let query = supabase
         .from('lead_notes')
         .select('*')
@@ -32,8 +29,6 @@ export const useLeadNotes = (leadId: string) => {
         console.error('Error fetching lead notes:', error);
         throw error;
       }
-      
-      console.log('Successfully fetched lead notes:', data?.length || 0, 'records');
       return data || [];
     },
     enabled: !!user?.id && !!leadId,

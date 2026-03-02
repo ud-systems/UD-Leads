@@ -26,14 +26,12 @@ class DatabaseOperations {
 
     this.client = new Client(DB_CONFIG);
     await this.client.connect();
-    console.log('Connected to database via direct connection');
   }
 
   async disconnect(): Promise<void> {
     if (this.client) {
       await this.client.end();
       this.client = null;
-      console.log('Disconnected from database');
     }
   }
 
@@ -69,7 +67,6 @@ class DatabaseOperations {
 
       try {
         await this.client.query(query, params);
-        console.log(`✅ Inserted batch ${i + 1}/${batches.length} (${batch.length} territories)`);
       } catch (error) {
         console.error(`❌ Error inserting batch ${i + 1}:`, error);
         throw error;

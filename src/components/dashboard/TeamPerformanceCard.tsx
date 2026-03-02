@@ -38,12 +38,7 @@ export function TeamPerformanceCard({
   dateRange 
 }: TeamPerformanceCardProps) {
   const navigate = useNavigate();
-  
-  // Debug logging
-  console.log('TeamPerformanceCard - Manager:', manager.name);
-  console.log('TeamPerformanceCard - Team Members:', teamMembers);
-  console.log('TeamPerformanceCard - Team Stats:', teamStats);
-  
+
   const formatDateRange = () => {
     const from = dateRange.from.toLocaleDateString('en-GB', { 
       day: 'numeric', 

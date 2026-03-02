@@ -118,29 +118,13 @@ const uniqueCities = ukCities.filter((city, index, self) =>
 );
 
 async function populateUKCities() {
-  console.log('Starting to populate UK cities...');
-  
   try {
     await runDatabaseOperation(async (dbOps) => {
-      // Check connection first
       const isConnected = await dbOps.checkConnection();
       if (!isConnected) {
         throw new Error('Failed to connect to database');
       }
-      
-      // Get existing territories count
-      const existingCount = await dbOps.getTerritoryCount();
-      console.log(`Current territories in database: ${existingCount}`);
-      
-      // Insert all UK cities
       await dbOps.insertTerritories(ukCities);
-      
-      // Get new count
-      const newCount = await dbOps.getTerritoryCount();
-      console.log(`New territories count: ${newCount}`);
-      console.log(`Added ${newCount - existingCount} new territories`);
-      
-      console.log('✅ Successfully populated UK cities in territories table!');
     });
     
   } catch (error) {

@@ -26,7 +26,6 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
-        
         try {
           setAuthState(prev => ({
             ...prev,
@@ -43,7 +42,6 @@ export function useAuth() {
               loading: false,
               connectionHealthy: false,
             }));
-            // Run diagnostics on auth errors
             logConnectionDiagnostics();
           }
         }
@@ -68,7 +66,6 @@ export function useAuth() {
             loading: false,
             connectionHealthy: false,
           }));
-          // Run diagnostics on initial session errors
           logConnectionDiagnostics();
         } else {
           setAuthState(prev => ({
@@ -87,7 +84,6 @@ export function useAuth() {
             loading: false,
             connectionHealthy: false,
           }));
-          // Run diagnostics on initialization failures
           logConnectionDiagnostics();
         }
       }
@@ -95,9 +91,32 @@ export function useAuth() {
 
     initializeAuth();
 
+    // Refresh session when user returns to tab (e.g. salesperson switching back to app)
+    // Reduces "session dropped" and connection issues after backgrounding
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible' || !mounted) return;
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (!error && session) {
+          setAuthState(prev => ({
+            ...prev,
+            user: session.user,
+            session,
+            connectionHealthy: true,
+          }));
+        }
+      } catch {
+        // Ignore; session stays as-is
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

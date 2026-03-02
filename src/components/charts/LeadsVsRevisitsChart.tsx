@@ -280,7 +280,7 @@ export function LeadsVsRevisitsChart({
   }
 
   return (
-    <Card>
+    <Card className="card-section-accent">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

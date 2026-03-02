@@ -41,20 +41,6 @@ export default function Analytics() {
   const { user: currentUser } = useAuth();
   const { data: profile } = useProfile(currentUser?.id);
   
-  // Debug visits data for salesperson
-  useMemo(() => {
-    if (userRole === 'salesperson' && visits.length > 0) {
-      console.log('Analytics - Visits data for salesperson:', {
-        totalVisits: visits.length,
-        sampleVisits: visits.slice(0, 3).map(v => ({
-          id: v.id,
-          salesperson: v.lastVisit?.salesperson,
-          lead_name: v.lastVisit?.leads?.store_name
-        }))
-      });
-    }
-  }, [visits, userRole]);
-
   // Determine page title based on user role
   const pageTitle = isSalesperson ? "My Analytics" : "Lead Analytics";
   const pageDescription = isSalesperson 

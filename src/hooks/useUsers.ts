@@ -26,8 +26,6 @@ export const useUsers = () => {
     queryKey: ['users'],
     queryFn: async () => {
       try {
-        console.log('Fetching users...', { isAdmin, adminConfigured });
-        
         // Use admin client for admin users, regular client for others
         const client = (isAdmin && adminConfigured) ? supabaseAdmin : supabase;
         
@@ -50,9 +48,6 @@ export const useUsers = () => {
           console.error('Error fetching users:', usersError);
           throw usersError;
         }
-
-        console.log('Users fetched successfully:', users?.length || 0);
-
         // Get all user preferences in a single query for better performance
         const userIds = users.map(user => user.id);
         const { data: allPreferences, error: prefError } = await client
@@ -75,8 +70,6 @@ export const useUsers = () => {
           ...user,
           user_preferences: preferencesMap.get(user.id) || null
         }));
-        
-        console.log('Users with preferences processed:', usersWithPreferences.length);
         return usersWithPreferences as UserWithPreferences[];
       } catch (error) {
         console.error('Error in useUsers queryFn:', error);
@@ -86,10 +79,7 @@ export const useUsers = () => {
     enabled: !!user, // Only run when user is authenticated
     staleTime: 5 * 60 * 1000, // 5 minutes - users don't change often
     gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: (failureCount, error) => {
-      console.log('useUsers retry attempt:', failureCount, error);
-      return failureCount < 2; // Only retry once
-    },
+    retry: (failureCount) => failureCount < 2, // Only retry once
   });
 };
 
@@ -111,11 +101,8 @@ export const useCreateUser = () => {
         throw new Error('Admin client not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY to your .env file');
       }
 
-      console.log('Creating user with data:', { ...userData, password: '[HIDDEN]' });
-
       try {
         // Step 1: Create the user in Supabase Auth
-        console.log('Creating user in Supabase Auth...');
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: userData.email,
           password: userData.password,
@@ -136,10 +123,7 @@ export const useCreateUser = () => {
           throw new Error('Failed to create user in auth system');
         }
 
-        console.log('User created in auth, ID:', authUser.user.id);
-
         // Step 2: Create the profile directly using admin client
-        console.log('Creating profile...');
         const { data: profile, error: profileError } = await supabaseAdmin
           .from('profiles')
           .insert({
@@ -158,7 +142,6 @@ export const useCreateUser = () => {
           // If profile creation fails, we should clean up the auth user
           try {
             await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-            console.log('Cleaned up auth user after profile creation failure');
           } catch (cleanupError) {
             console.error('Failed to clean up auth user:', cleanupError);
           }
@@ -167,7 +150,6 @@ export const useCreateUser = () => {
         }
 
         // Step 3: Create user preferences
-        console.log('Creating user preferences...');
         const { error: preferencesError } = await supabaseAdmin
           .from('user_preferences')
           .insert({
@@ -187,15 +169,12 @@ export const useCreateUser = () => {
           try {
             await supabaseAdmin.from('profiles').delete().eq('id', authUser.user.id);
             await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-            console.log('Cleaned up after preferences creation failure');
           } catch (cleanupError) {
             console.error('Failed to clean up after preferences error:', cleanupError);
           }
           
           throw preferencesError;
         }
-
-        console.log('User created successfully:', profile);
         return profile;
       } catch (error) {
         console.error('Error in useCreateUser mutationFn:', error);
@@ -264,11 +243,8 @@ export const useDeleteUser = () => {
         throw new Error('Admin client not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY to your .env file');
       }
 
-      console.log('Deleting user with ID:', id);
-
       try {
         // Step 1: Delete user preferences first (if they exist)
-        console.log('Deleting user preferences...');
         const { error: preferencesError } = await supabaseAdmin
           .from('user_preferences')
           .delete()
@@ -279,7 +255,6 @@ export const useDeleteUser = () => {
         }
 
         // Step 2: Delete the profile
-        console.log('Deleting user profile...');
         const { error: profileError } = await supabaseAdmin
           .from('profiles')
           .delete()
@@ -291,15 +266,12 @@ export const useDeleteUser = () => {
         }
 
         // Step 3: Delete the user from Supabase Auth
-        console.log('Deleting user from auth...');
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
         
         if (authError) {
           console.error('Error deleting user from auth:', authError);
           throw authError;
         }
-
-        console.log('User deleted successfully');
         return { success: true };
       } catch (error) {
         console.error('Error in user deletion process:', error);
@@ -315,8 +287,6 @@ export const useDeleteUser = () => {
 // Test function to check admin client access
 export const testAdminAccess = async () => {
   try {
-    console.log('Testing admin client access...');
-    
     // Test basic query
     const { data, error } = await supabaseAdmin
       .from('profiles')
@@ -327,8 +297,6 @@ export const testAdminAccess = async () => {
       console.error('Admin client test failed:', error);
       return { success: false, error };
     }
-    
-    console.log('Admin client test successful:', data);
     return { success: true, data };
   } catch (error) {
     console.error('Admin client test exception:', error);
@@ -339,8 +307,6 @@ export const testAdminAccess = async () => {
 // Test function to check database access
 export const testDatabaseAccess = async () => {
   try {
-    console.log('Testing database access...');
-    
     // Test basic query
     const { data, error } = await supabase
       .from('profiles')
@@ -351,8 +317,6 @@ export const testDatabaseAccess = async () => {
       console.error('Database access test failed:', error);
       return { success: false, error };
     }
-    
-    console.log('Database access test successful:', data);
     return { success: true, data };
   } catch (error) {
     console.error('Database access test exception:', error);

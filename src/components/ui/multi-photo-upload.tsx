@@ -161,10 +161,7 @@ export function MultiPhotoUpload({
         uploadResult = await uploadResumable(bucket, fileName, compressedFile, {
           cacheControl: '3600',
           upsert: false,
-          onProgress: (progress, chunk, totalChunks) => {
-            setUploadProgress(progress);
-            console.log(`Resumable upload progress: ${progress}% (chunk ${chunk}/${totalChunks})`);
-          },
+          onProgress: (progress) => setUploadProgress(progress),
           maxRetries: 3
         });
       } else {

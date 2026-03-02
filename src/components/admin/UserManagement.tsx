@@ -90,10 +90,7 @@ export function UserManagement() {
 
   const handleCreateUser = async (data: UserFormData) => {
     try {
-      console.log('Starting user creation process...', { email: data.email, name: data.name, role: data.role });
-      
-      // Create user using the new interface
-      const newUser = await createUser.mutateAsync({
+      await createUser.mutateAsync({
         email: data.email,
         password: data.password,
         name: data.name,
@@ -101,10 +98,6 @@ export function UserManagement() {
         manager_id: isManager ? user?.id : (data.manager_id === "none" ? null : data.manager_id || null),
         daily_visit_target: data.daily_visit_target,
       });
-
-      console.log('User created successfully:', newUser);
-
-      console.log('User preferences created successfully');
 
       setIsCreateDialogOpen(false);
       createForm.reset();

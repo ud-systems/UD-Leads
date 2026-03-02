@@ -32,11 +32,6 @@ export default function Auth() {
         const { testConnection } = await import('@/integrations/supabase/client');
         const isHealthy = await testConnection();
         setConnectionStatus(isHealthy ? 'healthy' : 'unhealthy');
-        
-        console.log('Connection status:', {
-          isHealthy,
-          strategy: 'direct-client-test'
-        });
       } catch (error) {
         console.error('Connection health check failed:', error);
         setConnectionStatus('unhealthy');
