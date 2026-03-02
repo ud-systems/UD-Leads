@@ -216,13 +216,13 @@ export default function Visits() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header - title/desc left, action button far right on all screens */}
+      <div className="flex flex-row items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="text-xl lg:text-2xl font-bold truncate">{pageTitle}</h1>
-          <p className="text-sm lg:text-base text-muted-foreground">{pageDescription}</p>
+          <p className="text-sm lg:text-base text-muted-foreground truncate">{pageDescription}</p>
         </div>
-        <div className="w-full sm:w-auto">
+        <div className="flex-shrink-0">
           {canScheduleVisits && <RecordVisitDialog />}
         </div>
       </div>
@@ -232,8 +232,8 @@ export default function Visits() {
         {/* Search and Filter Row - All in one horizontal row */}
         <div className="flex flex-col lg:flex-row gap-3 w-full">
           {/* Search Bar */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden />
             <Input
               placeholder="Search visits, postal codes, territories..."
               value={searchTerm}
@@ -241,7 +241,7 @@ export default function Visits() {
                 setSearchTerm(e.target.value);
                 handleFilterChange();
               }}
-              className="pl-10"
+              className="input-with-leading-icon pr-4 min-h-10"
             />
           </div>
           
@@ -322,10 +322,10 @@ export default function Visits() {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full"
+              className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? "Hide" : "Show"} Filters
+              <span>{showFilters ? "Hide" : "Show"} Filters</span>
+              <Plus className="h-4 w-4 shrink-0" />
             </Button>
           )}
         </div>

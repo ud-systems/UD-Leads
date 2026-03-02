@@ -11,7 +11,9 @@ import { useUsers } from "@/hooks/useUsers";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { useStatusColors, getStatusColor } from "@/hooks/useStatusColors";
-import { MapPin, Users, Building, Calendar, Target, Filter, ArrowUpRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { MapPin, Users, Building, Calendar, Target, ArrowUpRight, Plus } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -41,6 +43,7 @@ const createColoredMarker = (status: string, statusColors: any[]) => {
 
 export default function Territory() {
   const navigate = useNavigate();
+  const { isMobile } = useIsMobile();
   const { user } = useAuth();
   const { data: users = [] } = useUsers();
   const { data: leads = [] } = useLeads();
@@ -51,6 +54,7 @@ export default function Territory() {
   // Filter states
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>('all');
   const [selectedDateRange, setSelectedDateRange] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Get salespeople for filter dropdown
   const salespeople = useMemo(() => {
@@ -199,20 +203,19 @@ export default function Territory() {
         <p className="text-muted-foreground">{pageDescription}</p>
       </div>
 
-      {/* Filters Card */}
+      {/* Filters - same mobile UX as Leads, Visits, Scheduled Followups */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            Map Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Salesperson Filter - Hidden for salespeople */}
-            {!isSalesperson && (
-              <div className="flex items-center gap-2">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 w-full">
+            {/* Filter controls - on mobile hidden until "Show Filters" is toggled */}
+            <div className={cn(
+              "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3",
+              isMobile && !showFilters ? "hidden" : "flex"
+            )}>
+              {/* Salesperson Filter - Hidden for salespeople */}
+              {!isSalesperson && (
                 <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-48 h-10">
                     <SelectValue placeholder="Select Salesperson" />
                   </SelectTrigger>
                   <SelectContent>
@@ -224,13 +227,11 @@ export default function Territory() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            )}
+              )}
 
-            {/* Date Range Filter */}
-            <div className="flex items-center gap-2">
+              {/* Date Range Filter */}
               <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32 h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -241,39 +242,52 @@ export default function Territory() {
                   <SelectItem value="all">All Time</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Quick Filter Buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedDateRange === 'today' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedDateRange('today')}
+                >
+                  Today
+                </Button>
+                <Button
+                  variant={selectedDateRange === 'week' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedDateRange('week')}
+                >
+                  Week
+                </Button>
+                <Button
+                  variant={selectedDateRange === 'month' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedDateRange('month')}
+                >
+                  Month
+                </Button>
+                <Button
+                  variant={selectedDateRange === 'all' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedDateRange('all')}
+                >
+                  All Time
+                </Button>
+              </div>
             </div>
 
-            {/* Quick Filter Buttons */}
-            <div className="flex gap-2">
+            {/* Show/Hide Filters Button - Only on Mobile (same style as other pages) */}
+            {isMobile && (
               <Button
-                variant={selectedDateRange === 'today' ? "default" : "outline"}
+                variant="outline"
                 size="sm"
-                onClick={() => setSelectedDateRange('today')}
+                onClick={() => setShowFilters(!showFilters)}
+                className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
               >
-                Today
+                <span>{showFilters ? "Hide" : "Show"} Filters</span>
+                <Plus className="h-4 w-4 shrink-0" />
               </Button>
-              <Button
-                variant={selectedDateRange === 'week' ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedDateRange('week')}
-              >
-                Week
-              </Button>
-              <Button
-                variant={selectedDateRange === 'month' ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedDateRange('month')}
-              >
-                Month
-              </Button>
-              <Button
-                variant={selectedDateRange === 'all' ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedDateRange('all')}
-              >
-                All Time
-              </Button>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Phone, Mail, MapPin, Calendar, Loader2, Grid3X3, List, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare, Square, Edit, Trash2, ArrowUpRight, ShoppingCart } from "lucide-react";
+import { Search, Phone, Mail, MapPin, Calendar, Loader2, Grid3X3, List, Filter, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckSquare, Square, Edit, Trash2, ArrowUpRight, ShoppingCart } from "lucide-react";
 import { useLeads, useBulkUpdateLeads, useBulkDeleteLeads, useLeadVisitCount } from "@/hooks/useLeads";
 import { useTerritories } from "@/hooks/useTerritories";
 import { useToast } from "@/hooks/use-toast";
@@ -347,13 +347,13 @@ export default function Leads() {
 
   return (
     <div className="h-full space-y-4 lg:space-y-6 mobile-content small-desktop-container">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header - title/desc left, action button far right on all screens */}
+      <div className="flex flex-row items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="text-xl lg:text-2xl font-bold truncate small-desktop-heading">Leads</h1>
-          <p className="text-sm lg:text-base text-muted-foreground small-desktop-text">Manage your sales leads and prospects</p>
+          <p className="text-sm lg:text-base text-muted-foreground small-desktop-text truncate">Manage your sales leads and prospects</p>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* View Mode Toggle - Only on Desktop */}
           {!isMobile && (
             <div className="flex items-center gap-2">
@@ -387,12 +387,12 @@ export default function Leads() {
         <div className="flex flex-col lg:flex-row gap-3 w-full">
           {/* Search Bar */}
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden />
             <Input
               placeholder="Search leads, postal codes, territories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="input-with-leading-icon pr-4 min-h-10"
             />
           </div>
           
@@ -478,10 +478,10 @@ export default function Leads() {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full"
+              className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? "Hide" : "Show"} Filters
+              <span>{showFilters ? "Hide" : "Show"} Filters</span>
+              <Plus className="h-4 w-4 shrink-0" />
             </Button>
           )}
         </div>

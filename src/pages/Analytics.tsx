@@ -625,12 +625,12 @@ export default function Analytics() {
           {/* Search Bar */}
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden />
               <Input
                 placeholder="Search for a specific product..."
                 value={productSearchTerm}
                 onChange={(e) => setProductSearchTerm(e.target.value)}
-                className="pl-10"
+                className="input-with-leading-icon pr-4 min-h-10"
               />
             </div>
             {productSearchTerm && (

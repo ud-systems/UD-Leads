@@ -311,13 +311,13 @@ export default function ScheduledFollowups() {
         {/* Search and Filter Row - All in one horizontal row */}
         <div className="flex flex-col lg:flex-row gap-3 w-full">
           {/* Search Bar */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 hidden sm:block" />
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4 hidden sm:block pointer-events-none" aria-hidden />
             <Input
               placeholder="Search leads, postal codes, territories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-3 sm:pl-10 pr-4 border border-input"
+              className="input-with-leading-icon pr-4 min-h-10 border border-input"
             />
           </div>
 
@@ -442,10 +442,10 @@ export default function ScheduledFollowups() {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className="w-full"
+              className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? "Hide" : "Show"} Filters
+              <span>{showFilters ? "Hide" : "Show"} Filters</span>
+              <Plus className="h-4 w-4 shrink-0" />
             </Button>
           )}
         </div>
