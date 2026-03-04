@@ -130,10 +130,7 @@ export function CompanyLogoManager() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5" />
-            Company Logo
-          </CardTitle>
+          <CardTitle>Company Logo</CardTitle>
           <CardDescription>Manage your company logo for the sidebar</CardDescription>
         </CardHeader>
         <CardContent>
@@ -148,10 +145,7 @@ export function CompanyLogoManager() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Building className="h-5 w-5" />
-          Company Logo
-        </CardTitle>
+        <CardTitle>Company Logo</CardTitle>
         <CardDescription>
           Upload or set a URL for your company logo. Recommended size: 150x150px
         </CardDescription>

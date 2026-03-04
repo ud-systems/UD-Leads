@@ -126,8 +126,7 @@ export function VisitHistorySection({ lead, visits }: VisitHistorySectionProps) 
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="h-5 w-5 mr-2" />
+          <CardTitle>
             Visit History
           </CardTitle>
         </CardHeader>
@@ -145,8 +144,7 @@ export function VisitHistorySection({ lead, visits }: VisitHistorySectionProps) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <Calendar className="h-5 w-5 mr-2" />
+        <CardTitle>
           Visit History ({sortedVisits.length} visits)
         </CardTitle>
       </CardHeader>

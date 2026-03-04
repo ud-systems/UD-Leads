@@ -3,7 +3,6 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
-import { Bell, BellOff, Smartphone } from 'lucide-react';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useToast } from '../../hooks/use-toast';
 
@@ -29,10 +28,7 @@ export const PushNotificationSettings: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BellOff className="h-5 w-5" />
-          Push Notifications
-        </CardTitle>
+        <CardTitle>Push Notifications</CardTitle>
         <CardDescription>
           Currently disabled in this version
         </CardDescription>

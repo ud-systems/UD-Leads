@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useSystemSettings, useUpdateSystemSetting } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Palette, Check, Sparkles } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { applyCustomColors } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
@@ -202,10 +202,7 @@ export function ColorPaletteSelector() {
       {/* Predefined Palettes */}
       <Card className="bg-card shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Predefined Palettes
-          </CardTitle>
+          <CardTitle>Predefined Palettes</CardTitle>
           <CardDescription>
             Choose from our professionally designed color palettes
           </CardDescription>
@@ -245,10 +242,7 @@ export function ColorPaletteSelector() {
       {/* Custom Colors */}
       <Card className="bg-card shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Custom Colors
-          </CardTitle>
+          <CardTitle>Custom Colors</CardTitle>
           <CardDescription>
             Customize your own color palette
           </CardDescription>

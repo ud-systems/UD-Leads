@@ -42,7 +42,7 @@ export function MobileBottomNav({ onMoreClick }: MobileBottomNavProps) {
               <item.icon
                 className={cn("h-5 w-5", isActive && "text-white")}
               />
-              <span className={cn("text-[10px] font-medium", isActive && "text-white")}>{item.label}</span>
+              <span className={cn("font-medium", isActive && "text-white")}>{item.label}</span>
             </div>
           );
           if (isMore) {
@@ -55,7 +55,7 @@ export function MobileBottomNav({ onMoreClick }: MobileBottomNavProps) {
                 aria-label="Open menu"
               >
                 <item.icon className="h-5 w-5" />
-                <span className="text-[10px] font-medium">{item.label}</span>
+                <span className="font-medium">{item.label}</span>
               </button>
             );
           }

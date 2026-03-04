@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { useUpdateSystemSetting } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Moon, Sun, Monitor, Palette, Loader2 } from "lucide-react";
+import { Moon, Sun, Monitor, Loader2 } from "lucide-react";
 
 export function SystemThemeManager() {
   const { theme, setTheme } = useTheme();
@@ -68,10 +68,7 @@ export function SystemThemeManager() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="h-6 w-6" />
-          Theme Settings
-        </CardTitle>
+        <CardTitle>Theme Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">

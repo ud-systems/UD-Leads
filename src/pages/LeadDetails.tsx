@@ -778,8 +778,7 @@ export default function LeadDetails() {
           {/* Basic Information Section */}
           <div>
             <div className="mb-4">
-              <h3 className="text-xl font-semibold text-primary flex items-center gap-2">
-                <Building className="h-6 w-6" />
+              <h3 className="text-xl font-semibold text-primary">
                 Basic Information
               </h3>
             </div>
@@ -1107,8 +1106,7 @@ export default function LeadDetails() {
       {/* Comments Section */}
       <Card className="overflow-hidden">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <MessageSquare className="h-6 w-6" />
+          <CardTitle className="text-xl">
             Comments & Notes
           </CardTitle>
         </CardHeader>

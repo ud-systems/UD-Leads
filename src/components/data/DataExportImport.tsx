@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Download, Upload, FileText, Database, Users, Building, FileDown } from "lucide-react";
+import { Upload, FileText, Database, Users, Building, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -727,10 +727,7 @@ export function DataExportImport() {
       {/* Export Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
-            Export Data
-          </CardTitle>
+          <CardTitle>Export Data</CardTitle>
           <CardDescription>
             Export your data to CSV format for backup or analysis
           </CardDescription>
@@ -778,10 +775,7 @@ export function DataExportImport() {
       {/* Template Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileDown className="h-5 w-5" />
-            Download Template
-          </CardTitle>
+          <CardTitle>Download Template</CardTitle>
           <CardDescription>
             Get a template with 100 dummy leads for testing
           </CardDescription>
@@ -821,10 +815,7 @@ export function DataExportImport() {
       {/* Import Section */}
       <Card className="md:col-span-2 lg:col-span-1">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Import Leads
-          </CardTitle>
+          <CardTitle>Import Leads</CardTitle>
           <CardDescription>
             Import leads from CSV files directly into your database
           </CardDescription>
