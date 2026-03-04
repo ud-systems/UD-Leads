@@ -535,9 +535,9 @@ export default function LeadDetails() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6 mobile-content">
       {/* Page Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-md:border-b max-md:border-border max-md:pb-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 truncate">{lead.store_name}</h1>
           <p className="text-base sm:text-lg text-muted-foreground mt-1">Lead Details</p>

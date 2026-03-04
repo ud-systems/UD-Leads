@@ -51,6 +51,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { FiltersBottomSheet } from "@/components/ui/filters-bottom-sheet";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
 
 export default function ScheduledFollowups() {
   const { user } = useAuth();
@@ -72,7 +74,7 @@ export default function ScheduledFollowups() {
   const [currentPage, setCurrentPage] = useState(1);
   const [leadsPerPage] = useState(10);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(true); // New state for showing/hiding filters
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // CRUD state
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -287,9 +289,9 @@ export default function ScheduledFollowups() {
   // Show skeleton while loading
   if (isLoading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6 mobile-content">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold">Scheduled Followups</h1>
+          <h1 className="text-[1.625rem] lg:text-2xl font-bold">Scheduled Followups</h1>
         </div>
         <LeadsSkeleton />
       </div>
@@ -297,13 +299,21 @@ export default function ScheduledFollowups() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 mobile-content">
+      {/* Header - desc hidden on mobile; on mobile: Menu + Filter icons */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-md:border-b max-md:border-border max-md:pb-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl lg:text-2xl font-bold truncate">Scheduled Followups</h1>
-          <p className="text-sm lg:text-base text-muted-foreground">Manage your scheduled followups</p>
+          <h1 className="text-[1.625rem] md:text-2xl font-bold truncate">Scheduled Followups</h1>
+          <p className="text-sm lg:text-base text-muted-foreground max-md:hidden">Manage your scheduled followups</p>
         </div>
+        {isMobile && (
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Button type="button" variant="outline" size="icon" onClick={() => setFiltersOpen(true)} className="shrink-0 rounded-[14px] bg-muted text-muted-foreground hover:bg-muted/80 h-10 w-10 min-w-10 min-h-10 border-0" aria-label="Show filters">
+              <Filter className="h-5 w-5" />
+            </Button>
+            <MobileHeaderMenuButton />
+          </div>
+        )}
       </div>
 
       {/* Search and Filters Section */}
@@ -321,132 +331,122 @@ export default function ScheduledFollowups() {
             />
           </div>
 
-          {/* Filter Controls - In the same row as search */}
-          <div className={cn(
-            "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2",
-            isMobile && !showFilters ? "hidden" : "flex"
-          )}>
-            <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
-              <SelectTrigger className="w-full sm:w-[140px] h-10">
-                <SelectValue placeholder="Store Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Types</SelectItem>
-                <SelectItem value="Retail">Retail</SelectItem>
-                <SelectItem value="Wholesale">Wholesale</SelectItem>
-                <SelectItem value="Online">Online</SelectItem>
-                <SelectItem value="Restaurant">Restaurant</SelectItem>
-                <SelectItem value="Service">Service</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedBuyingPower} onValueChange={setSelectedBuyingPower}>
-              <SelectTrigger className="w-full sm:w-[140px] h-10">
-                <SelectValue placeholder="Buying Power" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Powers</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="Low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
-              <SelectTrigger className="w-full sm:w-[140px] h-10">
-                <SelectValue placeholder="Territory" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Territories</SelectItem>
-                {territories?.map((territory) => (
-                  <SelectItem key={territory.id} value={territory.city}>
-                    {territory.city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {!isSalesperson && (
-              <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                <SelectTrigger className="w-full sm:w-[140px] h-10">
-                  <SelectValue placeholder="Salesperson" />
-                </SelectTrigger>
+          {/* Desktop: inline filter controls */}
+          {!isMobile && (
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
+              <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
+                <SelectTrigger className="w-full sm:w-[140px] h-10"><SelectValue placeholder="Store Type" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Salespeople</SelectItem>
-                  {(() => {
-                    // Filter users based on role and team assignment
-                    let filteredUsers = users;
-                    
-                    if (isAdmin) {
-                      // Admins can see all salespeople and managers
-                      filteredUsers = users?.filter(u => {
-                        const role = (u as any).role;
-                        return role === 'salesperson' || role === 'manager';
-                      });
-                    } else if (isManager && currentUser) {
-                      // Managers can see themselves and their team members
-                      filteredUsers = users?.filter(u => {
-                        const userRole = (u as any).role;
-                        const userId = u.id;
-                        
-                        // Include themselves (manager)
-                        if (userId === currentUser.id && userRole === 'manager') {
-                          return true;
-                        }
-                        
-                        // Include their team members (salespeople assigned to them)
-                        if (userRole === 'salesperson' && (u as any).manager_id === currentUser.id) {
-                          return true;
-                        }
-                        
-                        return false;
-                      });
-                    } else if (isSalesperson) {
-                      // Salespeople can only see themselves
-                      filteredUsers = users?.filter(u => u.id === currentUser?.id);
-                    }
-                    
-                    return filteredUsers?.map((user) => (
-                      <SelectItem key={user.id} value={(user as any).name}>
-                        {(user as any).name}
-                      </SelectItem>
-                    ));
-                  })()}
+                  <SelectItem value="All">All Types</SelectItem>
+                  <SelectItem value="Retail">Retail</SelectItem>
+                  <SelectItem value="Wholesale">Wholesale</SelectItem>
+                  <SelectItem value="Online">Online</SelectItem>
+                  <SelectItem value="Restaurant">Restaurant</SelectItem>
+                  <SelectItem value="Service">Service</SelectItem>
                 </SelectContent>
               </Select>
-            )}
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              <DatePicker
-                value={dateRange}
-                onChange={setDateRange}
-                placeholder="Filter by followup date..."
-                className="w-full sm:w-[200px] h-10"
-              />
-              {dateRange && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDateRange(undefined)}
-                  className="h-10 px-3"
-                >
-                  Clear
-                </Button>
+              <Select value={selectedBuyingPower} onValueChange={setSelectedBuyingPower}>
+                <SelectTrigger className="w-full sm:w-[140px] h-10"><SelectValue placeholder="Buying Power" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Powers</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
+                <SelectTrigger className="w-full sm:w-[140px] h-10"><SelectValue placeholder="Territory" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Territories</SelectItem>
+                  {territories?.map((territory) => (
+                    <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!isSalesperson && (
+                <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                  <SelectTrigger className="w-full sm:w-[140px] h-10"><SelectValue placeholder="Salesperson" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Salespeople</SelectItem>
+                    {(() => {
+                      let filteredUsers = users;
+                      if (isAdmin) {
+                        filteredUsers = users?.filter(u => ((u as any).role === 'salesperson' || (u as any).role === 'manager'));
+                      } else if (isManager && currentUser) {
+                        filteredUsers = users?.filter(u => u.id === currentUser.id && (u as any).role === 'manager' || (u as any).role === 'salesperson' && (u as any).manager_id === currentUser.id);
+                      } else if (isSalesperson) {
+                        filteredUsers = users?.filter(u => u.id === currentUser?.id);
+                      }
+                      return filteredUsers?.map((user) => (
+                        <SelectItem key={user.id} value={(user as any).name}>{(user as any).name}</SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
               )}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <DatePicker value={dateRange} onChange={setDateRange} placeholder="Filter by followup date..." className="w-full sm:w-[200px] h-10" />
+                {dateRange && <Button variant="outline" size="sm" onClick={() => setDateRange(undefined)} className="h-10 px-3">Clear</Button>}
+              </div>
             </div>
-          </div>
-          
-          {/* Show/Hide Filters Button - Only on Mobile */}
+          )}
           {isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
-            >
-              <span>{showFilters ? "Hide" : "Show"} Filters</span>
-              <Plus className="h-4 w-4 shrink-0" />
-            </Button>
+              <FiltersBottomSheet open={filtersOpen} onOpenChange={setFiltersOpen} title="Filters">
+                <div className="flex flex-col gap-3 w-full">
+                  <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Store Type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Types</SelectItem>
+                      <SelectItem value="Retail">Retail</SelectItem>
+                      <SelectItem value="Wholesale">Wholesale</SelectItem>
+                      <SelectItem value="Online">Online</SelectItem>
+                      <SelectItem value="Restaurant">Restaurant</SelectItem>
+                      <SelectItem value="Service">Service</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedBuyingPower} onValueChange={setSelectedBuyingPower}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Buying Power" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Powers</SelectItem>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Territory" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Territories</SelectItem>
+                      {territories?.map((territory) => (
+                        <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!isSalesperson && (
+                    <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                      <SelectTrigger className="w-full h-10"><SelectValue placeholder="Salesperson" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="All">All Salespeople</SelectItem>
+                        {(() => {
+                          let filteredUsers = users;
+                          if (isAdmin) {
+                            filteredUsers = users?.filter(u => ((u as any).role === 'salesperson' || (u as any).role === 'manager'));
+                          } else if (isManager && currentUser) {
+                            filteredUsers = users?.filter(u => u.id === currentUser.id && (u as any).role === 'manager' || (u as any).role === 'salesperson' && (u as any).manager_id === currentUser.id);
+                          } else if (isSalesperson) {
+                            filteredUsers = users?.filter(u => u.id === currentUser?.id);
+                          }
+                          return filteredUsers?.map((user) => (
+                            <SelectItem key={user.id} value={(user as any).name}>{(user as any).name}</SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <DatePicker value={dateRange} onChange={setDateRange} placeholder="Filter by followup date..." className="w-full h-10" />
+                  {dateRange && <Button variant="outline" size="sm" onClick={() => setDateRange(undefined)} className="w-full">Clear date</Button>}
+                </div>
+              </FiltersBottomSheet>
           )}
         </div>
 

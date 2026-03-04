@@ -16,6 +16,8 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { VisitsSkeleton } from "@/components/ui/visits-skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { FiltersBottomSheet } from "@/components/ui/filters-bottom-sheet";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,7 +35,7 @@ export default function Visits() {
   const [selectedSalesperson, setSelectedSalesperson] = useState("All");
   const [selectedTerritory, setSelectedTerritory] = useState("All");
   const [viewMode, setViewMode] = useState<"list" | "calendar" | "grid">("list");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedVisits, setSelectedVisits] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined);
@@ -178,7 +180,7 @@ export default function Visits() {
   // Show skeleton while loading
   if (visitsLoading || territoriesLoading || leadsLoading || usersLoading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6 mobile-content">
         <div>
           <h1 className="text-3xl font-bold">Visits</h1>
           <p className="text-muted-foreground">Manage and track sales visits</p>
@@ -215,15 +217,29 @@ export default function Visits() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      {/* Header - title/desc left, action button far right on all screens */}
-      <div className="flex flex-row items-center justify-between gap-3">
+    <div className="space-y-6 mobile-content">
+      {/* Header - desc hidden on mobile; on mobile: Menu + Filter + Add (icon only) */}
+      <div className="flex flex-row items-center justify-between gap-3 max-md:border-b max-md:border-border max-md:pb-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl lg:text-2xl font-bold truncate">{pageTitle}</h1>
-          <p className="text-sm lg:text-base text-muted-foreground truncate">{pageDescription}</p>
+          <h1 className="text-[1.625rem] md:text-2xl font-bold truncate">{pageTitle}</h1>
+          <p className="text-sm lg:text-base text-muted-foreground truncate max-md:hidden">{pageDescription}</p>
         </div>
-        <div className="flex-shrink-0">
-          {canScheduleVisits && <RecordVisitDialog />}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {isMobile && (
+            <Button type="button" variant="outline" size="icon" onClick={() => setFiltersOpen(true)} className="shrink-0 rounded-[14px] bg-muted text-muted-foreground hover:bg-muted/80 h-10 w-10 min-w-10 min-h-10 border-0" aria-label="Show filters">
+              <Filter className="h-5 w-5" />
+            </Button>
+          )}
+          {canScheduleVisits && (isMobile ? (
+            <RecordVisitDialog>
+              <Button size="icon" className="shrink-0 h-10 w-10 min-w-10 min-h-10 rounded-[14px]" aria-label="Add visit">
+                <Plus className="h-5 w-5" />
+              </Button>
+            </RecordVisitDialog>
+          ) : (
+            <RecordVisitDialog />
+          ))}
+          {isMobile && <MobileHeaderMenuButton />}
         </div>
       </div>
 
@@ -245,88 +261,88 @@ export default function Visits() {
             />
           </div>
           
-          {/* Filter Controls - In the same row as search */}
-          <div className={cn(
-            "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2",
-            isMobile && !showFilters ? "hidden" : "flex"
-          )}>
-            <Select value={selectedStatus} onValueChange={(value) => {
-              setSelectedStatus(value);
-              handleFilterChange();
-            }}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Scheduled">Scheduled</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Cancelled">Cancelled</SelectItem>
-                <SelectItem value="Rescheduled">Rescheduled</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {!isSalesperson && (
-              <Select value={selectedSalesperson} onValueChange={(value) => {
-                setSelectedSalesperson(value);
-                handleFilterChange();
-              }}>
-                <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
-                  <SelectValue placeholder="Salesperson" />
-                </SelectTrigger>
+          {/* Desktop: inline filter controls */}
+          {!isMobile && (
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
+              <Select value={selectedStatus} onValueChange={(value) => { setSelectedStatus(value); handleFilterChange(); }}>
+                <SelectTrigger className="w-full sm:w-[140px] text-base h-10"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
-                  {salespeople.map(salesperson => (
-                    <SelectItem key={salesperson.id} value={salesperson.name}>
-                      <div className="flex items-center gap-2">
-                        {(salesperson as any).role === 'manager' && (
-                          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                            Manager
-                          </Badge>
-                        )}
-                        {salesperson.name}
-                      </div>
-                    </SelectItem>
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="Scheduled">Scheduled</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectItem value="Rescheduled">Rescheduled</SelectItem>
+                </SelectContent>
+              </Select>
+              {!isSalesperson && (
+                <Select value={selectedSalesperson} onValueChange={(value) => { setSelectedSalesperson(value); handleFilterChange(); }}>
+                  <SelectTrigger className="w-full sm:w-[140px] text-base h-10"><SelectValue placeholder="Salesperson" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
+                    {salespeople.map(salesperson => (
+                      <SelectItem key={salesperson.id} value={salesperson.name}>
+                        <div className="flex items-center gap-2">
+                          {(salesperson as any).role === 'manager' && <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">Manager</Badge>}
+                          {salesperson.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={selectedTerritory} onValueChange={(value) => { setSelectedTerritory(value); handleFilterChange(); }}>
+                <SelectTrigger className="w-full sm:w-[140px] text-base h-10"><SelectValue placeholder="Territory" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Territories</SelectItem>
+                  {territories.map(territory => (
+                    <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            )}
-            
-            <Select value={selectedTerritory} onValueChange={(value) => {
-              setSelectedTerritory(value);
-              handleFilterChange();
-            }}>
-              <SelectTrigger className="w-full sm:w-[140px] text-base h-10">
-                <SelectValue placeholder="Territory" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Territories</SelectItem>
-                {territories.map(territory => (
-                  <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Date Range Filter */}
-            <DatePicker
-              value={dateRange}
-              onChange={setDateRange}
-              placeholder="Filter by visit date..."
-              className="w-full sm:w-[200px] text-base h-10"
-            />
-          </div>
-          
-          {/* Show/Hide Filters Button - Only on Mobile */}
+              <DatePicker value={dateRange} onChange={setDateRange} placeholder="Filter by visit date..." className="w-full sm:w-[200px] text-base h-10" />
+            </div>
+          )}
           {isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
-            >
-              <span>{showFilters ? "Hide" : "Show"} Filters</span>
-              <Plus className="h-4 w-4 shrink-0" />
-            </Button>
+              <FiltersBottomSheet open={filtersOpen} onOpenChange={setFiltersOpen} title="Filters">
+                <div className="flex flex-col gap-3 w-full">
+                  <Select value={selectedStatus} onValueChange={(value) => { setSelectedStatus(value); handleFilterChange(); }}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Statuses</SelectItem>
+                      <SelectItem value="Scheduled">Scheduled</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      <SelectItem value="Rescheduled">Rescheduled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!isSalesperson && (
+                    <Select value={selectedSalesperson} onValueChange={(value) => { setSelectedSalesperson(value); handleFilterChange(); }}>
+                      <SelectTrigger className="w-full h-10"><SelectValue placeholder="Salesperson" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="All">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
+                        {salespeople.map(salesperson => (
+                          <SelectItem key={salesperson.id} value={salesperson.name}>
+                            <div className="flex items-center gap-2">
+                              {(salesperson as any).role === 'manager' && <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">Manager</Badge>}
+                              {salesperson.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Select value={selectedTerritory} onValueChange={(value) => { setSelectedTerritory(value); handleFilterChange(); }}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Territory" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Territories</SelectItem>
+                      {territories.map(territory => (
+                        <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <DatePicker value={dateRange} onChange={setDateRange} placeholder="Filter by visit date..." className="w-full h-10" />
+                </div>
+              </FiltersBottomSheet>
           )}
         </div>
       </div>

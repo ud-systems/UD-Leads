@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { MobileMenu } from "./MobileMenu";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileMenuProvider } from "@/contexts/MobileMenuContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 
@@ -73,25 +73,27 @@ export function Layout({ children }: LayoutProps) {
             : sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-80'
         }`}
       >
-        {/* Page Content */}
-        <main className={`flex-1 transition-all duration-300 bg-content overflow-auto ${
+        {/* Page Content - MobileMenuProvider so pages can open menu from header icon */}
+        <main className={`flex-1 min-h-0 transition-all duration-300 bg-content overflow-auto ${
           isMobile
-            ? 'p-2 sm:p-3'
+            ? 'p-2 sm:p-3 pb-24'
             : 'p-3 sm:p-4 lg:p-6'
         }`}>
-          <div className={`h-full transition-all duration-300 ${
-            isMobile
-              ? 'w-full max-w-full'
-              : 'w-full max-w-none'
-          }`}>
-            {children}
-          </div>
+          <MobileMenuProvider openMobileMenu={openMobileMenu}>
+            <div className={`min-h-full transition-all duration-300 ${
+              isMobile
+                ? 'w-full max-w-full'
+                : 'w-full max-w-none'
+            }`}>
+              {children}
+            </div>
+          </MobileMenuProvider>
         </main>
       </div>
 
-      {/* Mobile: persistent bottom navigation */}
+      {/* Mobile: bottom navigation (Menu moved to header) */}
       {isMobile && (
-        <MobileBottomNav onMoreClick={openMobileMenu} />
+        <MobileBottomNav />
       )}
     </div>
   );

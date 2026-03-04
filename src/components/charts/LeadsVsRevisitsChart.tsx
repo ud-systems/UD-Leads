@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { 
@@ -215,22 +215,10 @@ export function LeadsVsRevisitsChart({
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
-                Leads vs Revisits Analysis
-                {selectedSalesperson && (
-                  <span className="text-sm font-normal text-muted-foreground">
-                    - {selectedSalesperson}
-                  </span>
-                )}
-              </CardTitle>
-            </div>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-left">Leads vs Revisits Analysis{selectedSalesperson ? ` - ${selectedSalesperson}` : ''}</CardTitle>
+            <p className="text-sm text-muted-foreground text-left">Loading leads and visits data...</p>
           </div>
-          <CardDescription>
-            Loading leads and visits data...
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[400px] w-full flex items-center justify-center">
@@ -249,22 +237,10 @@ export function LeadsVsRevisitsChart({
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
-                Leads vs Revisits Analysis
-                {selectedSalesperson && (
-                  <span className="text-sm font-normal text-muted-foreground">
-                    - {selectedSalesperson}
-                  </span>
-                )}
-              </CardTitle>
-            </div>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-left">Leads vs Revisits Analysis{selectedSalesperson ? ` - ${selectedSalesperson}` : ''}</CardTitle>
+            <p className="text-sm text-muted-foreground text-left">No data available for the selected filters</p>
           </div>
-          <CardDescription>
-            No data available for the selected filters
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[400px] w-full flex items-center justify-center">
@@ -282,22 +258,10 @@ export function LeadsVsRevisitsChart({
   return (
     <Card className="card-section-accent">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="flex items-center gap-2 text-left">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              Leads vs Revisits Analysis
-              {selectedSalesperson && (
-                <span className="text-sm font-normal text-muted-foreground">
-                  - {selectedSalesperson}
-                </span>
-              )}
-            </CardTitle>
-          </div>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-left">Leads vs Revisits Analysis{selectedSalesperson ? ` - ${selectedSalesperson}` : ''}</CardTitle>
+          <p className="text-sm text-muted-foreground text-left">{getPeriodLabel()}</p>
         </div>
-        <CardDescription className="text-left">
-          {getPeriodLabel()}
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[450px] w-full">

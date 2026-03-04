@@ -27,8 +27,14 @@ import {
 import { 
   getDefaultDateRange, 
   calculateWorkingDays, 
-  isDateRangePreset 
+  isDateRangePreset,
+  getPresetDateRange
 } from "@/utils/dateRangeUtils";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
+import { FiltersBottomSheet } from "@/components/ui/filters-bottom-sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Filter } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -40,6 +46,9 @@ export default function Dashboard() {
   const { userRole, isAdmin, isManager, isSalesperson } = useRoleAccess();
   const { user: currentUser } = useAuth();
   const { data: profile } = useProfile(currentUser?.id);
+
+  const { isMobile } = useIsMobile();
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Global filters state - default to current week (Monday to Friday)
   const [filters, setFilters] = useState<DashboardFiltersType>(() => {
@@ -384,7 +393,7 @@ export default function Dashboard() {
   // Show loading state
   if (leadsLoading || territoriesLoading || visitsLoading || usersLoading || targetsLoading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6 mobile-content">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Loading your sales performance data...</p>
@@ -408,29 +417,110 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Your sales performance overview</p>
+    <div className="space-y-4 mobile-content">
+      <div className="flex items-center justify-between gap-2 max-md:border-b max-md:border-border max-md:pb-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[1.625rem] md:text-2xl font-bold truncate">Dashboard</h1>
+          <p className="text-muted-foreground max-md:hidden">Your sales performance overview</p>
         </div>
-        <Button 
-          onClick={handleRefresh} 
-          variant="outline" 
-          size="sm"
-          disabled={leadsLoading || visitsLoading || usersLoading || territoriesLoading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${(leadsLoading || visitsLoading || usersLoading || territoriesLoading) ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {isMobile && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setFiltersOpen(true)}
+              className="shrink-0 rounded-[14px] bg-muted text-muted-foreground hover:bg-muted/80 h-10 w-10 min-w-10 min-h-10 border-0"
+              aria-label="Show filters"
+            >
+              <Filter className="h-5 w-5" />
+            </Button>
+          )}
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size={isMobile ? "icon" : "sm"}
+            disabled={leadsLoading || visitsLoading || usersLoading || territoriesLoading}
+            className={isMobile ? "shrink-0 h-10 w-10 min-w-10 min-h-10 rounded-[14px] bg-black text-white hover:bg-gray-700 hover:text-white border-0" : ""}
+            aria-label={isMobile ? "Refresh" : undefined}
+          >
+            <RefreshCw className={`h-4 w-4 ${isMobile ? '' : 'mr-2'} ${(leadsLoading || visitsLoading || usersLoading || territoriesLoading) ? 'animate-spin' : ''}`} />
+            {!isMobile && "Refresh"}
+          </Button>
+          <MobileHeaderMenuButton />
+        </div>
       </div>
 
-      {/* Global Filters */}
-      <DashboardFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        salespeople={salespeople}
-      />
+      {/* Global Filters - desktop inline; mobile in bottom sheet */}
+      {!isMobile && (
+        <DashboardFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          salespeople={salespeople}
+        />
+      )}
+      {isMobile && (
+        <FiltersBottomSheet open={filtersOpen} onOpenChange={setFiltersOpen} title="Filters">
+          <div className="flex flex-col gap-3 w-full">
+            {!isSalesperson && (
+              <Select
+                value={filters.selectedSalesperson}
+                onValueChange={(value) => setFilters({ ...filters, selectedSalesperson: value })}
+              >
+                <SelectTrigger className="w-full h-10">
+                  <SelectValue placeholder="Select salesperson" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Salespeople</SelectItem>
+                  {salespeople.map((person) => (
+                    <SelectItem key={person.id} value={person.id}>
+                      {person.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={!filters.dateRange ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilters({ ...filters, dateRange: undefined })}
+                className={!filters.dateRange ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+              >
+                All Time
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'thisWeek') ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilters({ ...filters, dateRange: getPresetDateRange('thisWeek') })}
+              >
+                This Week
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'today') ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilters({ ...filters, dateRange: getPresetDateRange('today') })}
+              >
+                Today
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'last7Days') ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilters({ ...filters, dateRange: getPresetDateRange('last7Days') })}
+              >
+                Last 7 Days
+              </Button>
+              <Button
+                variant={isDateRangePreset(filters.dateRange, 'last30Days') ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilters({ ...filters, dateRange: getPresetDateRange('last30Days') })}
+              >
+                Last 30 Days
+              </Button>
+            </div>
+          </div>
+        </FiltersBottomSheet>
+      )}
 
       {/* Key Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">

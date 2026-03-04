@@ -64,6 +64,7 @@
     --mobile-heading-2: 1.125rem;           /* 18px */
     --mobile-heading-3: 1rem;               /* 16px */
     --mobile-nav-label: 0.875rem;           /* 14px – bottom nav labels */
+    --mobile-card-padding: 1.125rem;    /* 18px – consistent card padding on mobile */
 
     /* Elevation: visible greys for section/card separation */
     --elevation-border: 214 18% 82%;
@@ -146,6 +147,7 @@
     --mobile-heading-2: 1.125rem;
     --mobile-heading-3: 1rem;
     --mobile-nav-label: 0.875rem;
+    --mobile-card-padding: 1.125rem;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -603,14 +605,19 @@
       border-radius: 0.375rem !important;
     }
     .card {
-      padding: 0.5rem !important;
+      padding: var(--mobile-card-padding) !important;
       border-radius: 0.5rem !important;
     }
     .card-header {
+      padding: var(--mobile-card-padding) !important;
       padding-bottom: 0.375rem !important;
     }
     .card-content {
+      padding: var(--mobile-card-padding) !important;
       padding-top: 0.375rem !important;
+    }
+    .mobile-card {
+      padding: var(--mobile-card-padding) !important;
     }
     .table-container {
       overflow-x: auto !important;
@@ -712,6 +719,22 @@
     /* Mobile-optimized padding - Reduced */
     .p-6 {
       @apply p-2;
+    }
+
+    /* Card padding: 18px on mobile (overrides .p-6 for card content) */
+    .rounded-lg.bg-card > div,
+    .card-section-accent,
+    .card-modern,
+    .card-elevated,
+    .card-soft {
+      padding: var(--mobile-card-padding) !important;
+    }
+    .rounded-lg.bg-card > div.pt-0 {
+      padding-top: 0 !important;
+    }
+    /* Cards that are a single div with no inner padded children */
+    .rounded-lg.bg-card:not(:has(> [class*="p-6"])) {
+      padding: var(--mobile-card-padding) !important;
     }
 
     .px-6 {

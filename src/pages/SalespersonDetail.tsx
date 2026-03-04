@@ -267,7 +267,7 @@ export default function SalespersonDetail() {
   // Show loading state
   if (leadsLoading || territoriesLoading || visitsLoading || usersLoading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6 mobile-content">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Loading...</h1>
@@ -285,7 +285,7 @@ export default function SalespersonDetail() {
   // Show error if salesperson not found
   if (!salesperson) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6 mobile-content">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Salesperson Not Found</h1>
@@ -307,7 +307,7 @@ export default function SalespersonDetail() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-md:border-b max-md:border-border max-md:pb-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12">
             <AvatarImage src={(salesperson as any).avatar_url} alt={salespersonName} />

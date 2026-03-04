@@ -21,6 +21,7 @@ import {
   Calendar
 } from "lucide-react";
 import { getSystemDefaultVisitTarget } from "@/utils/targetUtils";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
 
 export default function PerformanceEnhanced() {
   // Set default date range to current week (Monday to Friday)
@@ -344,25 +345,25 @@ export default function PerformanceEnhanced() {
   const currentUserId = currentUser?.id;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 mobile-content">
       {/* Header Section */}
       <div className="bg-card p-6 rounded-xl border">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 max-md:border-b max-md:border-border max-md:pb-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <BarChart3 className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">
+                <h1 className="text-[1.625rem] md:text-3xl font-bold text-foreground">
                   {pageTitle}
                 </h1>
-                <p className="text-lg text-muted-foreground">{pageDescription}</p>
+                <p className="text-lg text-muted-foreground max-md:hidden">{pageDescription}</p>
               </div>
             </div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant={!dateRange ? "default" : "outline"}
               size="sm"
@@ -491,6 +492,7 @@ export default function PerformanceEnhanced() {
             >
               Last 30 Days
             </Button>
+            <MobileHeaderMenuButton />
           </div>
         </div>
       </div>

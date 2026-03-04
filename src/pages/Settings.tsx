@@ -14,6 +14,7 @@ import { DataExportImport } from "@/components/data/DataExportImport";
 import { PushNotificationSettings } from "@/components/notifications/PushNotificationSettings";
 import { CacheManager } from "@/components/debug/CacheManager";
 import { BackupManager } from "@/components/backup/BackupManager";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function Settings() {
@@ -24,10 +25,13 @@ export default function Settings() {
   const isManager = profile?.role === "manager";
 
   return (
-    <div className="h-full space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your system preferences and configuration</p>
+    <div className="h-full space-y-6 mobile-content">
+      <div className="flex items-center justify-between gap-2 max-md:border-b max-md:border-border max-md:pb-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[1.625rem] md:text-2xl font-bold truncate">Settings</h1>
+          <p className="text-muted-foreground max-md:hidden">Manage your system preferences and configuration</p>
+        </div>
+        <MobileHeaderMenuButton />
       </div>
 
       <Tabs defaultValue={isAdmin ? "overview" : "appearance"} className="space-y-6">

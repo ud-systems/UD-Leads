@@ -37,7 +37,7 @@ import { useOfflineStorage } from "@/hooks/useOfflineStorage";
 import { OfflineStatusIndicator } from "@/components/ui/offline-status-indicator";
 import { getUKDateTime } from "@/utils/timeUtils";
 
-export function CreateLeadDialog() {
+export function CreateLeadDialog({ iconOnly = false }: { iconOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -972,9 +972,14 @@ export function CreateLeadDialog() {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className="flex items-center gap-2" onClick={handleDialogOpen}>
-            <Plus className="h-4 w-4" />
-            Add Lead
+          <Button
+            className={iconOnly ? "shrink-0 h-10 w-10 min-w-10 min-h-10 rounded-[14px]" : "flex items-center gap-2"}
+            size={iconOnly ? "icon" : "default"}
+            onClick={handleDialogOpen}
+            aria-label={iconOnly ? "Add lead" : undefined}
+          >
+            <Plus className="h-5 w-5" />
+            {!iconOnly && "Add Lead"}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto sm:max-h-[90vh] sm:overflow-y-auto w-full sm:w-full sm:max-w-2xl left-0 sm:left-[50%] translate-x-0 sm:translate-x-[-50%] top-[50%] sm:top-[50%] translate-y-[-50%] sm:translate-y-[-50%]">

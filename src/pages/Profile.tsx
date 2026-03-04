@@ -217,8 +217,8 @@ export default function Profile() {
     <div className="container mx-auto p-6">
       <div className="max-w-3xl mx-auto">
         <Card className="shadow-lg">
-          <CardHeader className="pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardHeader className="pb-6 max-md:border-b max-md:border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-md:pb-4">
               <div>
                 <CardTitle className="text-2xl font-bold">Profile Settings</CardTitle>
                 <CardDescription>

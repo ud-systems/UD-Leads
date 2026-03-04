@@ -173,31 +173,43 @@ export function LeadPhotoDisplay({
               {hasExteriorPhotos && hasInteriorPhotos && (
                 <div className="absolute bottom-2 right-2 flex gap-1">
                   <button
+                    type="button"
                     onClick={() => {
                       setCurrentPhotoType("exterior");
                       setCurrentPhotoIndex(0);
                       setImageError(false);
                     }}
-                    className={cn(
-                      "w-2 h-2 rounded-full transition-colors",
-                      currentPhotoType === "exterior" 
-                        ? "bg-primary" 
-                        : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                    )}
-                  />
+                    aria-label="Show exterior photos"
+                    className="group flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full"
+                  >
+                    <span
+                      className={cn(
+                        "w-3 h-3 rounded-full transition-colors",
+                        currentPhotoType === "exterior" 
+                          ? "bg-primary" 
+                          : "bg-muted-foreground/30 group-hover:bg-muted-foreground/50"
+                      )}
+                    />
+                  </button>
                   <button
+                    type="button"
                     onClick={() => {
                       setCurrentPhotoType("interior");
                       setCurrentPhotoIndex(0);
                       setImageError(false);
                     }}
-                    className={cn(
-                      "w-2 h-2 rounded-full transition-colors",
-                      currentPhotoType === "interior" 
-                        ? "bg-primary" 
-                        : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                    )}
-                  />
+                    aria-label="Show interior photos"
+                    className="group flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full"
+                  >
+                    <span
+                      className={cn(
+                        "w-3 h-3 rounded-full transition-colors",
+                        currentPhotoType === "interior" 
+                          ? "bg-primary" 
+                          : "bg-muted-foreground/30 group-hover:bg-muted-foreground/50"
+                      )}
+                    />
+                  </button>
                 </div>
               )}
             </>

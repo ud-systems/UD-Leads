@@ -33,6 +33,8 @@ import { useUsers } from "@/hooks/useUsers";
 import { useBuyingPowerOptions, useLeadStatusOptions } from "@/hooks/useSystemSettings";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { FiltersBottomSheet } from "@/components/ui/filters-bottom-sheet";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -66,7 +68,7 @@ export default function Leads() {
   const [selectedTerritory, setSelectedTerritory] = useState("All");
   const [selectedSalesperson, setSelectedSalesperson] = useState("All");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLeads, setSelectedLeads] = useState<any[]>([]);
   const [bulkEditData, setBulkEditData] = useState<Record<string, any>>({});
@@ -231,7 +233,7 @@ export default function Leads() {
   // Show skeleton while loading
   if (isLoading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6 mobile-content">
         <div>
           <h1 className="text-3xl font-bold">Leads</h1>
           <p className="text-muted-foreground">Manage and track your retail leads</p>
@@ -347,45 +349,37 @@ export default function Leads() {
 
   return (
     <div className="h-full space-y-4 lg:space-y-6 mobile-content small-desktop-container">
-      {/* Header - title/desc left, action button far right on all screens */}
-      <div className="flex flex-row items-center justify-between gap-3">
+      {/* Header - title/desc left (desc hidden on mobile), actions far right */}
+      <div className="flex flex-row items-center justify-between gap-2 max-md:border-b max-md:border-border max-md:pb-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl lg:text-2xl font-bold truncate small-desktop-heading">Leads</h1>
-          <p className="text-sm lg:text-base text-muted-foreground small-desktop-text truncate">Manage your sales leads and prospects</p>
+          <h1 className="text-[1.625rem] md:text-2xl font-bold truncate small-desktop-heading">Leads</h1>
+          <p className="text-sm lg:text-base text-muted-foreground small-desktop-text truncate max-md:hidden">Manage your sales leads and prospects</p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* View Mode Toggle - Only on Desktop */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           {!isMobile && (
             <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className="flex items-center gap-2"
-              >
-                <List className="h-4 w-4" />
-                <span className="hidden sm:inline">List</span>
+              <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")} className="flex items-center gap-2">
+                <List className="h-4 w-4" /><span className="hidden sm:inline">List</span>
               </Button>
-              <Button
-                variant={viewMode === "grid" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className="flex items-center gap-2"
-              >
-                <Grid3X3 className="h-4 w-4" />
-                <span className="hidden sm:inline">Grid</span>
+              <Button variant={viewMode === "grid" ? "default" : "outline"} size="sm" onClick={() => setViewMode("grid")} className="flex items-center gap-2">
+                <Grid3X3 className="h-4 w-4" /><span className="hidden sm:inline">Grid</span>
               </Button>
             </div>
           )}
-          <CreateLeadDialog />
+          {isMobile && (
+            <Button type="button" variant="outline" size="icon" onClick={() => setFiltersOpen(true)} className="shrink-0 rounded-[14px] bg-muted text-muted-foreground hover:bg-muted/80 h-10 w-10 min-w-10 min-h-10 border-0" aria-label="Show filters">
+              <Filter className="h-5 w-5" />
+            </Button>
+          )}
+          <CreateLeadDialog iconOnly={isMobile} />
+          {isMobile && <MobileHeaderMenuButton />}
         </div>
       </div>
 
       {/* Search and Filters Section */}
       <div className="flex flex-col gap-4">
-        {/* Search and Filter Row - All in one horizontal row */}
         <div className="flex flex-col lg:flex-row gap-3 w-full">
-          {/* Search Bar */}
+          {/* Search Bar - always visible */}
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden />
             <Input
@@ -395,94 +389,123 @@ export default function Leads() {
               className="input-with-leading-icon pr-4 min-h-10"
             />
           </div>
-          
-          {/* Filter Controls - In the same row as search */}
-        <div className={cn(
-            "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2",
-          isMobile && !showFilters ? "hidden" : "flex"
-        )}>
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Statuses</SelectItem>
-              {statusOptions.map(option => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-            
-          <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
-              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Types</SelectItem>
-              {storeTypeOptions.map(option => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-            
-          <Select value={selectedWeeklySpend} onValueChange={setSelectedWeeklySpend}>
-              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
-              <SelectValue placeholder="Power" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Power</SelectItem>
-              {buyingPowerOptions.map(option => (
-                <SelectItem key={option} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-            
-          <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
-              <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
-              <SelectValue placeholder="Territory" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All">All Territories</SelectItem>
-              {territories.map(territory => (
-                <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-            
-          {userRole !== 'salesperson' && (
-            <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+          {/* Desktop: inline filter controls */}
+          {!isMobile && (
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
-                <SelectValue placeholder="Salesperson" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Salespeople</SelectItem>
-                {users.map(user => (
-                  <SelectItem key={(user as any).id} value={(user as any).name}>{(user as any).name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  {statusOptions.map(option => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
+                <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Types</SelectItem>
+                  {storeTypeOptions.map(option => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedWeeklySpend} onValueChange={setSelectedWeeklySpend}>
+                <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
+                  <SelectValue placeholder="Power" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Power</SelectItem>
+                  {buyingPowerOptions.map(option => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
+                <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
+                  <SelectValue placeholder="Territory" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Territories</SelectItem>
+                  {territories.map(territory => (
+                    <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {userRole !== 'salesperson' && (
+                <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                  <SelectTrigger className="w-full sm:w-[120px] lg:w-[140px] text-sm lg:text-base h-10 min-w-0">
+                    <SelectValue placeholder="Salesperson" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Salespeople</SelectItem>
+                    {users.map(user => (
+                      <SelectItem key={(user as any).id} value={(user as any).name}>{(user as any).name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <DatePicker value={dateRange} onChange={setDateRange} placeholder="Select date range..." className="w-full sm:w-[160px] lg:w-[200px] text-sm lg:text-base h-10 min-w-0" />
+            </div>
           )}
-          
-          {/* Date Range Filter */}
-          <DatePicker
-            value={dateRange}
-            onChange={setDateRange}
-            placeholder="Select date range..."
-              className="w-full sm:w-[160px] lg:w-[200px] text-sm lg:text-base h-10 min-w-0"
-            />
-          </div>
-          
-          {/* Show/Hide Filters Button - Only on Mobile */}
+          {/* Mobile: filter icon in header opens sheet; no Show Filters bar */}
           {isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
-            >
-              <span>{showFilters ? "Hide" : "Show"} Filters</span>
-              <Plus className="h-4 w-4 shrink-0" />
-            </Button>
+            <FiltersBottomSheet open={filtersOpen} onOpenChange={setFiltersOpen} title="Filters">
+                <div className="flex flex-col gap-3 w-full">
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Statuses</SelectItem>
+                      {statusOptions.map(option => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedStoreType} onValueChange={setSelectedStoreType}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Types</SelectItem>
+                      {storeTypeOptions.map(option => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedWeeklySpend} onValueChange={setSelectedWeeklySpend}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Power" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Power</SelectItem>
+                      {buyingPowerOptions.map(option => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedTerritory} onValueChange={setSelectedTerritory}>
+                    <SelectTrigger className="w-full h-10"><SelectValue placeholder="Territory" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Territories</SelectItem>
+                      {territories.map(territory => (
+                        <SelectItem key={territory.id} value={territory.city}>{territory.city}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {userRole !== 'salesperson' && (
+                    <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                      <SelectTrigger className="w-full h-10"><SelectValue placeholder="Salesperson" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="All">All Salespeople</SelectItem>
+                        {users.map(user => (
+                          <SelectItem key={(user as any).id} value={(user as any).name}>{(user as any).name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <DatePicker value={dateRange} onChange={setDateRange} placeholder="Select date range..." className="w-full h-10" />
+                </div>
+              </FiltersBottomSheet>
           )}
         </div>
       </div>
@@ -629,16 +652,14 @@ export default function Leads() {
               onClick={() => navigate(`/leads/${lead.id}`)}
             >
               {/* Photo Display */}
-              <div className="h-48 bg-muted overflow-hidden">
-                <LeadPhotoDisplay
-                  exteriorPhotos={lead.exterior_photos}
-                  interiorPhotos={lead.interior_photos}
-                  storeName={lead.store_name}
-                  storeType={lead.store_type}
-                  size="lg"
-                  className="w-full h-full"
-                />
-              </div>
+              <LeadPhotoDisplay
+                exteriorPhotos={lead.exterior_photos}
+                interiorPhotos={lead.interior_photos}
+                storeName={lead.store_name}
+                storeType={lead.store_type}
+                size="lg"
+                className="w-full h-48 overflow-hidden"
+              />
               
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
@@ -661,8 +682,9 @@ export default function Leads() {
                       {territories?.find(t => t.id === lead.territory_id)?.city || 'No territory'}
                     </span>
                   </div>
+                  {/* Phone hidden on card (not shown in card view) */}
                   {lead.phone_number && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="hidden flex items-center gap-2 text-sm text-muted-foreground">
                       <Phone className="h-4 w-4 flex-shrink-0" />
                       <span className="truncate">{lead.phone_number}</span>
                     </div>

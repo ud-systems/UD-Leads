@@ -12,7 +12,9 @@ import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { useStatusColors, getStatusColor } from "@/hooks/useStatusColors";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+import { FiltersBottomSheet } from "@/components/ui/filters-bottom-sheet";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
+import { Filter } from "lucide-react";
 import { MapPin, Users, Building, Calendar, Target, ArrowUpRight, Plus } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -54,7 +56,7 @@ export default function Territory() {
   // Filter states
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>('all');
   const [selectedDateRange, setSelectedDateRange] = useState<string>('all');
-  const [showFilters, setShowFilters] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Get salespeople for filter dropdown
   const salespeople = useMemo(() => {
@@ -194,99 +196,90 @@ export default function Territory() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mobile-content">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">
+      <div className="max-md:border-b max-md:border-border max-md:pb-4">
+        <h1 className="text-[1.625rem] md:text-2xl font-bold truncate">
           {pageTitle}
         </h1>
-        <p className="text-muted-foreground">{pageDescription}</p>
+        <p className="text-muted-foreground max-md:hidden">{pageDescription}</p>
       </div>
 
-      {/* Filters - same mobile UX as Leads, Visits, Scheduled Followups */}
+      {/* Filters - desktop inline; mobile: Menu + Filter icon in header, sheet for filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col gap-3 w-full">
-            {/* Filter controls - on mobile hidden until "Show Filters" is toggled */}
-            <div className={cn(
-              "flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3",
-              isMobile && !showFilters ? "hidden" : "flex"
-            )}>
-              {/* Salesperson Filter - Hidden for salespeople */}
-              {!isSalesperson && (
-                <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                  <SelectTrigger className="w-full sm:w-48 h-10">
-                    <SelectValue placeholder="Select Salesperson" />
-                  </SelectTrigger>
+            {isMobile && (
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Button type="button" variant="outline" size="icon" onClick={() => setFiltersOpen(true)} className="shrink-0 rounded-[14px] bg-muted text-muted-foreground hover:bg-muted/80 h-10 w-10 min-w-10 min-h-10 border-0" aria-label="Show filters">
+                  <Filter className="h-5 w-5" />
+                </Button>
+                <MobileHeaderMenuButton />
+              </div>
+            )}
+            {!isMobile && (
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+                {!isSalesperson && (
+                  <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                    <SelectTrigger className="w-full sm:w-48 h-10"><SelectValue placeholder="Select Salesperson" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Salespeople</SelectItem>
+                      {salespeople.map((person) => (
+                        <SelectItem key={person.id} value={person.name}>{person.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
+                  <SelectTrigger className="w-full sm:w-32 h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Salespeople</SelectItem>
-                    {salespeople.map((person) => (
-                      <SelectItem key={person.id} value={person.name}>
-                        {person.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                    <SelectItem value="all">All Time</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
-
-              {/* Date Range Filter */}
-              <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
-                <SelectTrigger className="w-full sm:w-32 h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
-                  <SelectItem value="all">All Time</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Quick Filter Buttons */}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedDateRange === 'today' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedDateRange('today')}
-                >
-                  Today
-                </Button>
-                <Button
-                  variant={selectedDateRange === 'week' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedDateRange('week')}
-                >
-                  Week
-                </Button>
-                <Button
-                  variant={selectedDateRange === 'month' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedDateRange('month')}
-                >
-                  Month
-                </Button>
-                <Button
-                  variant={selectedDateRange === 'all' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedDateRange('all')}
-                >
-                  All Time
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant={selectedDateRange === 'today' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('today')}>Today</Button>
+                  <Button variant={selectedDateRange === 'week' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('week')}>Week</Button>
+                  <Button variant={selectedDateRange === 'month' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('month')}>Month</Button>
+                  <Button variant={selectedDateRange === 'all' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('all')}>All Time</Button>
+                </div>
               </div>
-            </div>
-
-            {/* Show/Hide Filters Button - Only on Mobile (same style as other pages) */}
+            )}
             {isMobile && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="w-full flex items-center justify-between bg-black text-white hover:bg-gray-700 hover:text-white border-0"
-              >
-                <span>{showFilters ? "Hide" : "Show"} Filters</span>
-                <Plus className="h-4 w-4 shrink-0" />
-              </Button>
+                <FiltersBottomSheet open={filtersOpen} onOpenChange={setFiltersOpen} title="Filters">
+                  <div className="flex flex-col gap-3 w-full">
+                    {!isSalesperson && (
+                      <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                        <SelectTrigger className="w-full h-10"><SelectValue placeholder="Select Salesperson" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Salespeople</SelectItem>
+                          {salespeople.map((person) => (
+                            <SelectItem key={person.id} value={person.name}>{person.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
+                      <SelectTrigger className="w-full h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="week">This Week</SelectItem>
+                        <SelectItem value="month">This Month</SelectItem>
+                        <SelectItem value="year">This Year</SelectItem>
+                        <SelectItem value="all">All Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant={selectedDateRange === 'today' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('today')}>Today</Button>
+                      <Button variant={selectedDateRange === 'week' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('week')}>Week</Button>
+                      <Button variant={selectedDateRange === 'month' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('month')}>Month</Button>
+                      <Button variant={selectedDateRange === 'all' ? "default" : "outline"} size="sm" onClick={() => setSelectedDateRange('all')}>All Time</Button>
+                    </div>
+                  </div>
+                </FiltersBottomSheet>
             )}
           </div>
         </CardContent>

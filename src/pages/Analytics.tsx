@@ -1,12 +1,13 @@
 
 import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, Target, Users, Award, FileText, Download, Calendar, DollarSign, Activity, BarChart3, CheckCircle, XCircle, RefreshCw, MapPin, Building, ShoppingCart, Clock, Search } from "lucide-react";
+import { TrendingUp, Target, Users, Award, FileText, Download, Calendar, DollarSign, Activity, BarChart3, CheckCircle, XCircle, RefreshCw, MapPin, Building, Clock, Search, Plus } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisits } from "@/hooks/useVisits";
 import { useTerritories } from "@/hooks/useTerritories";
@@ -23,8 +24,14 @@ import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { getPresetDateRange, isDateRangePreset } from "@/utils/dateRangeUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { FiltersBottomSheet } from "@/components/ui/filters-bottom-sheet";
+import { MobileHeaderMenuButton } from "@/components/layout/MobileHeaderMenuButton";
+import { Filter } from "lucide-react";
 
 export default function Analytics() {
+  const { isMobile } = useIsMobile();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [selectedSalesperson, setSelectedSalesperson] = useState("all");
   const [productSearchTerm, setProductSearchTerm] = useState("");
@@ -410,89 +417,100 @@ export default function Analytics() {
   }, [roleFilteredLeads, productSearchTerm]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mobile-header-stack">
-        <div>
-          <h1 className="text-2xl font-bold">{pageTitle}</h1>
-          <p className="text-muted-foreground">{pageDescription}</p>
+    <div className="space-y-6 mobile-content">
+      <div className="flex flex-row items-center justify-between gap-2 flex-wrap max-md:border-b max-md:border-border max-md:pb-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[1.625rem] md:text-2xl font-bold truncate">{pageTitle}</h1>
+          <p className="text-muted-foreground max-md:hidden">{pageDescription}</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mobile-filters-stack">
-          {/* Date Range Filter - Preset Buttons - EXACTLY match Dashboard */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={!dateRange ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDateRange(null)}
-              className={!dateRange ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
-            >
-              All Time
+        <div className="flex flex-row items-center gap-3 flex-shrink-0">
+          {isMobile && (
+            <Button type="button" variant="outline" size="icon" onClick={() => setFiltersOpen(true)} className="shrink-0 rounded-[14px] bg-muted text-muted-foreground hover:bg-muted/80 h-10 w-10 min-w-10 min-h-10 border-0" aria-label="Show filters">
+              <Filter className="h-5 w-5" />
             </Button>
-            <Button
-              variant={isDateRangePreset(dateRange, 'thisWeek') ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDateRange(getPresetDateRange('thisWeek'))}
-            >
-              This Week
-            </Button>
-            <Button
-              variant={isDateRangePreset(dateRange, 'today') ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDateRange(getPresetDateRange('today'))}
-            >
-              Today
-            </Button>
-            <Button
-              variant={isDateRangePreset(dateRange, 'last7Days') ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDateRange(getPresetDateRange('last7Days'))}
-            >
-              Last 7 Days
-            </Button>
-            <Button
-              variant={isDateRangePreset(dateRange, 'last30Days') ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDateRange(getPresetDateRange('last30Days'))}
-            >
-              Last 30 Days
-            </Button>
-          </div>
-          <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
-            <SelectTrigger className="w-full sm:w-[140px] h-10">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
-            </SelectContent>
-          </Select>
-          {!isSalesperson && (
-            <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-              <SelectTrigger className="w-full sm:w-[200px] h-10">
-                <SelectValue placeholder="All Salespeople" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
-                {users.filter((u: any) => isAdmin ? ['salesperson', 'manager'].includes(u.role) : u.role === 'salesperson').map((user: any) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    <div className="flex items-center gap-2">
-                      {user.role === 'manager' && (
-                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                          Manager
-                        </Badge>
-                      )}
-                    {user.name || user.email}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           )}
-          <Button onClick={refreshAllData} className="w-full sm:w-[150px] mobile-filter-full">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
+          {isMobile && <MobileHeaderMenuButton />}
+          {/* Desktop: inline filters - same row as title */}
+          {!isMobile && (
+            <div className="flex flex-row flex-wrap items-center gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button variant={!dateRange ? "default" : "outline"} size="sm" onClick={() => setDateRange(null)} className={!dateRange ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}>All Time</Button>
+                <Button variant={isDateRangePreset(dateRange, 'thisWeek') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('thisWeek'))}>This Week</Button>
+                <Button variant={isDateRangePreset(dateRange, 'today') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('today'))}>Today</Button>
+                <Button variant={isDateRangePreset(dateRange, 'last7Days') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('last7Days'))}>Last 7 Days</Button>
+                <Button variant={isDateRangePreset(dateRange, 'last30Days') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('last30Days'))}>Last 30 Days</Button>
+              </div>
+              <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+                <SelectTrigger className="w-full sm:w-[140px] h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+              {!isSalesperson && (
+                <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                  <SelectTrigger className="w-full sm:w-[200px] h-10"><SelectValue placeholder="All Salespeople" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
+                    {users.filter((u: any) => isAdmin ? ['salesperson', 'manager'].includes(u.role) : u.role === 'salesperson').map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        <div className="flex items-center gap-2">
+                          {user.role === 'manager' && <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">Manager</Badge>}
+                          {user.name || user.email}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Button onClick={refreshAllData} className="w-full sm:w-[150px]">
+                <RefreshCw className="h-4 w-4 mr-2" /> Refresh Data
+              </Button>
+            </div>
+          )}
+          {isMobile && (
+              <FiltersBottomSheet open={filtersOpen} onOpenChange={setFiltersOpen} title="Filters">
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant={!dateRange ? "default" : "outline"} size="sm" onClick={() => setDateRange(null)} className={!dateRange ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}>All Time</Button>
+                    <Button variant={isDateRangePreset(dateRange, 'thisWeek') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('thisWeek'))}>This Week</Button>
+                    <Button variant={isDateRangePreset(dateRange, 'today') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('today'))}>Today</Button>
+                    <Button variant={isDateRangePreset(dateRange, 'last7Days') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('last7Days'))}>Last 7 Days</Button>
+                    <Button variant={isDateRangePreset(dateRange, 'last30Days') ? "default" : "outline"} size="sm" onClick={() => setDateRange(getPresetDateRange('last30Days'))}>Last 30 Days</Button>
+                  </div>
+                  <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+                    <SelectTrigger className="w-full h-10"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!isSalesperson && (
+                    <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
+                      <SelectTrigger className="w-full h-10"><SelectValue placeholder="All Salespeople" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All {isAdmin ? 'Team Members' : 'Salespeople'}</SelectItem>
+                        {users.filter((u: any) => isAdmin ? ['salesperson', 'manager'].includes(u.role) : u.role === 'salesperson').map((user: any) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            <div className="flex items-center gap-2">
+                              {user.role === 'manager' && <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">Manager</Badge>}
+                              {user.name || user.email}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Button onClick={() => { refreshAllData(); setFiltersOpen(false); }} className="w-full">
+                    <RefreshCw className="h-4 w-4 mr-2" /> Refresh Data
+                  </Button>
+                </div>
+              </FiltersBottomSheet>
+          )}
         </div>
       </div>
 
@@ -615,10 +633,7 @@ export default function Analytics() {
       {/* Top Selling Products */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Top Selling Products
-          </CardTitle>
+          <CardTitle>Top Selling Products</CardTitle>
           <CardDescription>Top 10 most popular products listed as top selling by stores</CardDescription>
         </CardHeader>
         <CardContent>
